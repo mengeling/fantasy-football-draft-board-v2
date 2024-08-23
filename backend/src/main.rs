@@ -1,5 +1,9 @@
 use anyhow::Result;
 use headless_chrome::Browser;
+use regex::Regex;
+use reqwest::Client;
+use scraper::{Html, Selector};
+use std::collections::HashMap;
 
 fn main() -> Result<()> {
     let browser = Browser::default()?;
@@ -30,26 +34,131 @@ fn main() -> Result<()> {
     let table_html_value = table_html_debug.value.unwrap();
     let table_html = table_html_value.as_str().unwrap();
 
-    // Parse the HTML using the scraper crate
-    let document = scraper::Html::parse_document(table_html);
-    let selector = scraper::Selector::parse("tbody tr.player-row").unwrap();
+    // Parse the document
+    let document = Html::parse_document(table_html);
+    let row_selector = Selector::parse("tbody tr.player-row").unwrap();
+    let td_selector = Selector::parse("td").unwrap();
 
-    // Find all matching elements
-    let player_rows: Vec<_> = document.select(&selector).collect();
+    // Regex for splitting position and ranking
+    let re = Regex::new(r"(\D+)(\d+)").unwrap();
 
-    // Check if we have player rows and print the last one
-    if let Some(last_row) = player_rows.last() {
-        println!("Last player row HTML: {}", last_row.html());
-    } else {
-        println!("No player rows found.");
+    // Data structure to hold the extracted player data
+    let mut rows = Vec::new();
+
+    // Loop through each player-row
+    for row in document.select(&row_selector) {
+        let mut row_data = Vec::new();
+        let tds: Vec<_> = row.select(&td_selector).collect();
+
+        for (i, td) in tds.iter().enumerate() {
+            match i {
+                0 => {
+                    // Get overall ranking
+                    row_data.push(td.text().collect::<Vec<_>>().concat());
+                }
+                2 => {
+                    // Get player_id, bio_url, name, and team
+                    let div = td.select(&Selector::parse("div").unwrap()).next().unwrap();
+                    let player_id = div.value().attr("data-player").unwrap_or("").to_string();
+                    let a = td.select(&Selector::parse("a").unwrap()).next().unwrap();
+                    let bio_url = a.value().attr("href").unwrap_or("").to_string();
+                    let name = a.text().collect::<Vec<_>>().concat();
+                    let team = td
+                        .select(&Selector::parse("span").unwrap())
+                        .next()
+                        .unwrap()
+                        .text()
+                        .collect::<Vec<_>>()
+                        .concat()
+                        .trim_matches(&['(', ')'][..])
+                        .to_string();
+                    row_data.extend(vec![player_id, bio_url, name, team]);
+                }
+                3 => {
+                    // Split position and position ranking using regex
+                    let text = td.text().collect::<Vec<_>>().concat();
+                    if let Some(caps) = re.captures(&text) {
+                        let position = caps.get(1).map_or("", |m| m.as_str()).to_string();
+                        let ranking = caps.get(2).map_or("", |m| m.as_str()).to_string();
+                        row_data.push(position);
+                        row_data.push(ranking);
+                    } else {
+                        // Handle cases where the regex doesn't match
+                        row_data.push(text);
+                    }
+                }
+                4 => {
+                    // Get bye week
+                    row_data.push(td.text().collect::<Vec<_>>().concat());
+                }
+                _ => {}
+            }
+        }
+
+        rows.push(row_data);
     }
 
-    // Pause the program to allow viewing of console output
-    use std::io::{self, Write};
-    print!("Press Enter to exit...");
-    io::stdout().flush()?; // Ensure the message is printed before waiting for input
-    let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
+    // Print the extracted data for debugging purposes
+    for row in rows {
+        println!("{:?}", row);
+    }
+
+    Ok(())
+}
+
+async fn scrape_bio(
+    row_data: &mut Vec<String>,
+    bio_headers: &[&str],
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let bio_url = &row_data[2];
+
+    // Get HTML for the bio page
+    let response = client.get(bio_url).send().await?;
+    let body = response.text().await?;
+    let html = Html::parse_document(&body);
+
+    // Set up selectors
+    let picture_selector = Selector::parse("picture img").unwrap();
+    let clearfix_selector = Selector::parse("div.clearfix").unwrap();
+    let bio_detail_selector = Selector::parse("span.bio-detail").unwrap();
+
+    // Check for the picture element
+    if let Some(picture) = html.select(&picture_selector).next() {
+        if let Some(img_url) = picture.value().attr("src") {
+            row_data.push(img_url.to_string());
+
+            // Get bio details in the clearfix div
+            if let Some(bio_div) = html.select(&clearfix_selector).next() {
+                let mut bio_details_dict = HashMap::new();
+                for detail in bio_div.select(&bio_detail_selector) {
+                    let text = detail.text().collect::<Vec<_>>().concat();
+                    let mut parts = text.split(": ");
+                    if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
+                        bio_details_dict.insert(key.to_string(), value.to_string());
+                    }
+                }
+
+                // Add bio details to row_data
+                for header in bio_headers {
+                    if let Some(value) = bio_details_dict.get(*header) {
+                        row_data.push(value.clone());
+                    } else {
+                        row_data.push("None".to_string());
+                    }
+                }
+            } else {
+                // If bio details are missing, add "None" for each header
+                row_data.extend(vec!["None".to_string(); bio_headers.len()]);
+            }
+        } else {
+            // If no picture, add "None" for all bio fields
+            row_data.extend(vec!["None".to_string(); bio_headers.len() + 1]);
+        }
+    } else {
+        // No picture element, so add "None" for all bio fields
+        row_data.extend(vec!["None".to_string(); bio_headers.len() + 1]);
+    }
 
     Ok(())
 }
