@@ -5,7 +5,34 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-fn main() -> Result<()> {
+#[derive(Debug, Clone, Copy)]
+enum BioHeader {
+    Height,
+    Weight,
+    Age,
+    College,
+}
+
+impl BioHeader {
+    fn as_str(&self) -> &'static str {
+        match self {
+            BioHeader::Height => "Height",
+            BioHeader::Weight => "Weight",
+            BioHeader::Age => "Age",
+            BioHeader::College => "College",
+        }
+    }
+}
+
+const BIO_HEADERS: &[BioHeader] = &[
+    BioHeader::Height,
+    BioHeader::Weight,
+    BioHeader::Age,
+    BioHeader::College,
+];
+
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
 
@@ -50,6 +77,8 @@ fn main() -> Result<()> {
         let mut row_data = Vec::new();
         let tds: Vec<_> = row.select(&td_selector).collect();
 
+        let mut bio_url = String::new();
+
         for (i, td) in tds.iter().enumerate() {
             match i {
                 0 => {
@@ -61,7 +90,7 @@ fn main() -> Result<()> {
                     let div = td.select(&Selector::parse("div").unwrap()).next().unwrap();
                     let player_id = div.value().attr("data-player").unwrap_or("").to_string();
                     let a = td.select(&Selector::parse("a").unwrap()).next().unwrap();
-                    let bio_url = a.value().attr("href").unwrap_or("").to_string();
+                    bio_url = a.value().attr("href").unwrap_or("").to_string();
                     let name = a.text().collect::<Vec<_>>().concat();
                     let team = td
                         .select(&Selector::parse("span").unwrap())
@@ -72,7 +101,7 @@ fn main() -> Result<()> {
                         .concat()
                         .trim_matches(&['(', ')'][..])
                         .to_string();
-                    row_data.extend(vec![player_id, bio_url, name, team]);
+                    row_data.extend(vec![player_id, bio_url.clone(), name, team]);
                 }
                 3 => {
                     // Split position and position ranking using regex
@@ -95,6 +124,7 @@ fn main() -> Result<()> {
             }
         }
 
+        row_data.extend(scrape_bio(&bio_url).await);
         rows.push(row_data);
     }
 
@@ -106,59 +136,47 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-async fn scrape_bio(
-    row_data: &mut Vec<String>,
-    bio_headers: &[&str],
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn scrape_bio(bio_url: &str) -> Vec<String> {
     let client = Client::new();
-    let bio_url = &row_data[2];
+    let mut bio_data = vec![String::new(); BIO_HEADERS.len() + 1];
 
-    // Get HTML for the bio page
-    let response = client.get(bio_url).send().await?;
-    let body = response.text().await?;
+    let response = match client.get(bio_url).send().await {
+        Ok(resp) => resp,
+        Err(e) => return vec![format!("Error fetching bio: {}", e); BIO_HEADERS.len() + 1],
+    };
+    let body = match response.text().await {
+        Ok(text) => text,
+        Err(e) => return vec![format!("Error reading response: {}", e); BIO_HEADERS.len() + 1],
+    };
+
     let html = Html::parse_document(&body);
-
-    // Set up selectors
     let picture_selector = Selector::parse("picture img").unwrap();
     let clearfix_selector = Selector::parse("div.clearfix").unwrap();
     let bio_detail_selector = Selector::parse("span.bio-detail").unwrap();
 
-    // Check for the picture element
     if let Some(picture) = html.select(&picture_selector).next() {
         if let Some(img_url) = picture.value().attr("src") {
-            row_data.push(img_url.to_string());
+            bio_data[0] = img_url.to_string();
 
-            // Get bio details in the clearfix div
             if let Some(bio_div) = html.select(&clearfix_selector).next() {
-                let mut bio_details_dict = HashMap::new();
-                for detail in bio_div.select(&bio_detail_selector) {
-                    let text = detail.text().collect::<Vec<_>>().concat();
-                    let mut parts = text.split(": ");
-                    if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
-                        bio_details_dict.insert(key.to_string(), value.to_string());
-                    }
-                }
+                let bio_details: HashMap<_, _> = bio_div
+                    .select(&bio_detail_selector)
+                    .filter_map(|detail| {
+                        let text = detail.text().collect::<String>();
+                        let mut parts = text.split(": ");
+                        Some((parts.next()?.to_string(), parts.next()?.to_string()))
+                    })
+                    .collect();
 
-                // Add bio details to row_data
-                for header in bio_headers {
-                    if let Some(value) = bio_details_dict.get(*header) {
-                        row_data.push(value.clone());
-                    } else {
-                        row_data.push("None".to_string());
-                    }
+                for (i, header) in BIO_HEADERS.iter().enumerate() {
+                    bio_data[i + 1] = bio_details
+                        .get(header.as_str())
+                        .cloned()
+                        .unwrap_or_default();
                 }
-            } else {
-                // If bio details are missing, add "None" for each header
-                row_data.extend(vec!["None".to_string(); bio_headers.len()]);
             }
-        } else {
-            // If no picture, add "None" for all bio fields
-            row_data.extend(vec!["None".to_string(); bio_headers.len() + 1]);
         }
-    } else {
-        // No picture element, so add "None" for all bio fields
-        row_data.extend(vec!["None".to_string(); bio_headers.len() + 1]);
     }
-
-    Ok(())
+    println!("{:?}", bio_data);
+    bio_data
 }
