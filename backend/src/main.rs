@@ -1,35 +1,144 @@
 use anyhow::Result;
-use headless_chrome::Browser;
+use futures::future::join_all;
+use headless_chrome::{Browser, Tab};
+use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy)]
-enum BioHeader {
-    Height,
-    Weight,
-    Age,
-    College,
+static CLIENT: Lazy<Client> = Lazy::new(|| {
+    Client::builder()
+        .pool_max_idle_per_host(0)
+        .build()
+        .expect("Failed to create HTTP client")
+});
+
+lazy_static! {
+    static ref STATS_HEADERS: HashMap<&'static str, Vec<&'static str>> = HashMap::from([
+        (
+            "qb",
+            vec![
+                "id",
+                "pass_cmp",
+                "pass_att",
+                "pass_cmp_pct",
+                "pass_yds",
+                "pass_yds_per_att",
+                "pass_td",
+                "pass_int",
+                "pass_sacks",
+                "rush_att",
+                "rush_yds",
+                "rush_td",
+                "fumbles",
+                "games",
+                "fantasy_pts",
+                "fantasy_pts_per_game",
+            ]
+        ),
+        (
+            "rb",
+            vec![
+                "id",
+                "rush_att",
+                "rush_yds",
+                "rush_yds_per_att",
+                "rush_long",
+                "rush_20",
+                "rush_td",
+                "receptions",
+                "rec_tgt",
+                "rec_yds",
+                "rec_yds_per_rec",
+                "rec_td",
+                "fumbles",
+                "games",
+                "fantasy_pts",
+                "fantasy_pts_per_game",
+            ]
+        ),
+        (
+            "wr",
+            vec![
+                "id",
+                "receptions",
+                "rec_tgt",
+                "rec_yds",
+                "rec_yds_per_rec",
+                "rec_long",
+                "rec_20",
+                "rec_td",
+                "rush_att",
+                "rush_yds",
+                "rush_td",
+                "fumbles",
+                "games",
+                "fantasy_pts",
+                "fantasy_pts_per_game",
+            ]
+        ),
+        (
+            "te",
+            vec![
+                "id",
+                "receptions",
+                "rec_tgt",
+                "rec_yds",
+                "rec_yds_per_rec",
+                "rec_long",
+                "rec_20",
+                "rec_td",
+                "rush_att",
+                "rush_yds",
+                "rush_td",
+                "fumbles",
+                "games",
+                "fantasy_pts",
+                "fantasy_pts_per_game",
+            ]
+        ),
+        (
+            "k",
+            vec![
+                "id",
+                "field_goals",
+                "fg_att",
+                "fg_pct",
+                "fg_long",
+                "fg_1_19",
+                "fg_20_29",
+                "fg_30_39",
+                "fg_40_49",
+                "fg_50",
+                "extra_points",
+                "xp_att",
+                "games",
+                "fantasy_pts",
+                "fantasy_pts_per_game",
+            ]
+        ),
+        (
+            "dst",
+            vec![
+                "id",
+                "sacks",
+                "int",
+                "fumbles_recovered",
+                "fumbles_forced",
+                "def_td",
+                "safeties",
+                "special_teams_td",
+                "games",
+                "fantasy_pts",
+                "fantasy_pts_per_game",
+            ]
+        ),
+    ]);
 }
 
-impl BioHeader {
-    fn as_str(&self) -> &'static str {
-        match self {
-            BioHeader::Height => "Height",
-            BioHeader::Weight => "Weight",
-            BioHeader::Age => "Age",
-            BioHeader::College => "College",
-        }
-    }
-}
-
-const BIO_HEADERS: &[BioHeader] = &[
-    BioHeader::Height,
-    BioHeader::Weight,
-    BioHeader::Age,
-    BioHeader::College,
-];
+const BIO_HEADERS: &[&str] = &["Height", "Weight", "Age", "College"];
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -39,8 +148,18 @@ async fn main() -> Result<(), anyhow::Error> {
     let scoring_settings = "half-point-ppr";
     let rankings_url =
         format!("https://www.fantasypros.com/nfl/rankings/{scoring_settings}-cheatsheets.php");
+    let stats_url = "https://www.fantasypros.com/nfl/stats/{}?scoring=HALF.php";
 
-    tab.navigate_to(&rankings_url)?;
+    let rankings = scrape_rankings(&tab, &rankings_url).await?;
+    println!("{:?}", rankings);
+    let stats = scrape_stats(&stats_url).await?;
+    println!("{:?}", stats);
+
+    Ok(())
+}
+
+async fn scrape_rankings(tab: &Tab, rankings_url: &str) -> Result<Vec<Vec<String>>, anyhow::Error> {
+    tab.navigate_to(rankings_url)?;
     tab.wait_until_navigated()?;
     tab.wait_for_element("table#ranking-table")?;
 
@@ -70,6 +189,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let re = Regex::new(r"(\D+)(\d+)").unwrap();
 
     // Data structure to hold the extracted player data
+    let mut bio_futures = Vec::new();
     let mut rows = Vec::new();
 
     // Loop through each player-row
@@ -124,23 +244,25 @@ async fn main() -> Result<(), anyhow::Error> {
             }
         }
 
-        row_data.extend(scrape_bio(&bio_url).await);
+        bio_futures.push(scrape_bio(bio_url.clone()));
+        // row_data.extend(scrape_bio(&bio_url).await);
+        // println!("{:?}", row_data);
         rows.push(row_data);
     }
 
-    // Print the extracted data for debugging purposes
-    for row in rows {
-        println!("{:?}", row);
+    let bios = join_all(bio_futures).await;
+    for (row, bio) in rows.iter_mut().zip(bios) {
+        row.extend(bio);
     }
 
-    Ok(())
+    Ok(rows)
 }
 
-async fn scrape_bio(bio_url: &str) -> Vec<String> {
-    let client = Client::new();
+async fn scrape_bio(bio_url: String) -> Vec<String> {
+    // let client: Client = Client::new();
     let mut bio_data = vec![String::new(); BIO_HEADERS.len() + 1];
 
-    let response = match client.get(bio_url).send().await {
+    let response = match CLIENT.get(bio_url).send().await {
         Ok(resp) => resp,
         Err(e) => return vec![format!("Error fetching bio: {}", e); BIO_HEADERS.len() + 1],
     };
@@ -170,13 +292,69 @@ async fn scrape_bio(bio_url: &str) -> Vec<String> {
 
                 for (i, header) in BIO_HEADERS.iter().enumerate() {
                     bio_data[i + 1] = bio_details
-                        .get(header.as_str())
-                        .cloned()
+                        .get(header as &str)
+                        .map(|s| s.to_string())
                         .unwrap_or_default();
                 }
             }
         }
     }
-    println!("{:?}", bio_data);
+    // println!("{:?}", bio_data);
     bio_data
 }
+
+async fn scrape_stats(url: &str) -> Result<HashMap<String, Vec<Vec<String>>>> {
+    let mut dict_stats: HashMap<String, Vec<Vec<String>>> = HashMap::new();
+
+    for (position, _position_stats) in STATS_HEADERS.iter() {
+        let response = CLIENT.get(&url.replace("{}", position)).send().await?;
+        let html = Html::parse_document(&response.text().await?);
+
+        let table_selector = Selector::parse("table#data tbody").unwrap();
+        let row_selector = Selector::parse("tr").unwrap();
+        let cell_selector = Selector::parse("td").unwrap();
+
+        let mut rows = Vec::new();
+
+        if let Some(table) = html.select(&table_selector).next() {
+            for row in table.select(&row_selector) {
+                let class_name = row.value().attr("class").unwrap_or("");
+                let re = Regex::new(r"(\d+)").unwrap();
+                let player_id = re
+                    .captures(class_name)
+                    .and_then(|cap| cap.get(1))
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
+
+                let mut row_data = vec![player_id];
+                for (i, td) in row.select(&cell_selector).enumerate() {
+                    if i >= 2 && i < row.select(&cell_selector).count() - 1 {
+                        row_data.push(td.text().collect::<String>());
+                    }
+                }
+                rows.push(row_data);
+            }
+        }
+
+        dict_stats.insert(position.to_string(), rows);
+    }
+    // println!("{:?}", dict_stats);
+    Ok(dict_stats)
+
+    // create_stats_all(
+    //     &dict_stats,
+    //     STATS_HEADERS.values().flatten().collect::<Vec<_>>(),
+    // )
+}
+
+// You'll need to implement this function to combine the stats
+// fn create_stats_all(
+//     dict_stats: &HashMap<String, Vec<Vec<String>>>,
+//     stats_all_headers: &[&str],
+// ) -> Result<Vec<Vec<String>>> {
+//     // Implement the logic to combine stats here
+//     // This function should return a Result<Vec<Vec<String>>>
+//     println!("{:?}", dict_stats);
+//     println!("{:?}", stats_all_headers);
+//     todo!("Implement create_stats_all function")
+// }
