@@ -303,7 +303,7 @@ async fn scrape_bio(bio_url: String) -> Vec<String> {
     bio_data
 }
 
-async fn scrape_stats(url: &str) -> Result<HashMap<String, Vec<Vec<String>>>> {
+async fn scrape_stats(url: &str) -> Result<Vec<Vec<String>>> {
     let mut dict_stats: HashMap<String, Vec<Vec<String>>> = HashMap::new();
 
     for (position, _position_stats) in STATS_HEADERS.iter() {
@@ -319,8 +319,8 @@ async fn scrape_stats(url: &str) -> Result<HashMap<String, Vec<Vec<String>>>> {
         if let Some(table) = html.select(&table_selector).next() {
             for row in table.select(&row_selector) {
                 let class_name = row.value().attr("class").unwrap_or("");
-                let re = Regex::new(r"(\d+)").unwrap();
-                let player_id = re
+                let player_id = Regex::new(r"(\d+)")
+                    .unwrap()
                     .captures(class_name)
                     .and_then(|cap| cap.get(1))
                     .map(|m| m.as_str().to_string())
@@ -339,22 +339,51 @@ async fn scrape_stats(url: &str) -> Result<HashMap<String, Vec<Vec<String>>>> {
         dict_stats.insert(position.to_string(), rows);
     }
     // println!("{:?}", dict_stats);
-    Ok(dict_stats)
-
-    // create_stats_all(
-    //     &dict_stats,
-    //     STATS_HEADERS.values().flatten().collect::<Vec<_>>(),
-    // )
+    create_stats_all(&dict_stats)
 }
 
-// You'll need to implement this function to combine the stats
-// fn create_stats_all(
-//     dict_stats: &HashMap<String, Vec<Vec<String>>>,
-//     stats_all_headers: &[&str],
-// ) -> Result<Vec<Vec<String>>> {
-//     // Implement the logic to combine stats here
-//     // This function should return a Result<Vec<Vec<String>>>
-//     println!("{:?}", dict_stats);
-//     println!("{:?}", stats_all_headers);
-//     todo!("Implement create_stats_all function")
-// }
+fn create_stats_all(dict_stats: &HashMap<String, Vec<Vec<String>>>) -> Result<Vec<Vec<String>>> {
+    let mut all_stats: HashMap<String, HashMap<String, String>> = HashMap::new();
+    let mut all_headers: Vec<String> = vec!["id".to_string()];
+
+    // Collect all unique headers and initialize player stats
+    for (position, stats) in dict_stats.iter() {
+        let headers = STATS_HEADERS.get(position.as_str()).unwrap();
+        for (i, header) in headers.iter().enumerate() {
+            if i > 0 && !all_headers.contains(&header.to_string()) {
+                all_headers.push(header.to_string());
+            }
+        }
+
+        for row in stats {
+            let player_id = &row[0];
+            let player_stats = all_stats
+                .entry(player_id.to_string())
+                .or_insert_with(HashMap::new);
+            for (i, value) in row.iter().enumerate() {
+                if i < headers.len() {
+                    player_stats.insert(headers[i].to_string(), value.to_string());
+                }
+            }
+        }
+    }
+
+    // Create the final vector of vectors
+    let mut result = Vec::new();
+    result.push(all_headers.clone());
+
+    for (player_id, stats) in all_stats {
+        let mut row = vec![player_id];
+        for header in all_headers.iter().skip(1) {
+            row.push(
+                stats
+                    .get(header)
+                    .cloned()
+                    .unwrap_or_else(|| "0".to_string()),
+            );
+        }
+        result.push(row);
+    }
+
+    Ok(result)
+}
