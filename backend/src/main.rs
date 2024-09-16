@@ -22,7 +22,6 @@ lazy_static! {
         (
             "qb",
             vec![
-                "id",
                 "pass_cmp",
                 "pass_att",
                 "pass_cmp_pct",
@@ -43,7 +42,6 @@ lazy_static! {
         (
             "rb",
             vec![
-                "id",
                 "rush_att",
                 "rush_yds",
                 "rush_yds_per_att",
@@ -64,7 +62,6 @@ lazy_static! {
         (
             "wr",
             vec![
-                "id",
                 "receptions",
                 "rec_tgt",
                 "rec_yds",
@@ -84,7 +81,6 @@ lazy_static! {
         (
             "te",
             vec![
-                "id",
                 "receptions",
                 "rec_tgt",
                 "rec_yds",
@@ -104,7 +100,6 @@ lazy_static! {
         (
             "k",
             vec![
-                "id",
                 "field_goals",
                 "fg_att",
                 "fg_pct",
@@ -124,7 +119,6 @@ lazy_static! {
         (
             "dst",
             vec![
-                "id",
                 "sacks",
                 "int",
                 "fumbles_recovered",
@@ -140,7 +134,56 @@ lazy_static! {
     ]);
 }
 
-const BIO_HEADERS: &[&str] = &["Height", "Weight", "Age", "College"];
+lazy_static! {
+    static ref STATS_ALL_HEADERS: Vec<&'static str> = vec![
+        "id",
+        "pass_cmp",
+        "pass_att",
+        "pass_cmp_pct",
+        "pass_yds",
+        "pass_yds_per_att",
+        "pass_td",
+        "pass_int",
+        "pass_sacks",
+        "rush_att",
+        "rush_yds",
+        "rush_yds_per_att",
+        "rush_long",
+        "rush_20",
+        "rush_td",
+        "fumbles",
+        "receptions",
+        "rec_tgt",
+        "rec_yds",
+        "rec_yds_per_rec",
+        "rec_long",
+        "rec_20",
+        "rec_td",
+        "field_goals",
+        "fg_att",
+        "fg_pct",
+        "fg_long",
+        "fg_1_19",
+        "fg_20_29",
+        "fg_30_39",
+        "fg_40_49",
+        "fg_50",
+        "extra_points",
+        "xp_att",
+        "sacks",
+        "int",
+        "fumbles_recovered",
+        "fumbles_forced",
+        "def_td",
+        "safeties",
+        "special_teams_td",
+        "games",
+        "fantasy_pts",
+        "fantasy_pts_per_game",
+    ];
+}
+
+// const BIO_HEADERS: &[&str] = &["Height", "Weight", "Age", "College"];
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Player {
@@ -151,7 +194,7 @@ struct Player {
     ranking: PlayerRanking,
     bye_week: String,
     bio: PlayerBio,
-    stats: HashMap<String, String>,
+    stats: HashMap<String, f64>,
     bio_url: String,
 }
 
@@ -159,6 +202,15 @@ struct Player {
 struct PlayerRanking {
     overall: String,
     position: String,
+}
+
+impl Default for PlayerRanking {
+    fn default() -> Self {
+        Self {
+            overall: String::new(),
+            position: String::new(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -170,6 +222,24 @@ struct PlayerBio {
     college: String,
 }
 
+impl Default for PlayerBio {
+    fn default() -> Self {
+        Self {
+            image_url: String::new(),
+            height: String::new(),
+            weight: String::new(),
+            age: String::new(),
+            college: String::new(),
+        }
+    }
+}
+
+struct PlayerData {
+    id: String,
+    bio_url: String,
+    name: String,
+    team: String,
+}
 #[async_trait]
 trait Scraper {
     async fn scrape(&self) -> Result<Vec<Player>>;
@@ -284,7 +354,7 @@ fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
 #[async_trait]
 impl Scraper for StatsScraper {
     async fn scrape(&self) -> Result<Vec<Player>> {
-        let mut players = Vec::new();
+        let mut players: Vec<Player> = Vec::new();
 
         for (position, headers) in STATS_HEADERS.iter() {
             let response = CLIENT.get(&self.url.replace("{}", position)).send().await?;
@@ -295,27 +365,47 @@ impl Scraper for StatsScraper {
             let cell_selector = Selector::parse("td").unwrap();
 
             if let Some(table) = html.select(&table_selector).next() {
-                for row in table.select(&row_selector) {
+                for row in table.select(&row_selector).take(1) {
                     let player_id = extract_player_id(&row);
                     let mut stats = HashMap::new();
 
                     for (i, td) in row.select(&cell_selector).enumerate().skip(2) {
                         if i < headers.len() + 2 {
-                            stats.insert(headers[i - 2].to_string(), td.text().collect());
+                            let value = td.text().collect::<String>().parse::<f64>().unwrap_or(0.0);
+                            stats.insert(headers[i - 2].to_string(), value);
                         }
                     }
 
-                    players.push(Player {
-                        id: player_id,
-                        name: String::new(), // Will be filled later
-                        team: String::new(), // Will be filled later
-                        position: position.to_string(),
-                        ranking: PlayerRanking::default(), // Will be filled later
-                        bye_week: String::new(),
-                        bio: PlayerBio::default(), // Will be filled later
-                        stats,
-                        bio_url: String::new(), // Add this line
-                    });
+                    if let Some(existing_player) = players.iter_mut().find(|p| p.id == player_id) {
+                        // Update existing player's stats only if new value is greater
+                        for (key, &value) in &stats {
+                            existing_player
+                                .stats
+                                .entry(key.clone())
+                                .and_modify(|e| *e = f64::max(*e, value))
+                                .or_insert(value);
+                        }
+                    } else {
+                        // Create a new player with all stats initialized to 0.0
+                        let mut all_stats = HashMap::new();
+                        for &header in STATS_ALL_HEADERS.iter() {
+                            all_stats.insert(header.to_string(), 0.0);
+                        }
+                        // Update with the current position's stats
+                        all_stats.extend(stats);
+
+                        players.push(Player {
+                            id: player_id,
+                            name: String::new(),
+                            team: String::new(),
+                            position: position.to_string(),
+                            ranking: PlayerRanking::default(),
+                            bye_week: String::new(),
+                            bio: PlayerBio::default(),
+                            stats: all_stats,
+                            bio_url: String::new(),
+                        });
+                    }
                 }
             }
         }
@@ -332,13 +422,6 @@ fn extract_player_id(row: &scraper::element_ref::ElementRef) -> String {
         .and_then(|cap| cap.get(1))
         .map(|m| m.as_str().to_string())
         .unwrap_or_default()
-}
-
-struct PlayerData {
-    id: String,
-    bio_url: String,
-    name: String,
-    team: String,
 }
 
 fn extract_player_data(td: &scraper::element_ref::ElementRef) -> PlayerData {
@@ -415,26 +498,4 @@ fn combine_player_data(rankings: Vec<Player>, stats: Vec<Player>) -> Vec<Player>
     }
 
     combined.into_values().collect()
-}
-
-// Add these trait implementations
-impl Default for PlayerRanking {
-    fn default() -> Self {
-        Self {
-            overall: String::new(),
-            position: String::new(),
-        }
-    }
-}
-
-impl Default for PlayerBio {
-    fn default() -> Self {
-        Self {
-            image_url: String::new(),
-            height: String::new(),
-            weight: String::new(),
-            age: String::new(),
-            college: String::new(),
-        }
-    }
 }
