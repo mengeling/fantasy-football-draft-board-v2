@@ -14,3 +14,15 @@ This web application provides the same interactive fantasy football drafting exp
 ### App Screenshot
 
 ![App Screenshot](frontend/src/static/img/app_pic.png)
+
+### App Setup
+
+1. Clone the repository
+2. Run `sudo apt-get install postgresql`
+3. Run `sudo systemctl start postgresql`
+4. Run `psql -U postgres -c "CREATE USER ffball WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'ffball';"`
+5. Run `createdb -U ffball ffball`
+6. Run `\q` to quit
+7. Run `cargo run` from the `backend` directory
+8. Run `npm run dev` from the `frontend` directory
+9. Open your browser and navigate to `http://localhost:3000`
