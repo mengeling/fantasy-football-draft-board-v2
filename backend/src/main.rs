@@ -1,5 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use dotenv::dotenv;
 use futures::future::join_all;
 use headless_chrome::{Browser, Tab};
 use lazy_static::lazy_static;
@@ -8,7 +9,9 @@ use regex::Regex;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
+use sqlx::postgres::PgPoolOptions;
 use std::collections::HashMap;
+use std::env;
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
@@ -185,6 +188,9 @@ lazy_static! {
 
 // const BIO_HEADERS: &[&str] = &["Height", "Weight", "Age", "College"];
 
+// Add this constant at the top of your file
+const MAX_PLAYERS: usize = 10;
+
 #[derive(Debug, Serialize, Deserialize)]
 struct Player {
     id: String,
@@ -256,6 +262,53 @@ struct StatsScraper {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenv().ok();
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await?;
+
+    // Create tables if they don't exist
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS players (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            position TEXT NOT NULL,
+            overall_ranking TEXT NOT NULL,
+            position_ranking TEXT NOT NULL,
+            bye_week TEXT NOT NULL,
+            bio_url TEXT NOT NULL
+        )",
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS player_bios (
+            player_id TEXT PRIMARY KEY REFERENCES players(id),
+            image_url TEXT NOT NULL,
+            height TEXT NOT NULL,
+            weight TEXT NOT NULL,
+            age TEXT NOT NULL,
+            college TEXT NOT NULL
+        )",
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS player_stats (
+            player_id TEXT REFERENCES players(id),
+            stat_name TEXT NOT NULL,
+            stat_value DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY (player_id, stat_name)
+        )",
+    )
+    .execute(&pool)
+    .await?;
+
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
 
@@ -275,8 +328,76 @@ async fn main() -> Result<()> {
     let rankings = rankings_scraper.scrape().await?;
     let stats = stats_scraper.scrape().await?;
 
-    let combined_players = combine_player_data(rankings, stats);
-    println!("{:?}", combined_players);
+    let combined_players: Vec<Player> = combine_player_data(rankings, stats);
+    println!("Combined players: {:?}", combined_players);
+
+    // Save players to the database
+    for player in combined_players {
+        save_player(&pool, &player).await?;
+    }
+
+    Ok(())
+}
+
+async fn save_player(pool: &sqlx::PgPool, player: &Player) -> Result<()> {
+    // Insert player
+    sqlx::query(
+        "INSERT INTO players (id, name, team, position, overall_ranking, position_ranking, bye_week, bio_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (id) DO UPDATE SET
+         name = EXCLUDED.name,
+         team = EXCLUDED.team,
+         position = EXCLUDED.position,
+         overall_ranking = EXCLUDED.overall_ranking,
+         position_ranking = EXCLUDED.position_ranking,
+         bye_week = EXCLUDED.bye_week,
+         bio_url = EXCLUDED.bio_url"
+    )
+    .bind(&player.id)
+    .bind(&player.name)
+    .bind(&player.team)
+    .bind(&player.position)
+    .bind(&player.ranking.overall)
+    .bind(&player.ranking.position)
+    .bind(&player.bye_week)
+    .bind(&player.bio_url)
+    .execute(pool)
+    .await?;
+
+    // Insert player bio
+    sqlx::query(
+        "INSERT INTO player_bios (player_id, image_url, height, weight, age, college)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (player_id) DO UPDATE SET
+         image_url = EXCLUDED.image_url,
+         height = EXCLUDED.height,
+         weight = EXCLUDED.weight,
+         age = EXCLUDED.age,
+         college = EXCLUDED.college",
+    )
+    .bind(&player.id)
+    .bind(&player.bio.image_url)
+    .bind(&player.bio.height)
+    .bind(&player.bio.weight)
+    .bind(&player.bio.age)
+    .bind(&player.bio.college)
+    .execute(pool)
+    .await?;
+
+    // Insert player stats
+    for (stat_name, stat_value) in &player.stats {
+        sqlx::query(
+            "INSERT INTO player_stats (player_id, stat_name, stat_value)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (player_id, stat_name) DO UPDATE SET
+             stat_value = EXCLUDED.stat_value",
+        )
+        .bind(&player.id)
+        .bind(stat_name)
+        .bind(stat_value)
+        .execute(pool)
+        .await?;
+    }
 
     Ok(())
 }
@@ -288,18 +409,20 @@ impl<'a> Scraper for RankingsScraper<'a> {
         self.tab.wait_until_navigated()?;
         self.tab.wait_for_element("table#ranking-table")?;
 
-        // Scroll to the last player
-        self.tab.evaluate(
-            "let rows = document.querySelectorAll('tbody tr.player-row');
-             let lastRow = rows[rows.length - 1];
-             lastRow.scrollIntoView();",
-            false,
-        )?;
+        // Comment out the scrolling part
+        // self.tab.evaluate(
+        //     &format!("
+        //         let rows = document.querySelectorAll('tbody tr.player-row');
+        //         let lastRow = rows[Math.min({}, rows.length) - 1];
+        //         lastRow.scrollIntoView();
+        //     ", MAX_PLAYERS),
+        //     false,
+        // )?;
+
         let table_element = self.tab.wait_for_element("table#ranking-table")?;
         let table_html_debug =
             table_element.call_js_fn("function() { return this.outerHTML; }", vec![], false)?;
 
-        // Fix: Assign the unwrap to a variable to extend its lifetime
         let table_html_value = table_html_debug.value.unwrap();
         let table_html = table_html_value.as_str().unwrap();
 
@@ -308,6 +431,7 @@ impl<'a> Scraper for RankingsScraper<'a> {
         Ok(players
             .into_iter()
             .zip(bios)
+            .take(MAX_PLAYERS)
             .map(|(mut player, bio)| {
                 player.bio = bio.unwrap_or_default();
                 player
@@ -324,7 +448,7 @@ fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
 
     let mut players = Vec::new();
 
-    for row in document.select(&row_selector) {
+    for row in document.select(&row_selector).take(MAX_PLAYERS) {
         let tds: Vec<_> = row.select(&td_selector).collect();
 
         let overall_ranking = tds[0].text().collect::<String>();
