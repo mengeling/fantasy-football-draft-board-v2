@@ -188,17 +188,14 @@ lazy_static! {
 
 // const BIO_HEADERS: &[&str] = &["Height", "Weight", "Age", "College"];
 
-// Add this constant at the top of your file
-const MAX_PLAYERS: usize = 10;
-
 #[derive(Debug, Serialize, Deserialize)]
 struct Player {
-    id: String,
+    id: i32,
     name: String,
     team: String,
     position: String,
     ranking: PlayerRanking,
-    bye_week: String,
+    bye_week: i32,
     bio: PlayerBio,
     stats: HashMap<String, f64>,
     bio_url: String,
@@ -206,15 +203,15 @@ struct Player {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PlayerRanking {
-    overall: String,
-    position: String,
+    overall: i32,
+    position: i32,
 }
 
 impl Default for PlayerRanking {
     fn default() -> Self {
         Self {
-            overall: String::new(),
-            position: String::new(),
+            overall: 0,
+            position: 0,
         }
     }
 }
@@ -241,7 +238,7 @@ impl Default for PlayerBio {
 }
 
 struct PlayerData {
-    id: String,
+    id: i32,
     bio_url: String,
     name: String,
     team: String,
@@ -272,13 +269,13 @@ async fn main() -> Result<()> {
     // Create tables if they don't exist
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS players (
-            id TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             team TEXT NOT NULL,
             position TEXT NOT NULL,
-            overall_ranking TEXT NOT NULL,
-            position_ranking TEXT NOT NULL,
-            bye_week TEXT NOT NULL,
+            overall_ranking INTEGER NOT NULL,
+            position_ranking INTEGER NOT NULL,
+            bye_week INTEGER NOT NULL,
             bio_url TEXT NOT NULL
         )",
     )
@@ -287,11 +284,11 @@ async fn main() -> Result<()> {
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS player_bios (
-            player_id TEXT PRIMARY KEY REFERENCES players(id),
+            player_id INTEGER PRIMARY KEY REFERENCES players(id),
             image_url TEXT NOT NULL,
             height TEXT NOT NULL,
             weight TEXT NOT NULL,
-            age TEXT NOT NULL,
+            age INTEGER NOT NULL,
             college TEXT NOT NULL
         )",
     )
@@ -300,7 +297,7 @@ async fn main() -> Result<()> {
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS player_stats (
-            player_id TEXT REFERENCES players(id),
+            player_id INTEGER REFERENCES players(id),
             stat_name TEXT NOT NULL,
             stat_value DOUBLE PRECISION NOT NULL,
             PRIMARY KEY (player_id, stat_name)
@@ -353,13 +350,13 @@ async fn save_player(pool: &sqlx::PgPool, player: &Player) -> Result<()> {
          bye_week = EXCLUDED.bye_week,
          bio_url = EXCLUDED.bio_url"
     )
-    .bind(&player.id)
+    .bind(player.id)
     .bind(&player.name)
     .bind(&player.team)
     .bind(&player.position)
-    .bind(&player.ranking.overall)
-    .bind(&player.ranking.position)
-    .bind(&player.bye_week)
+    .bind(player.ranking.overall)
+    .bind(player.ranking.position)
+    .bind(player.bye_week)
     .bind(&player.bio_url)
     .execute(pool)
     .await?;
@@ -375,11 +372,11 @@ async fn save_player(pool: &sqlx::PgPool, player: &Player) -> Result<()> {
          age = EXCLUDED.age,
          college = EXCLUDED.college",
     )
-    .bind(&player.id)
+    .bind(player.id)
     .bind(&player.bio.image_url)
     .bind(&player.bio.height)
     .bind(&player.bio.weight)
-    .bind(&player.bio.age)
+    .bind(player.bio.age.parse::<i32>().unwrap_or(0))
     .bind(&player.bio.college)
     .execute(pool)
     .await?;
@@ -392,7 +389,7 @@ async fn save_player(pool: &sqlx::PgPool, player: &Player) -> Result<()> {
              ON CONFLICT (player_id, stat_name) DO UPDATE SET
              stat_value = EXCLUDED.stat_value",
         )
-        .bind(&player.id)
+        .bind(player.id)
         .bind(stat_name)
         .bind(stat_value)
         .execute(pool)
@@ -409,13 +406,11 @@ impl<'a> Scraper for RankingsScraper<'a> {
         self.tab.wait_until_navigated()?;
         self.tab.wait_for_element("table#ranking-table")?;
 
-        // Comment out the scrolling part
+        // Scroll to the last player
         // self.tab.evaluate(
-        //     &format!("
-        //         let rows = document.querySelectorAll('tbody tr.player-row');
-        //         let lastRow = rows[Math.min({}, rows.length) - 1];
-        //         lastRow.scrollIntoView();
-        //     ", MAX_PLAYERS),
+        //     "let rows = document.querySelectorAll('tbody tr.player-row');
+        //         let lastRow = rows[rows.length - 1];
+        //         lastRow.scrollIntoView();",
         //     false,
         // )?;
 
@@ -431,7 +426,6 @@ impl<'a> Scraper for RankingsScraper<'a> {
         Ok(players
             .into_iter()
             .zip(bios)
-            .take(MAX_PLAYERS)
             .map(|(mut player, bio)| {
                 player.bio = bio.unwrap_or_default();
                 player
@@ -448,13 +442,21 @@ fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
 
     let mut players = Vec::new();
 
-    for row in document.select(&row_selector).take(MAX_PLAYERS) {
+    for row in document.select(&row_selector) {
         let tds: Vec<_> = row.select(&td_selector).collect();
 
-        let overall_ranking = tds[0].text().collect::<String>();
+        let overall_ranking = tds[0]
+            .text()
+            .collect::<String>()
+            .parse::<i32>()
+            .unwrap_or(0);
         let player_data = extract_player_data(&tds[2]);
         let (position, position_ranking) = extract_position_data(&tds[3], &re);
-        let bye_week = tds[4].text().collect::<String>();
+        let bye_week = tds[4]
+            .text()
+            .collect::<String>()
+            .parse::<i32>()
+            .unwrap_or(0);
 
         players.push(Player {
             id: player_data.id,
@@ -463,12 +465,12 @@ fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
             position,
             ranking: PlayerRanking {
                 overall: overall_ranking,
-                position: position_ranking,
+                position: position_ranking.parse::<i32>().unwrap_or(0),
             },
             bye_week,
-            bio: PlayerBio::default(),    // Will be filled later
-            stats: HashMap::new(),        // Will be filled later
-            bio_url: player_data.bio_url, // Add this field to the Player struct
+            bio: PlayerBio::default(),
+            stats: HashMap::new(),
+            bio_url: player_data.bio_url,
         });
     }
 
@@ -524,7 +526,7 @@ impl Scraper for StatsScraper {
                             team: String::new(),
                             position: position.to_string(),
                             ranking: PlayerRanking::default(),
-                            bye_week: String::new(),
+                            bye_week: String::new().parse::<i32>().unwrap_or(0),
                             bio: PlayerBio::default(),
                             stats: all_stats,
                             bio_url: String::new(),
@@ -538,14 +540,14 @@ impl Scraper for StatsScraper {
     }
 }
 
-fn extract_player_id(row: &scraper::element_ref::ElementRef) -> String {
+fn extract_player_id(row: &scraper::element_ref::ElementRef) -> i32 {
     let class_name = row.value().attr("class").unwrap_or("");
     Regex::new(r"(\d+)")
         .unwrap()
         .captures(class_name)
         .and_then(|cap| cap.get(1))
-        .map(|m| m.as_str().to_string())
-        .unwrap_or_default()
+        .map(|m| m.as_str().parse::<i32>().unwrap_or(0))
+        .unwrap_or(0)
 }
 
 fn extract_player_data(td: &scraper::element_ref::ElementRef) -> PlayerData {
@@ -554,7 +556,12 @@ fn extract_player_data(td: &scraper::element_ref::ElementRef) -> PlayerData {
     let span = td.select(&Selector::parse("span").unwrap()).next().unwrap();
 
     PlayerData {
-        id: div.value().attr("data-player").unwrap_or("").to_string(),
+        id: div
+            .value()
+            .attr("data-player")
+            .unwrap_or("0")
+            .parse::<i32>()
+            .unwrap_or(0),
         bio_url: a.value().attr("href").unwrap_or("").to_string(),
         name: a.text().collect::<String>(),
         team: span
@@ -612,7 +619,7 @@ fn combine_player_data(rankings: Vec<Player>, stats: Vec<Player>) -> Vec<Player>
     let mut combined = HashMap::new();
 
     for player in rankings {
-        combined.insert(player.id.clone(), player);
+        combined.insert(player.id, player);
     }
 
     for player in stats {
