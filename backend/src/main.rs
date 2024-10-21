@@ -190,28 +190,28 @@ lazy_static! {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Player {
-    id: i32,
+    id: Option<i32>,
     name: String,
     team: String,
     position: String,
     ranking: PlayerRanking,
-    bye_week: i32,
+    bye_week: Option<i32>,
     bio: PlayerBio,
-    stats: HashMap<String, f64>,
+    stats: HashMap<String, Option<f64>>,
     bio_url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PlayerRanking {
-    overall: i32,
-    position: i32,
+    overall: Option<i32>,
+    position: Option<i32>,
 }
 
 impl Default for PlayerRanking {
     fn default() -> Self {
         Self {
-            overall: 0,
-            position: 0,
+            overall: None,
+            position: None,
         }
     }
 }
@@ -221,7 +221,7 @@ struct PlayerBio {
     image_url: String,
     height: String,
     weight: String,
-    age: String,
+    age: Option<i32>,
     college: String,
 }
 
@@ -231,14 +231,14 @@ impl Default for PlayerBio {
             image_url: String::new(),
             height: String::new(),
             weight: String::new(),
-            age: String::new(),
+            age: None,
             college: String::new(),
         }
     }
 }
 
 struct PlayerData {
-    id: i32,
+    id: Option<i32>,
     bio_url: String,
     name: String,
     team: String,
@@ -273,9 +273,9 @@ async fn main() -> Result<()> {
             name TEXT NOT NULL,
             team TEXT NOT NULL,
             position TEXT NOT NULL,
-            overall_ranking INTEGER NOT NULL,
-            position_ranking INTEGER NOT NULL,
-            bye_week INTEGER NOT NULL,
+            overall_ranking INTEGER,
+            position_ranking INTEGER,
+            bye_week INTEGER,
             bio_url TEXT NOT NULL
         )",
     )
@@ -288,7 +288,7 @@ async fn main() -> Result<()> {
             image_url TEXT NOT NULL,
             height TEXT NOT NULL,
             weight TEXT NOT NULL,
-            age INTEGER NOT NULL,
+            age INTEGER,
             college TEXT NOT NULL
         )",
     )
@@ -299,7 +299,7 @@ async fn main() -> Result<()> {
         "CREATE TABLE IF NOT EXISTS player_stats (
             player_id INTEGER REFERENCES players(id),
             stat_name TEXT NOT NULL,
-            stat_value DOUBLE PRECISION NOT NULL,
+            stat_value DOUBLE PRECISION,
             PRIMARY KEY (player_id, stat_name)
         )",
     )
@@ -376,7 +376,7 @@ async fn save_player(pool: &sqlx::PgPool, player: &Player) -> Result<()> {
     .bind(&player.bio.image_url)
     .bind(&player.bio.height)
     .bind(&player.bio.weight)
-    .bind(player.bio.age.parse::<i32>().unwrap_or(0))
+    .bind(player.bio.age)
     .bind(&player.bio.college)
     .execute(pool)
     .await?;
@@ -445,18 +445,10 @@ fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
     for row in document.select(&row_selector) {
         let tds: Vec<_> = row.select(&td_selector).collect();
 
-        let overall_ranking = tds[0]
-            .text()
-            .collect::<String>()
-            .parse::<i32>()
-            .unwrap_or(0);
+        let overall_ranking = tds[0].text().collect::<String>().parse::<i32>().ok();
         let player_data = extract_player_data(&tds[2]);
         let (position, position_ranking) = extract_position_data(&tds[3], &re);
-        let bye_week = tds[4]
-            .text()
-            .collect::<String>()
-            .parse::<i32>()
-            .unwrap_or(0);
+        let bye_week = tds[4].text().collect::<String>().parse::<i32>().ok();
 
         players.push(Player {
             id: player_data.id,
@@ -465,7 +457,7 @@ fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
             position,
             ranking: PlayerRanking {
                 overall: overall_ranking,
-                position: position_ranking.parse::<i32>().unwrap_or(0),
+                position: position_ranking.parse::<i32>().ok(),
             },
             bye_week,
             bio: PlayerBio::default(),
@@ -498,7 +490,7 @@ impl Scraper for StatsScraper {
                     for (i, td) in row.select(&cell_selector).enumerate().skip(2) {
                         if i < headers.len() + 2 {
                             let value = td.text().collect::<String>().parse::<f64>().unwrap_or(0.0);
-                            stats.insert(headers[i - 2].to_string(), value);
+                            stats.insert(headers[i - 2].to_string(), Some(value));
                         }
                     }
 
@@ -508,14 +500,16 @@ impl Scraper for StatsScraper {
                             existing_player
                                 .stats
                                 .entry(key.clone())
-                                .and_modify(|e| *e = f64::max(*e, value))
+                                .and_modify(|e| {
+                                    *e = Some(e.unwrap_or(0.0).max(value.unwrap_or(0.0)))
+                                })
                                 .or_insert(value);
                         }
                     } else {
                         // Create a new player with all stats initialized to 0.0
                         let mut all_stats = HashMap::new();
                         for &header in STATS_ALL_HEADERS.iter() {
-                            all_stats.insert(header.to_string(), 0.0);
+                            all_stats.insert(header.to_string(), Some(0.0));
                         }
                         // Update with the current position's stats
                         all_stats.extend(stats);
@@ -526,7 +520,7 @@ impl Scraper for StatsScraper {
                             team: String::new(),
                             position: position.to_string(),
                             ranking: PlayerRanking::default(),
-                            bye_week: String::new().parse::<i32>().unwrap_or(0),
+                            bye_week: None,
                             bio: PlayerBio::default(),
                             stats: all_stats,
                             bio_url: String::new(),
@@ -540,14 +534,13 @@ impl Scraper for StatsScraper {
     }
 }
 
-fn extract_player_id(row: &scraper::element_ref::ElementRef) -> i32 {
+fn extract_player_id(row: &scraper::element_ref::ElementRef) -> Option<i32> {
     let class_name = row.value().attr("class").unwrap_or("");
     Regex::new(r"(\d+)")
         .unwrap()
         .captures(class_name)
         .and_then(|cap| cap.get(1))
-        .map(|m| m.as_str().parse::<i32>().unwrap_or(0))
-        .unwrap_or(0)
+        .and_then(|m| m.as_str().parse::<i32>().ok())
 }
 
 fn extract_player_data(td: &scraper::element_ref::ElementRef) -> PlayerData {
@@ -559,9 +552,7 @@ fn extract_player_data(td: &scraper::element_ref::ElementRef) -> PlayerData {
         id: div
             .value()
             .attr("data-player")
-            .unwrap_or("0")
-            .parse::<i32>()
-            .unwrap_or(0),
+            .and_then(|s| s.parse::<i32>().ok()),
         bio_url: a.value().attr("href").unwrap_or("").to_string(),
         name: a.text().collect::<String>(),
         team: span
@@ -608,7 +599,9 @@ async fn scrape_bio(bio_url: String) -> Result<PlayerBio> {
 
         bio.height = bio_details.get("Height").cloned().unwrap_or_default();
         bio.weight = bio_details.get("Weight").cloned().unwrap_or_default();
-        bio.age = bio_details.get("Age").cloned().unwrap_or_default();
+        bio.age = bio_details
+            .get("Age")
+            .and_then(|age| age.parse::<i32>().ok());
         bio.college = bio_details.get("College").cloned().unwrap_or_default();
     }
 
