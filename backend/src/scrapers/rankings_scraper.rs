@@ -1,12 +1,12 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use headless_chrome::Tab;
-use scraper::{Html, Selector};
-use regex::Regex;
 use futures::future::join_all;
+use headless_chrome::Tab;
+use regex::Regex;
+use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-use crate::models::player::{Player, PlayerBio, PlayerRanking, PlayerData};
+use crate::models::player::{Player, PlayerBio, PlayerRanking};
 use crate::scrapers::Scraper;
 use crate::utils::helpers::{extract_player_data, extract_position_data, scrape_bio};
 

@@ -3,10 +3,10 @@ use async_trait::async_trait;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-use crate::models::player::{Player, PlayerRanking, PlayerBio};
+use crate::constants::{STATS_ALL_HEADERS, STATS_HEADERS};
+use crate::models::player::{Player, PlayerBio, PlayerRanking};
 use crate::scrapers::Scraper;
-use crate::constants::{STATS_HEADERS, STATS_ALL_HEADERS};
-use crate::utils::helpers::{CLIENT, extract_player_id};
+use crate::utils::helpers::extract_player_id;
 
 pub struct StatsScraper {
     url: String,
@@ -24,7 +24,8 @@ impl Scraper for StatsScraper {
         let mut players: Vec<Player> = Vec::new();
 
         for (position, headers) in STATS_HEADERS.iter() {
-            let response = CLIENT.get(&self.url.replace("{}", position)).send().await?;
+            let client = reqwest::Client::new();
+            let response = client.get(&self.url.replace("{}", position)).send().await?;
             let html = Html::parse_document(&response.text().await?);
 
             let table_selector = Selector::parse("table#data tbody").unwrap();

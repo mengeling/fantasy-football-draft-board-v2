@@ -1,7 +1,6 @@
-use anyhow::Result;
-use sqlx::PgPool;
-use crate::models::player::Player;
 use crate::database::pool::DB_POOL;
+use crate::models::player::Player;
+use anyhow::Result;
 
 pub async fn save_player(player: &Player) -> Result<()> {
     // Insert player
