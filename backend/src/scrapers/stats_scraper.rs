@@ -1,7 +1,9 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
+use url::Url;
 
 use crate::constants::{STATS_ALL_HEADERS, STATS_HEADERS};
 use crate::models::player::{Player, PlayerBio, PlayerRanking};
@@ -9,12 +11,38 @@ use crate::scrapers::Scraper;
 use crate::utils::helpers::extract_player_id;
 
 pub struct StatsScraper {
-    url: String,
+    client: Client,
+    scoring: String,
 }
 
 impl StatsScraper {
-    pub fn new(url: String) -> Self {
-        Self { url }
+    pub fn new(scoring: &str) -> Self {
+        StatsScraper {
+            client: Client::new(),
+            scoring: scoring.to_string(),
+        }
+    }
+
+    fn build_url(&self, position: &str) -> Result<String> {
+        let base_url = "https://www.fantasypros.com/nfl/stats/";
+        let mut url = Url::parse(base_url)?;
+        url.path_segments_mut()
+            .map_err(|_| anyhow::anyhow!("Cannot modify URL"))?
+            .push(position)
+            .push(""); // Adds a trailing slash
+
+        if self.scoring != "standard" {
+            url.query_pairs_mut().append_pair(
+                "scoring",
+                match self.scoring.as_str() {
+                    "half" => "HALF",
+                    "ppr" => "PPR",
+                    _ => "HALF",
+                },
+            );
+        }
+
+        Ok(url.to_string())
     }
 }
 
@@ -24,8 +52,8 @@ impl Scraper for StatsScraper {
         let mut players: Vec<Player> = Vec::new();
 
         for (position, headers) in STATS_HEADERS.iter() {
-            let client = reqwest::Client::new();
-            let response = client.get(&self.url.replace("{}", position)).send().await?;
+            let url = self.build_url(position)?;
+            let response = self.client.get(url).send().await?;
             let html = Html::parse_document(&response.text().await?);
 
             let table_selector = Selector::parse("table#data tbody").unwrap();

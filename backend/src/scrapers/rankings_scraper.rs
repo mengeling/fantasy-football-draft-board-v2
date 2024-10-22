@@ -12,21 +12,46 @@ use crate::utils::helpers::{extract_player_data, extract_position_data, scrape_b
 
 pub struct RankingsScraper<'a> {
     tab: &'a Tab,
-    url: String,
+    scoring: String,
 }
 
 impl<'a> RankingsScraper<'a> {
-    pub fn new(tab: &'a Tab, url: String) -> Self {
-        Self { tab, url }
+    pub fn new(tab: &'a Tab, scoring: &str) -> Self {
+        Self {
+            tab,
+            scoring: scoring.to_string(),
+        }
+    }
+
+    fn build_url(&self) -> String {
+        match self.scoring.as_str() {
+            "standard" => "https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
+            "half" => "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php",
+            "ppr" => "https://www.fantasypros.com/nfl/rankings/ppr-cheatsheets.php",
+            _ => {
+                eprintln!("Invalid scoring setting. Using half point PPR as default");
+                "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php"
+            }
+        }
+        .to_string()
     }
 }
 
 #[async_trait]
 impl<'a> Scraper for RankingsScraper<'a> {
     async fn scrape(&self) -> Result<Vec<Player>> {
-        self.tab.navigate_to(&self.url)?;
+        let url = self.build_url();
+        self.tab.navigate_to(&url)?;
         self.tab.wait_until_navigated()?;
         self.tab.wait_for_element("table#ranking-table")?;
+
+        // Scroll to the last player
+        // self.tab.evaluate(
+        //     "let rows = document.querySelectorAll('tbody tr.player-row');
+        //         let lastRow = rows[rows.length - 1];
+        //         lastRow.scrollIntoView();",
+        //     false,
+        // )?;
 
         let table_element = self.tab.wait_for_element("table#ranking-table")?;
         let table_html_debug =

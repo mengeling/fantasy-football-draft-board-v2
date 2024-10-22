@@ -7,6 +7,7 @@ mod utils;
 use anyhow::Result;
 use dotenv::dotenv;
 use headless_chrome::Browser;
+use std::env;
 
 use crate::database::operations::save_player;
 use crate::database::pool::init_db;
@@ -23,13 +24,14 @@ async fn main() -> Result<()> {
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
 
-    let scoring_settings = "half-point-ppr";
-    let rankings_url =
-        format!("https://www.fantasypros.com/nfl/rankings/{scoring_settings}-cheatsheets.php");
-    let stats_url = "https://www.fantasypros.com/nfl/stats/{}?scoring=HALF.php";
+    let scoring_var = env::var("SCORING").unwrap_or_else(|_| "half".to_string());
+    let scoring = match scoring_var.as_str() {
+        "half" | "standard" | "ppr" => scoring_var,
+        _ => anyhow::bail!("Invalid SCORING value. Must be 'half', 'standard', or 'ppr'."),
+    };
 
-    let rankings_scraper = RankingsScraper::new(&tab, rankings_url);
-    let stats_scraper = StatsScraper::new(stats_url.to_string());
+    let rankings_scraper = RankingsScraper::new(&tab, &scoring);
+    let stats_scraper = StatsScraper::new(&scoring);
 
     let rankings = rankings_scraper.scrape().await?;
     let stats = stats_scraper.scrape().await?;
