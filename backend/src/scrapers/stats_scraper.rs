@@ -37,6 +37,7 @@ impl StatsScraper {
                 match self.scoring.as_str() {
                     "half" => "HALF",
                     "ppr" => "PPR",
+                    _ => "HALF",
                 },
             );
         }
@@ -60,7 +61,7 @@ impl Scraper for StatsScraper {
             let cell_selector = Selector::parse("td").unwrap();
 
             if let Some(table) = html.select(&table_selector).next() {
-                for row in table.select(&row_selector).take(1) {
+                for row in table.select(&row_selector) {
                     let player_id = extract_player_id(&row);
                     let mut stats = HashMap::new();
 
