@@ -28,10 +28,6 @@ impl<'a> RankingsScraper<'a> {
             "standard" => "https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
             "half" => "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php",
             "ppr" => "https://www.fantasypros.com/nfl/rankings/ppr-cheatsheets.php",
-            _ => {
-                eprintln!("Invalid scoring setting. Using half point PPR as default");
-                "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php"
-            }
         }
         .to_string()
     }

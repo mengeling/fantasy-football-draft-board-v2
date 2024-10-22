@@ -29,7 +29,7 @@ impl StatsScraper {
         url.path_segments_mut()
             .map_err(|_| anyhow::anyhow!("Cannot modify URL"))?
             .push(position)
-            .push(""); // Adds a trailing slash
+            .push("");
 
         if self.scoring != "standard" {
             url.query_pairs_mut().append_pair(
@@ -37,7 +37,6 @@ impl StatsScraper {
                 match self.scoring.as_str() {
                     "half" => "HALF",
                     "ppr" => "PPR",
-                    _ => "HALF",
                 },
             );
         }
