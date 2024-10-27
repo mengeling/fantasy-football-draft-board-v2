@@ -16,25 +16,14 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
         "CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            team TEXT NOT NULL,
             position TEXT NOT NULL,
-            overall_ranking INTEGER,
-            position_ranking INTEGER,
+            team TEXT NOT NULL,
             bye_week INTEGER,
-            bio_url TEXT NOT NULL
-        )",
-    )
-    .execute(&*DB_POOL)
-    .await?;
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS player_bios (
-            player_id INTEGER PRIMARY KEY REFERENCES players(id),
             image_url TEXT NOT NULL,
             height TEXT NOT NULL,
             weight TEXT NOT NULL,
             age INTEGER,
-            college TEXT NOT NULL
+            college TEXT NOT NULL          
         )",
     )
     .execute(&*DB_POOL)

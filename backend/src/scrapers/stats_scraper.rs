@@ -1,13 +1,11 @@
 use anyhow::Result;
-use async_trait::async_trait;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 use url::Url;
 
 use crate::constants::{STATS_ALL_HEADERS, STATS_HEADERS};
-use crate::models::player::{Player, PlayerBio, PlayerRanking};
-use crate::scrapers::Scraper;
+use crate::models::player::Player;
 use crate::utils::helpers::extract_player_id;
 
 pub struct StatsScraper {
@@ -44,11 +42,8 @@ impl StatsScraper {
 
         Ok(url.to_string())
     }
-}
 
-#[async_trait]
-impl Scraper for StatsScraper {
-    async fn scrape(&self) -> Result<Vec<Player>> {
+    pub async fn scrape(&self) -> Result<Vec<Player>> {
         let mut players: Vec<Player> = Vec::new();
 
         for (position, headers) in STATS_HEADERS.iter() {
@@ -95,13 +90,15 @@ impl Scraper for StatsScraper {
                         players.push(Player {
                             id: player_id,
                             name: String::new(),
+                            position: String::new(),
                             team: String::new(),
-                            position: position.to_string(),
-                            ranking: PlayerRanking::default(),
                             bye_week: None,
-                            bio: PlayerBio::default(),
+                            image_url: String::new(),
+                            height: String::new(),
+                            weight: String::new(),
+                            age: None,
+                            college: String::new(),
                             stats: all_stats,
-                            bio_url: String::new(),
                         });
                     }
                 }

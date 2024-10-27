@@ -12,7 +12,7 @@ use std::env;
 use crate::database::operations::save_player;
 use crate::database::pool::init_db;
 use crate::models::player::Player;
-use crate::scrapers::{rankings_scraper::RankingsScraper, stats_scraper::StatsScraper, Scraper};
+use crate::scrapers::{rankings_scraper::RankingsScraper, stats_scraper::StatsScraper};
 use crate::utils::helpers::combine_player_data;
 
 #[tokio::main]
@@ -33,15 +33,19 @@ async fn main() -> Result<()> {
     let rankings_scraper = RankingsScraper::new(&tab, &scoring);
     let stats_scraper = StatsScraper::new(&scoring);
 
-    let rankings = rankings_scraper.scrape().await?;
+    let (players, rankings) = rankings_scraper.scrape().await?;
     let stats = stats_scraper.scrape().await?;
 
-    let combined_players: Vec<Player> = combine_player_data(rankings, stats);
-    println!("Combined players: {:?}", combined_players);
-
-    for player in combined_players {
+    for player in players {
         save_player(&player).await?;
     }
+
+    // let combined_players: Vec<Player> = combine_player_data(players, stats);
+    // println!("Combined players: {:?}", combined_players);
+
+    // for player in combined_players {
+    //     save_player(&player).await?;
+    // }
 
     Ok(())
 }

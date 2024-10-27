@@ -1,14 +1,13 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
-use async_trait::async_trait;
-use futures::future::join_all;
 use headless_chrome::Tab;
 use regex::Regex;
 use scraper::{Html, Selector};
-use std::collections::HashMap;
 
-use crate::models::player::{Player, PlayerBio, PlayerRanking};
-use crate::scrapers::Scraper;
-use crate::utils::helpers::{extract_player_data, extract_position_data, scrape_bio};
+use crate::models::player::{Player, PlayerBio, Ranking};
+use crate::scrapers::player_bio_scraper::PlayerBioScraper;
+use crate::utils::helpers::{extract_player_data, extract_position_data};
 
 pub struct RankingsScraper<'a> {
     tab: &'a Tab,
@@ -32,11 +31,8 @@ impl<'a> RankingsScraper<'a> {
         }
         .to_string()
     }
-}
 
-#[async_trait]
-impl<'a> Scraper for RankingsScraper<'a> {
-    async fn scrape(&self) -> Result<Vec<Player>> {
+    pub async fn scrape(&self) -> Result<(Vec<Player>, Vec<Ranking>)> {
         let url = self.build_url();
         self.tab.navigate_to(&url)?;
         self.tab.wait_until_navigated()?;
@@ -57,26 +53,20 @@ impl<'a> Scraper for RankingsScraper<'a> {
         let table_html_value = table_html_debug.value.unwrap();
         let table_html = table_html_value.as_str().unwrap();
 
-        let players = parse_rankings_html(&table_html)?;
-        let bios = join_all(players.iter().map(|p| scrape_bio(p.bio_url.clone()))).await;
-        Ok(players
-            .into_iter()
-            .zip(bios)
-            .map(|(mut player, bio)| {
-                player.bio = bio.unwrap_or_default();
-                player
-            })
-            .collect())
+        let (players, rankings) = parse_rankings_html(&table_html).await?;
+        // let bios = join_all(players.iter().map(|p| scrape_bio(p.bio_url.clone()))).await;
+        Ok((players, rankings))
     }
 }
 
-fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
+async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Ranking>)> {
     let document = Html::parse_document(table_html);
     let row_selector = Selector::parse("tbody tr.player-row").unwrap();
     let td_selector = Selector::parse("td").unwrap();
     let re = Regex::new(r"(\D+)(\d+)").unwrap();
 
     let mut players = Vec::new();
+    let mut rankings = Vec::new();
 
     for row in document.select(&row_selector) {
         let tds: Vec<_> = row.select(&td_selector).collect();
@@ -85,22 +75,29 @@ fn parse_rankings_html(table_html: &str) -> Result<Vec<Player>> {
         let player_data = extract_player_data(&tds[2]);
         let (position, position_ranking) = extract_position_data(&tds[3], &re);
         let bye_week = tds[4].text().collect::<String>().parse::<i32>().ok();
+        let player_bio_scraper = PlayerBioScraper::new(&player_data.bio_url);
+        let bio: PlayerBio = player_bio_scraper.scrape().await?;
 
         players.push(Player {
             id: player_data.id,
             name: player_data.name,
-            team: player_data.team,
             position,
-            ranking: PlayerRanking {
-                overall: overall_ranking,
-                position: position_ranking.parse::<i32>().ok(),
-            },
+            team: player_data.team,
             bye_week,
-            bio: PlayerBio::default(),
+            image_url: bio.image_url,
+            height: bio.height,
+            weight: bio.weight,
+            age: bio.age,
+            college: bio.college,
             stats: HashMap::new(),
-            bio_url: player_data.bio_url,
+        });
+
+        rankings.push(Ranking {
+            player_id: player_data.id.unwrap(),
+            overall: overall_ranking,
+            position: position_ranking.parse::<i32>().ok(),
         });
     }
 
-    Ok(players)
+    Ok((players, rankings))
 }
