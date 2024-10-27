@@ -25,7 +25,10 @@ pub fn extract_player_data(td: &scraper::element_ref::ElementRef) -> PlayerData 
     }
 }
 
-pub fn extract_position_data(td: &scraper::element_ref::ElementRef, re: &Regex) -> (String, String) {
+pub fn extract_position_data(
+    td: &scraper::element_ref::ElementRef,
+    re: &Regex,
+) -> (String, String) {
     let text = td.text().collect::<String>();
     if let Some(caps) = re.captures(&text) {
         (caps[1].to_string(), caps[2].to_string())
