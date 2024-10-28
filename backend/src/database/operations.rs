@@ -4,25 +4,23 @@ use anyhow::Result;
 
 pub async fn save_player(player: &Player) -> Result<()> {
     sqlx::query(
-        "INSERT INTO players (id, name, position, team, bye_week, image_url, height, weight, age, college)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        "INSERT INTO players (id, name, position, team, bye_week, height, weight, age, college)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (id) DO UPDATE SET
          name = EXCLUDED.name,
          position = EXCLUDED.position,
          team = EXCLUDED.team,
          bye_week = EXCLUDED.bye_week,
-         image_url = EXCLUDED.image_url,
          height = EXCLUDED.height,
          weight = EXCLUDED.weight,
          age = EXCLUDED.age,
-         college = EXCLUDED.college"
+         college = EXCLUDED.college",
     )
     .bind(player.id)
     .bind(&player.name)
     .bind(&player.position)
     .bind(&player.team)
     .bind(player.bye_week)
-    .bind(&player.image_url)
     .bind(&player.height)
     .bind(&player.weight)
     .bind(player.age)

@@ -9,7 +9,6 @@ pub struct Player {
     pub position: String,
     pub team: String,
     pub bye_week: Option<i32>,
-    pub image_url: String,
     pub height: String,
     pub weight: String,
     pub age: Option<i32>,
@@ -19,7 +18,6 @@ pub struct Player {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerBio {
-    pub image_url: String,
     pub height: String,
     pub weight: String,
     pub age: Option<i32>,

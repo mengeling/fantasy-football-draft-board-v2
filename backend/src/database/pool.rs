@@ -19,7 +19,6 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
             position TEXT NOT NULL,
             team TEXT NOT NULL,
             bye_week INTEGER,
-            image_url TEXT NOT NULL,
             height TEXT NOT NULL,
             weight TEXT NOT NULL,
             age INTEGER,

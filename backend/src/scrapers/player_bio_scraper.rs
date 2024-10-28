@@ -23,25 +23,19 @@ impl PlayerBioScraper {
         let body = response.text().await?;
         let html = Html::parse_document(&body);
 
-        let picture_selector = Selector::parse(".player-bio-image img").unwrap();
-        let clearfix_selector = Selector::parse("div.clearfix").unwrap();
-        let bio_detail_selector = Selector::parse("span.bio-detail").unwrap();
+        let bio_section_selector = Selector::parse("div.clearfix").unwrap();
+        let bio_field_selector = Selector::parse("span.bio-detail").unwrap();
 
         let mut player_bio = PlayerBio {
-            image_url: String::new(),
             height: String::new(),
             weight: String::new(),
             age: None,
             college: String::new(),
         };
 
-        if let Some(picture) = html.select(&picture_selector).next() {
-            player_bio.image_url = picture.value().attr("src").unwrap_or("").to_string();
-        }
-
-        if let Some(bio_div) = html.select(&clearfix_selector).next() {
+        if let Some(bio_div) = html.select(&bio_section_selector).next() {
             let bio_details: HashMap<_, _> = bio_div
-                .select(&bio_detail_selector)
+                .select(&bio_field_selector)
                 .filter_map(|detail| {
                     let text = detail.text().collect::<String>();
                     let mut parts = text.split(": ");
@@ -57,6 +51,8 @@ impl PlayerBioScraper {
             player_bio.college = bio_details.get("College").cloned().unwrap_or_default();
         }
 
+        // NOTE: Don't need to scrape image_url anymore. Can now add player_id to url like this:
+        // https://images.fantasypros.com/images/players/nfl/{PLAYER_ID}/headshot/70x70.png
         Ok(player_bio)
     }
 }

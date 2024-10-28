@@ -84,7 +84,6 @@ async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Ranki
             position,
             team: player_data.team,
             bye_week,
-            image_url: bio.image_url,
             height: bio.height,
             weight: bio.weight,
             age: bio.age,

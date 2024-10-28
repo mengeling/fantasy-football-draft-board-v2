@@ -93,7 +93,6 @@ impl StatsScraper {
                             position: String::new(),
                             team: String::new(),
                             bye_week: None,
-                            image_url: String::new(),
                             height: String::new(),
                             weight: String::new(),
                             age: None,
