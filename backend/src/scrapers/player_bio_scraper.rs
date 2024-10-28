@@ -23,7 +23,7 @@ impl PlayerBioScraper {
         let body = response.text().await?;
         let html = Html::parse_document(&body);
 
-        let picture_selector = Selector::parse("picture img").unwrap();
+        let picture_selector = Selector::parse(".player-bio-image img").unwrap();
         let clearfix_selector = Selector::parse("div.clearfix").unwrap();
         let bio_detail_selector = Selector::parse("span.bio-detail").unwrap();
 
