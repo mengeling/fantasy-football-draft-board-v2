@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-
 use anyhow::Result;
 use headless_chrome::Tab;
 use regex::Regex;
 use scraper::{Html, Selector};
 
-use crate::models::player::{Player, PlayerBio, PlayerIdentity, Ranking};
+use crate::models::player::{Player, PlayerBio, PlayerIdentity};
+use crate::models::rankings::Rankings;
 use crate::scrapers::player_scraper::PlayerScraper;
 
 pub struct RankingsScraper<'a> {
@@ -31,7 +30,7 @@ impl<'a> RankingsScraper<'a> {
         .to_string()
     }
 
-    pub async fn scrape(&self) -> Result<(Vec<Player>, Vec<Ranking>)> {
+    pub async fn scrape(&self) -> Result<(Vec<Player>, Vec<Rankings>)> {
         let url = self.build_url();
         self.tab.navigate_to(&url)?;
         self.tab.wait_until_navigated()?;
@@ -58,7 +57,7 @@ impl<'a> RankingsScraper<'a> {
     }
 }
 
-async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Ranking>)> {
+async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Rankings>)> {
     let document = Html::parse_document(table_html);
     let row_selector = Selector::parse("tbody tr.player-row").unwrap();
     let cell_selector = Selector::parse("td").unwrap();
@@ -88,10 +87,9 @@ async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Ranki
             weight: player_bio.weight,
             age: player_bio.age,
             college: player_bio.college,
-            stats: HashMap::new(),
         });
 
-        rankings.push(Ranking {
+        rankings.push(Rankings {
             player_id: player_identity.id.unwrap(),
             overall: overall_ranking,
             position: position_ranking.parse::<i32>().ok(),

@@ -117,7 +117,7 @@ lazy_static! {
         ),
     ]);
     pub static ref STATS_ALL_HEADERS: Vec<&'static str> = vec![
-        "id",
+        "player_id",
         "pass_cmp",
         "pass_att",
         "pass_cmp_pct",

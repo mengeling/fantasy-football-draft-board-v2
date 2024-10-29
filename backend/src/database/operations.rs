@@ -29,19 +29,19 @@ pub async fn save_player(player: &Player) -> Result<()> {
     .await?;
 
     // Insert player stats
-    for (stat_name, stat_value) in &player.stats {
-        sqlx::query(
-            "INSERT INTO player_stats (player_id, stat_name, stat_value)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (player_id, stat_name) DO UPDATE SET
-             stat_value = EXCLUDED.stat_value",
-        )
-        .bind(player.id)
-        .bind(stat_name)
-        .bind(stat_value)
-        .execute(&*DB_POOL)
-        .await?;
-    }
+    // for (stat_name, stat_value) in &player.stats {
+    //     sqlx::query(
+    //         "INSERT INTO player_stats (player_id, stat_name, stat_value)
+    //          VALUES ($1, $2, $3)
+    //          ON CONFLICT (player_id, stat_name) DO UPDATE SET
+    //          stat_value = EXCLUDED.stat_value",
+    //     )
+    //     .bind(player.id)
+    //     .bind(stat_name)
+    //     .bind(stat_value)
+    //     .execute(&*DB_POOL)
+    //     .await?;
+    // }
 
     Ok(())
 }

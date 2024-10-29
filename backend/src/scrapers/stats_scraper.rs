@@ -2,11 +2,10 @@ use anyhow::Result;
 use regex::Regex;
 use reqwest::Client;
 use scraper::{Html, Selector};
-use std::collections::HashMap;
 use url::Url;
 
-use crate::constants::{STATS_ALL_HEADERS, STATS_HEADERS};
-use crate::models::player::Player;
+use crate::constants::STATS_HEADERS;
+use crate::models::stats::Stats;
 
 pub struct StatsScraper {
     client: Client,
@@ -43,8 +42,8 @@ impl StatsScraper {
         Ok(url.to_string())
     }
 
-    pub async fn scrape(&self) -> Result<Vec<Player>> {
-        let mut players: Vec<Player> = Vec::new();
+    pub async fn scrape(&self) -> Result<Vec<Stats>> {
+        let mut players: Vec<Stats> = Vec::new();
 
         for (position, headers) in STATS_HEADERS.iter() {
             let url = self.build_url(position)?;
@@ -58,8 +57,56 @@ impl StatsScraper {
             if let Some(stats_table) = html.select(&stats_table_selector).next() {
                 for row in stats_table.select(&stats_row_selector) {
                     let player_id = get_player_id(&row);
-                    let mut stats = HashMap::new();
 
+                    // Create temporary stats object for current position
+                    let mut current_stats = Stats {
+                        player_id: player_id.unwrap(),
+                        pass_cmp: 0.0,
+                        pass_att: 0.0,
+                        pass_cmp_pct: 0.0,
+                        pass_yds: 0.0,
+                        pass_yds_per_att: 0.0,
+                        pass_td: 0.0,
+                        pass_int: 0.0,
+                        pass_sacks: 0.0,
+                        rush_att: 0.0,
+                        rush_yds: 0.0,
+                        rush_yds_per_att: 0.0,
+                        rush_long: 0.0,
+                        rush_20: 0.0,
+                        rush_td: 0.0,
+                        fumbles: 0.0,
+                        receptions: 0.0,
+                        rec_tgt: 0.0,
+                        rec_yds: 0.0,
+                        rec_yds_per_rec: 0.0,
+                        rec_long: 0.0,
+                        rec_20: 0.0,
+                        rec_td: 0.0,
+                        field_goals: 0.0,
+                        fg_att: 0.0,
+                        fg_pct: 0.0,
+                        fg_long: 0.0,
+                        fg_1_19: 0.0,
+                        fg_20_29: 0.0,
+                        fg_30_39: 0.0,
+                        fg_40_49: 0.0,
+                        fg_50: 0.0,
+                        extra_points: 0.0,
+                        xp_att: 0.0,
+                        sacks: 0.0,
+                        int: 0.0,
+                        fumbles_recovered: 0.0,
+                        fumbles_forced: 0.0,
+                        def_td: 0.0,
+                        safeties: 0.0,
+                        special_teams_td: 0.0,
+                        games: 0.0,
+                        fantasy_pts: 0.0,
+                        fantasy_pts_per_game: 0.0,
+                    };
+
+                    // Fill stats with current position's values
                     for (cell_index, cell) in row.select(&stats_cell_selector).enumerate().skip(2) {
                         if cell_index < headers.len() + 2 {
                             let value = cell
@@ -67,42 +114,154 @@ impl StatsScraper {
                                 .collect::<String>()
                                 .parse::<f64>()
                                 .unwrap_or(0.0);
-                            stats.insert(headers[cell_index - 2].to_string(), Some(value));
+
+                            match headers[cell_index - 2] {
+                                "pass_cmp" => current_stats.pass_cmp = value,
+                                "pass_att" => current_stats.pass_att = value,
+                                "pass_cmp_pct" => current_stats.pass_cmp_pct = value,
+                                "pass_yds" => current_stats.pass_yds = value,
+                                "pass_yds_per_att" => current_stats.pass_yds_per_att = value,
+                                "pass_td" => current_stats.pass_td = value,
+                                "pass_int" => current_stats.pass_int = value,
+                                "pass_sacks" => current_stats.pass_sacks = value,
+                                "rush_att" => current_stats.rush_att = value,
+                                "rush_yds" => current_stats.rush_yds = value,
+                                "rush_yds_per_att" => current_stats.rush_yds_per_att = value,
+                                "rush_long" => current_stats.rush_long = value,
+                                "rush_20" => current_stats.rush_20 = value,
+                                "rush_td" => current_stats.rush_td = value,
+                                "fumbles" => current_stats.fumbles = value,
+                                "receptions" => current_stats.receptions = value,
+                                "rec_tgt" => current_stats.rec_tgt = value,
+                                "rec_yds" => current_stats.rec_yds = value,
+                                "rec_yds_per_rec" => current_stats.rec_yds_per_rec = value,
+                                "rec_long" => current_stats.rec_long = value,
+                                "rec_20" => current_stats.rec_20 = value,
+                                "rec_td" => current_stats.rec_td = value,
+                                "field_goals" => current_stats.field_goals = value,
+                                "fg_att" => current_stats.fg_att = value,
+                                "fg_pct" => current_stats.fg_pct = value,
+                                "fg_long" => current_stats.fg_long = value,
+                                "fg_1_19" => current_stats.fg_1_19 = value,
+                                "fg_20_29" => current_stats.fg_20_29 = value,
+                                "fg_30_39" => current_stats.fg_30_39 = value,
+                                "fg_40_49" => current_stats.fg_40_49 = value,
+                                "fg_50" => current_stats.fg_50 = value,
+                                "extra_points" => current_stats.extra_points = value,
+                                "xp_att" => current_stats.xp_att = value,
+                                "sacks" => current_stats.sacks = value,
+                                "int" => current_stats.int = value,
+                                "fumbles_recovered" => current_stats.fumbles_recovered = value,
+                                "fumbles_forced" => current_stats.fumbles_forced = value,
+                                "def_td" => current_stats.def_td = value,
+                                "safeties" => current_stats.safeties = value,
+                                "special_teams_td" => current_stats.special_teams_td = value,
+                                "games" => current_stats.games = value,
+                                "fantasy_pts" => current_stats.fantasy_pts = value,
+                                "fantasy_pts_per_game" => {
+                                    current_stats.fantasy_pts_per_game = value
+                                }
+                                _ => (),
+                            }
                         }
                     }
 
-                    if let Some(existing_player) = players.iter_mut().find(|p| p.id == player_id) {
-                        // Update existing player's stats only if new value is greater
-                        for (key, &value) in &stats {
-                            existing_player
-                                .stats
-                                .entry(key.clone())
-                                .and_modify(|e| {
-                                    *e = Some(e.unwrap_or(0.0).max(value.unwrap_or(0.0)))
-                                })
-                                .or_insert(value);
+                    if let Some(player_id) = player_id {
+                        if let Some(existing_player) =
+                            players.iter_mut().find(|p| p.player_id == player_id)
+                        {
+                            existing_player.pass_cmp =
+                                existing_player.pass_cmp.max(current_stats.pass_cmp);
+                            existing_player.pass_att =
+                                existing_player.pass_att.max(current_stats.pass_att);
+                            existing_player.pass_cmp_pct =
+                                existing_player.pass_cmp_pct.max(current_stats.pass_cmp_pct);
+                            existing_player.pass_yds =
+                                existing_player.pass_yds.max(current_stats.pass_yds);
+                            existing_player.pass_yds_per_att = existing_player
+                                .pass_yds_per_att
+                                .max(current_stats.pass_yds_per_att);
+                            existing_player.pass_td =
+                                existing_player.pass_td.max(current_stats.pass_td);
+                            existing_player.pass_int =
+                                existing_player.pass_int.max(current_stats.pass_int);
+                            existing_player.pass_sacks =
+                                existing_player.pass_sacks.max(current_stats.pass_sacks);
+                            existing_player.rush_att =
+                                existing_player.rush_att.max(current_stats.rush_att);
+                            existing_player.rush_yds =
+                                existing_player.rush_yds.max(current_stats.rush_yds);
+                            existing_player.rush_yds_per_att = existing_player
+                                .rush_yds_per_att
+                                .max(current_stats.rush_yds_per_att);
+                            existing_player.rush_long =
+                                existing_player.rush_long.max(current_stats.rush_long);
+                            existing_player.rush_20 =
+                                existing_player.rush_20.max(current_stats.rush_20);
+                            existing_player.rush_td =
+                                existing_player.rush_td.max(current_stats.rush_td);
+                            existing_player.fumbles =
+                                existing_player.fumbles.max(current_stats.fumbles);
+                            existing_player.receptions =
+                                existing_player.receptions.max(current_stats.receptions);
+                            existing_player.rec_tgt =
+                                existing_player.rec_tgt.max(current_stats.rec_tgt);
+                            existing_player.rec_yds =
+                                existing_player.rec_yds.max(current_stats.rec_yds);
+                            existing_player.rec_yds_per_rec = existing_player
+                                .rec_yds_per_rec
+                                .max(current_stats.rec_yds_per_rec);
+                            existing_player.rec_long =
+                                existing_player.rec_long.max(current_stats.rec_long);
+                            existing_player.rec_20 =
+                                existing_player.rec_20.max(current_stats.rec_20);
+                            existing_player.rec_td =
+                                existing_player.rec_td.max(current_stats.rec_td);
+                            existing_player.field_goals =
+                                existing_player.field_goals.max(current_stats.field_goals);
+                            existing_player.fg_att =
+                                existing_player.fg_att.max(current_stats.fg_att);
+                            existing_player.fg_pct =
+                                existing_player.fg_pct.max(current_stats.fg_pct);
+                            existing_player.fg_long =
+                                existing_player.fg_long.max(current_stats.fg_long);
+                            existing_player.fg_1_19 =
+                                existing_player.fg_1_19.max(current_stats.fg_1_19);
+                            existing_player.fg_20_29 =
+                                existing_player.fg_20_29.max(current_stats.fg_20_29);
+                            existing_player.fg_30_39 =
+                                existing_player.fg_30_39.max(current_stats.fg_30_39);
+                            existing_player.fg_40_49 =
+                                existing_player.fg_40_49.max(current_stats.fg_40_49);
+                            existing_player.fg_50 = existing_player.fg_50.max(current_stats.fg_50);
+                            existing_player.extra_points =
+                                existing_player.extra_points.max(current_stats.extra_points);
+                            existing_player.xp_att =
+                                existing_player.xp_att.max(current_stats.xp_att);
+                            existing_player.sacks = existing_player.sacks.max(current_stats.sacks);
+                            existing_player.int = existing_player.int.max(current_stats.int);
+                            existing_player.fumbles_recovered = existing_player
+                                .fumbles_recovered
+                                .max(current_stats.fumbles_recovered);
+                            existing_player.fumbles_forced = existing_player
+                                .fumbles_forced
+                                .max(current_stats.fumbles_forced);
+                            existing_player.def_td =
+                                existing_player.def_td.max(current_stats.def_td);
+                            existing_player.safeties =
+                                existing_player.safeties.max(current_stats.safeties);
+                            existing_player.special_teams_td = existing_player
+                                .special_teams_td
+                                .max(current_stats.special_teams_td);
+                            existing_player.games = existing_player.games.max(current_stats.games);
+                            existing_player.fantasy_pts =
+                                existing_player.fantasy_pts.max(current_stats.fantasy_pts);
+                            existing_player.fantasy_pts_per_game = existing_player
+                                .fantasy_pts_per_game
+                                .max(current_stats.fantasy_pts_per_game);
+                        } else {
+                            players.push(current_stats);
                         }
-                    } else {
-                        // Create a new player with all stats initialized to 0.0
-                        let mut all_stats = HashMap::new();
-                        for &header in STATS_ALL_HEADERS.iter() {
-                            all_stats.insert(header.to_string(), Some(0.0));
-                        }
-                        // Update with the current position's stats
-                        all_stats.extend(stats);
-
-                        players.push(Player {
-                            id: player_id,
-                            name: String::new(),
-                            position: String::new(),
-                            team: String::new(),
-                            bye_week: None,
-                            height: String::new(),
-                            weight: String::new(),
-                            age: None,
-                            college: String::new(),
-                            stats: all_stats,
-                        });
                     }
                 }
             }

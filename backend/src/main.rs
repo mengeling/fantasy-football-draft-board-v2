@@ -2,7 +2,6 @@ mod constants;
 mod database;
 mod models;
 mod scrapers;
-mod utils;
 
 use anyhow::Result;
 use dotenv::dotenv;
@@ -11,9 +10,7 @@ use std::env;
 
 use crate::database::operations::save_player;
 use crate::database::pool::init_db;
-use crate::models::player::Player;
 use crate::scrapers::{rankings_scraper::RankingsScraper, stats_scraper::StatsScraper};
-use crate::utils::helpers::combine_player_data;
 
 #[tokio::main]
 async fn main() -> Result<()> {
