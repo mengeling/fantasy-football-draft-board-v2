@@ -8,7 +8,7 @@ use dotenv::dotenv;
 use headless_chrome::Browser;
 use std::env;
 
-use crate::database::operations::save_player;
+use crate::database::operations::{bulk_save_players, bulk_save_rankings, bulk_save_stats};
 use crate::database::pool::init_db;
 use crate::scrapers::{rankings_scraper::RankingsScraper, stats_scraper::StatsScraper};
 
@@ -33,9 +33,9 @@ async fn main() -> Result<()> {
     let (players, rankings) = rankings_scraper.scrape().await?;
     let stats = stats_scraper.scrape().await?;
 
-    for player in players {
-        save_player(&player).await?;
-    }
+    bulk_save_players(&players).await?;
+    bulk_save_rankings(&rankings).await?;
+    bulk_save_stats(&stats).await?;
 
     Ok(())
 }
