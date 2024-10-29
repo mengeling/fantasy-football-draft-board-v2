@@ -1,4 +1,5 @@
 use anyhow::Result;
+use regex::Regex;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
@@ -6,7 +7,6 @@ use url::Url;
 
 use crate::constants::{STATS_ALL_HEADERS, STATS_HEADERS};
 use crate::models::player::Player;
-use crate::utils::helpers::extract_player_id;
 
 pub struct StatsScraper {
     client: Client,
@@ -51,19 +51,23 @@ impl StatsScraper {
             let response = self.client.get(url).send().await?;
             let html = Html::parse_document(&response.text().await?);
 
-            let table_selector = Selector::parse("table#data tbody").unwrap();
-            let row_selector = Selector::parse("tr").unwrap();
-            let cell_selector = Selector::parse("td").unwrap();
+            let stats_table_selector = Selector::parse("table#data tbody").unwrap();
+            let stats_row_selector = Selector::parse("tr").unwrap();
+            let stats_cell_selector = Selector::parse("td").unwrap();
 
-            if let Some(table) = html.select(&table_selector).next() {
-                for row in table.select(&row_selector) {
-                    let player_id = extract_player_id(&row);
+            if let Some(stats_table) = html.select(&stats_table_selector).next() {
+                for row in stats_table.select(&stats_row_selector) {
+                    let player_id = get_player_id(&row);
                     let mut stats = HashMap::new();
 
-                    for (i, td) in row.select(&cell_selector).enumerate().skip(2) {
-                        if i < headers.len() + 2 {
-                            let value = td.text().collect::<String>().parse::<f64>().unwrap_or(0.0);
-                            stats.insert(headers[i - 2].to_string(), Some(value));
+                    for (cell_index, cell) in row.select(&stats_cell_selector).enumerate().skip(2) {
+                        if cell_index < headers.len() + 2 {
+                            let value = cell
+                                .text()
+                                .collect::<String>()
+                                .parse::<f64>()
+                                .unwrap_or(0.0);
+                            stats.insert(headers[cell_index - 2].to_string(), Some(value));
                         }
                     }
 
@@ -106,4 +110,13 @@ impl StatsScraper {
 
         Ok(players)
     }
+}
+
+pub fn get_player_id(row: &scraper::element_ref::ElementRef) -> Option<i32> {
+    let row_class = row.value().attr("class").unwrap_or("");
+    Regex::new(r"(\d+)")
+        .unwrap()
+        .captures(row_class)
+        .and_then(|cap| cap.get(1))
+        .and_then(|m| m.as_str().parse::<i32>().ok())
 }

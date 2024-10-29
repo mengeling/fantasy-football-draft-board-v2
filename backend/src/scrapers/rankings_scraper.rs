@@ -72,8 +72,9 @@ async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Ranki
 
         let overall_ranking = cells[0].text().collect::<String>().parse::<i32>().ok();
         let player_identity = get_player_identity(&cells[2]);
-        let (position, position_ranking) = extract_position_data(&cells[3], &ranking_regex);
+        let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
         let bye_week = cells[4].text().collect::<String>().parse::<i32>().ok();
+
         let player_scraper = PlayerScraper::new(&player_identity.bio_url);
         let player_bio: PlayerBio = player_scraper.scrape().await?;
 
@@ -135,11 +136,14 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
     }
 }
 
-fn extract_position_data(td: &scraper::element_ref::ElementRef, re: &Regex) -> (String, String) {
-    let text = td.text().collect::<String>();
-    if let Some(caps) = re.captures(&text) {
+fn get_position_ranking(
+    poosition_cell: &scraper::element_ref::ElementRef,
+    re: &Regex,
+) -> (String, String) {
+    let position_text = poosition_cell.text().collect::<String>();
+    if let Some(caps) = re.captures(&position_text) {
         (caps[1].to_string(), caps[2].to_string())
     } else {
-        (text, String::new())
+        (position_text, String::new())
     }
 }
