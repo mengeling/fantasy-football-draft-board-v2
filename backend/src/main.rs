@@ -37,12 +37,5 @@ async fn main() -> Result<()> {
         save_player(&player).await?;
     }
 
-    // let combined_players: Vec<Player> = combine_player_data(players, stats);
-    // println!("Combined players: {:?}", combined_players);
-
-    // for player in combined_players {
-    //     save_player(&player).await?;
-    // }
-
     Ok(())
 }
