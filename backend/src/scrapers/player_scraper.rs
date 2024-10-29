@@ -5,14 +5,14 @@ use std::collections::HashMap;
 
 use crate::models::player::PlayerBio;
 
-pub struct PlayerBioScraper {
+pub struct PlayerScraper {
     client: Client,
     url: String,
 }
 
-impl PlayerBioScraper {
+impl PlayerScraper {
     pub fn new(url: &str) -> Self {
-        PlayerBioScraper {
+        PlayerScraper {
             client: Client::new(),
             url: url.to_string(),
         }
@@ -22,7 +22,6 @@ impl PlayerBioScraper {
         let response = self.client.get(&self.url).send().await?;
         let body = response.text().await?;
         let html = Html::parse_document(&body);
-
         let bio_section_selector = Selector::parse("div.clearfix").unwrap();
         let bio_field_selector = Selector::parse("span.bio-detail").unwrap();
 

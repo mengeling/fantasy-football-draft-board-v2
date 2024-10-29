@@ -24,6 +24,14 @@ pub struct PlayerBio {
     pub college: String,
 }
 
+//  REMOVE
+pub struct PlayerIdentity {
+    pub id: Option<i32>,
+    pub bio_url: String,
+    pub name: String,
+    pub team: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ranking {
     pub player_id: i32,
@@ -36,12 +44,4 @@ pub struct Stat {
     pub player_id: i32,
     pub stat_name: String,
     pub stat_value: f64,
-}
-
-//  REMOVE
-pub struct PlayerData {
-    pub id: Option<i32>,
-    pub bio_url: String,
-    pub name: String,
-    pub team: String,
 }
