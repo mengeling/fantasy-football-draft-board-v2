@@ -12,6 +12,18 @@ pub static DB_POOL: Lazy<PgPool> = Lazy::new(|| {
 });
 
 pub async fn init_db() -> Result<(), sqlx::Error> {
+    sqlx::query("DROP TABLE IF EXISTS rankings")
+        .execute(&*DB_POOL)
+        .await?;
+
+    sqlx::query("DROP TABLE IF EXISTS stats")
+        .execute(&*DB_POOL)
+        .await?;
+
+    sqlx::query("DROP TABLE IF EXISTS players CASCADE")
+        .execute(&*DB_POOL)
+        .await?;
+
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY,
@@ -30,7 +42,7 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS rankings (
-            player_id INTEGER PRIMARY KEY REFERENCES players(id),
+            player_id INTEGER PRIMARY KEY,
             overall INTEGER,
             position INTEGER
         )",
@@ -40,7 +52,7 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS stats (
-            player_id INTEGER PRIMARY KEY REFERENCES players(id),
+            player_id INTEGER PRIMARY KEY,
             pass_cmp DOUBLE PRECISION,
             pass_att DOUBLE PRECISION,
             pass_cmp_pct DOUBLE PRECISION,

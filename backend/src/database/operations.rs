@@ -6,53 +6,9 @@ use crate::models::player::Player;
 use crate::models::rankings::Rankings;
 use crate::models::stats::Stats;
 
-pub async fn save_player(player: &Player) -> Result<()> {
-    sqlx::query(
-        "INSERT INTO players (id, name, position, team, bye_week, height, weight, age, college)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         ON CONFLICT (id) DO UPDATE SET
-         name = EXCLUDED.name,
-         position = EXCLUDED.position,
-         team = EXCLUDED.team,
-         bye_week = EXCLUDED.bye_week,
-         height = EXCLUDED.height,
-         weight = EXCLUDED.weight,
-         age = EXCLUDED.age,
-         college = EXCLUDED.college",
-    )
-    .bind(player.id)
-    .bind(&player.name)
-    .bind(&player.position)
-    .bind(&player.team)
-    .bind(player.bye_week)
-    .bind(&player.height)
-    .bind(&player.weight)
-    .bind(player.age)
-    .bind(&player.college)
-    .execute(&*DB_POOL)
-    .await?;
-
-    // Insert player stats
-    // for (stat_name, stat_value) in &player.stats {
-    //     sqlx::query(
-    //         "INSERT INTO player_stats (player_id, stat_name, stat_value)
-    //          VALUES ($1, $2, $3)
-    //          ON CONFLICT (player_id, stat_name) DO UPDATE SET
-    //          stat_value = EXCLUDED.stat_value",
-    //     )
-    //     .bind(player.id)
-    //     .bind(stat_name)
-    //     .bind(stat_value)
-    //     .execute(&*DB_POOL)
-    //     .await?;
-    // }
-
-    Ok(())
-}
-
 pub async fn bulk_save_players(players: &[Player]) -> Result<()> {
     let mut query_builder = QueryBuilder::new(
-        "INSERT INTO players (id, name, position, team, bye_week, height, weight, age, college) ",
+        "INSERT INTO players (id, name, position, team, bye_week, height, weight, age, college)",
     );
 
     query_builder.push_values(players, |mut b, player| {
@@ -73,7 +29,7 @@ pub async fn bulk_save_players(players: &[Player]) -> Result<()> {
 
 pub async fn bulk_save_rankings(rankings: &[Rankings]) -> Result<()> {
     let mut query_builder =
-        QueryBuilder::new("INSERT INTO rankings (player_id, overall, position) ");
+        QueryBuilder::new("INSERT INTO rankings (player_id, overall, position)");
 
     query_builder.push_values(rankings, |mut b, ranking| {
         b.push_bind(ranking.player_id)
@@ -95,7 +51,7 @@ pub async fn bulk_save_stats(stats: &[Stats]) -> Result<()> {
             fg_pct, fg_long, fg_1_19, fg_20_29, fg_30_39, fg_40_49, fg_50,
             extra_points, xp_att, sacks, int, fumbles_recovered, fumbles_forced,
             def_td, safeties, special_teams_td, games, fantasy_pts, fantasy_pts_per_game
-        ) ",
+        )",
     );
 
     query_builder.push_values(stats, |mut b, stat| {
