@@ -307,23 +307,26 @@ fn get_player_id(row: &scraper::element_ref::ElementRef) -> Option<i32> {
 
 fn calculate_standard_points(stats: &Stats) -> f64 {
     let mut points = 0.0;
-
-    // Passing
-    points += stats.pass_yds * 0.04; // 1 point per 25 yards
+    points += stats.pass_yds * 0.04;
     points += stats.pass_td * 4.0;
-    points -= stats.pass_int * 2.0;
-
-    // Rushing
-    points += stats.rush_yds * 0.1; // 1 point per 10 yards
+    points += stats.pass_int * -2.0;
+    points += stats.rush_yds * 0.1;
     points += stats.rush_td * 6.0;
-
-    // Receiving
-    points += stats.rec_yds * 0.1; // 1 point per 10 yards
+    points += stats.fumbles * -2.0;
+    points += stats.rec_yds * 0.1;
     points += stats.rec_td * 6.0;
-
-    // Misc
-    points -= stats.fumbles * 2.0;
-
+    points += stats.fg_1_19 * 3.0;
+    points += stats.fg_20_29 * 3.0;
+    points += stats.fg_30_39 * 3.0;
+    points += stats.fg_40_49 * 4.0;
+    points += stats.fg_50 * 5.0;
+    points += stats.extra_points * 1.0;
+    points += stats.sacks * 1.0;
+    points += stats.int * 2.0;
+    points += stats.fumbles_recovered * 2.0;
+    points += stats.def_td * 6.0;
+    points += stats.safeties * 2.0;
+    points += stats.special_teams_td * 6.0;
     points
 }
 
