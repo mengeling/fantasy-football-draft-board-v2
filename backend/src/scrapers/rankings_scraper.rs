@@ -9,55 +9,76 @@ use crate::scrapers::player_scraper::PlayerScraper;
 
 pub struct RankingsScraper<'a> {
     tab: &'a Tab,
-    scoring: String,
 }
 
 impl<'a> RankingsScraper<'a> {
-    pub fn new(tab: &'a Tab, scoring: &str) -> Self {
-        Self {
-            tab,
-            scoring: scoring.to_string(),
-        }
+    pub fn new(tab: &'a Tab) -> Self {
+        Self { tab }
     }
 
-    fn build_url(&self) -> String {
-        match self.scoring.as_str() {
-            "standard" => "https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
-            "half" => "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php",
-            "ppr" => "https://www.fantasypros.com/nfl/rankings/ppr-cheatsheets.php",
-            _ => "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php",
-        }
-        .to_string()
+    fn get_urls() -> Vec<(&'static str, &'static str)> {
+        vec![
+            (
+                "standard",
+                "https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
+            ),
+            (
+                "half",
+                "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php",
+            ),
+            (
+                "ppr",
+                "https://www.fantasypros.com/nfl/rankings/ppr-cheatsheets.php",
+            ),
+        ]
     }
 
     pub async fn scrape(&self) -> Result<(Vec<Player>, Vec<Rankings>)> {
-        let url = self.build_url();
-        self.tab.navigate_to(&url)?;
-        self.tab.wait_until_navigated()?;
-        self.tab.wait_for_element("table#ranking-table")?;
+        let mut all_players = Vec::new();
+        let mut all_rankings = Vec::new();
+        let mut seen_players = std::collections::HashSet::new();
 
-        // Scroll to the last player
-        // self.tab.evaluate(
-        //     "let rows = document.querySelectorAll('tbody tr.player-row');
-        //         let lastRow = rows[rows.length - 1];
-        //         lastRow.scrollIntoView();",
-        //     false,
-        // )?;
+        // Scrape each scoring type
+        for (scoring_settings, url) in Self::get_urls() {
+            self.tab.navigate_to(url)?;
+            self.tab.wait_until_navigated()?;
+            self.tab.wait_for_element("table#ranking-table")?;
 
-        let ranking_table = self.tab.wait_for_element("table#ranking-table")?;
-        let ranking_table_html =
-            ranking_table.call_js_fn("function() { return this.outerHTML; }", vec![], false)?;
-        let ranking_table_html_value = ranking_table_html
-            .value
-            .and_then(|v| v.as_str().map(|s| s.to_string()))
-            .unwrap();
+            // Scroll to the last player
+            // self.tab.evaluate(
+            //     "let rows = document.querySelectorAll('tbody tr.player-row');
+            //         let lastRow = rows[rows.length - 1];
+            //         lastRow.scrollIntoView();",
+            //     false,
+            // )?;
 
-        let (players, rankings) = parse_rankings_html(&ranking_table_html_value).await?;
-        Ok((players, rankings))
+            let ranking_table = self.tab.wait_for_element("table#ranking-table")?;
+            let ranking_table_html =
+                ranking_table.call_js_fn("function() { return this.outerHTML; }", vec![], false)?;
+            let ranking_table_html_value = ranking_table_html
+                .value
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .unwrap();
+
+            let (players, rankings) = parse_rankings_html(
+                &ranking_table_html_value,
+                &mut seen_players,
+                scoring_settings,
+            )
+            .await?;
+            all_players.extend(players);
+            all_rankings.extend(rankings);
+        }
+
+        Ok((all_players, all_rankings))
     }
 }
 
-async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Rankings>)> {
+async fn parse_rankings_html(
+    table_html: &str,
+    seen_players: &mut std::collections::HashSet<i32>,
+    scoring_settings: &str,
+) -> Result<(Vec<Player>, Vec<Rankings>)> {
     let document = Html::parse_document(table_html);
     let row_selector = Selector::parse("tbody tr.player-row").unwrap();
     let cell_selector = Selector::parse("td").unwrap();
@@ -74,26 +95,35 @@ async fn parse_rankings_html(table_html: &str) -> Result<(Vec<Player>, Vec<Ranki
         let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
         let bye_week = cells[4].text().collect::<String>().parse::<i32>().ok();
 
-        let player_scraper = PlayerScraper::new(&player_identity.bio_url);
-        let player_bio: PlayerBio = player_scraper.scrape().await?;
+        // Only fetch bio and create player if we haven't seen this player ID before
+        if let Some(player_id) = player_identity.id {
+            if !seen_players.contains(&player_id) {
+                println!("Scraping bio for player: {}", player_identity.bio_url);
+                let player_scraper = PlayerScraper::new(&player_identity.bio_url);
+                let player_bio: PlayerBio = player_scraper.scrape().await?;
 
-        players.push(Player {
-            id: player_identity.id,
-            name: player_identity.name,
-            position,
-            team: player_identity.team,
-            bye_week,
-            height: player_bio.height,
-            weight: player_bio.weight,
-            age: player_bio.age,
-            college: player_bio.college,
-        });
+                players.push(Player {
+                    id: player_identity.id,
+                    name: player_identity.name,
+                    position: position.clone(),
+                    team: player_identity.team,
+                    bye_week,
+                    height: player_bio.height,
+                    weight: player_bio.weight,
+                    age: player_bio.age,
+                    college: player_bio.college,
+                });
 
-        rankings.push(Rankings {
-            player_id: player_identity.id.unwrap(),
-            overall: overall_ranking,
-            position: position_ranking.parse::<i32>().ok(),
-        });
+                seen_players.insert(player_id);
+            }
+
+            rankings.push(Rankings {
+                player_id,
+                overall: overall_ranking,
+                position: position_ranking.parse::<i32>().ok(),
+                scoring_settings: scoring_settings.to_string(),
+            });
+        }
     }
 
     Ok((players, rankings))

@@ -9,14 +9,14 @@ use crate::models::stats::Stats;
 
 pub struct StatsScraper {
     client: Client,
-    scoring: String,
+    // scoring: String,
 }
 
 impl StatsScraper {
-    pub fn new(scoring: &str) -> Self {
+    pub fn new() -> Self {
         StatsScraper {
             client: Client::new(),
-            scoring: scoring.to_string(),
+            // scoring: scoring.to_string(),
         }
     }
 
@@ -28,16 +28,16 @@ impl StatsScraper {
             .push(position)
             .push("");
 
-        if self.scoring != "standard" {
-            url.query_pairs_mut().append_pair(
-                "scoring",
-                match self.scoring.as_str() {
-                    "half" => "HALF",
-                    "ppr" => "PPR",
-                    _ => "HALF",
-                },
-            );
-        }
+        // if self.scoring != "standard" {
+        //     url.query_pairs_mut().append_pair(
+        //         "scoring",
+        //         match self.scoring.as_str() {
+        //             "half" => "HALF",
+        //             "ppr" => "PPR",
+        //             _ => "HALF",
+        //         },
+        //     );
+        // }
 
         Ok(url.to_string())
     }
@@ -102,8 +102,8 @@ impl StatsScraper {
                         safeties: 0.0,
                         special_teams_td: 0.0,
                         games: 0.0,
-                        fantasy_pts: 0.0,
-                        fantasy_pts_per_game: 0.0,
+                        // fantasy_pts: 0.0,
+                        // fantasy_pts_per_game: 0.0,
                     };
 
                     // Fill stats with current position's values
@@ -157,10 +157,10 @@ impl StatsScraper {
                                 "safeties" => current_stats.safeties = value,
                                 "special_teams_td" => current_stats.special_teams_td = value,
                                 "games" => current_stats.games = value,
-                                "fantasy_pts" => current_stats.fantasy_pts = value,
-                                "fantasy_pts_per_game" => {
-                                    current_stats.fantasy_pts_per_game = value
-                                }
+                                // "fantasy_pts" => current_stats.fantasy_pts = value,
+                                // "fantasy_pts_per_game" => {
+                                //     current_stats.fantasy_pts_per_game = value
+                                // }
                                 _ => (),
                             }
                         }
@@ -254,11 +254,11 @@ impl StatsScraper {
                                 .special_teams_td
                                 .max(current_stats.special_teams_td);
                             existing_player.games = existing_player.games.max(current_stats.games);
-                            existing_player.fantasy_pts =
-                                existing_player.fantasy_pts.max(current_stats.fantasy_pts);
-                            existing_player.fantasy_pts_per_game = existing_player
-                                .fantasy_pts_per_game
-                                .max(current_stats.fantasy_pts_per_game);
+                            // existing_player.fantasy_pts =
+                            //     existing_player.fantasy_pts.max(current_stats.fantasy_pts);
+                            // existing_player.fantasy_pts_per_game = existing_player
+                            //     .fantasy_pts_per_game
+                            //     .max(current_stats.fantasy_pts_per_game);
                         } else {
                             players.push(current_stats);
                         }

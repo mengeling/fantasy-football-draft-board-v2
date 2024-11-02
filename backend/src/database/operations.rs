@@ -29,10 +29,11 @@ pub async fn bulk_save_players(players: &[Player]) -> Result<()> {
 
 pub async fn bulk_save_rankings(rankings: &[Rankings]) -> Result<()> {
     let mut query_builder =
-        QueryBuilder::new("INSERT INTO rankings (player_id, overall, position)");
+        QueryBuilder::new("INSERT INTO rankings (player_id, scoring_settings, overall, position)");
 
     query_builder.push_values(rankings, |mut b, ranking| {
         b.push_bind(ranking.player_id)
+            .push_bind(&ranking.scoring_settings)
             .push_bind(ranking.overall)
             .push_bind(ranking.position);
     });
@@ -50,7 +51,7 @@ pub async fn bulk_save_stats(stats: &[Stats]) -> Result<()> {
             rec_yds_per_rec, rec_long, rec_20, rec_td, field_goals, fg_att,
             fg_pct, fg_long, fg_1_19, fg_20_29, fg_30_39, fg_40_49, fg_50,
             extra_points, xp_att, sacks, int, fumbles_recovered, fumbles_forced,
-            def_td, safeties, special_teams_td, games, fantasy_pts, fantasy_pts_per_game
+            def_td, safeties, special_teams_td, games
         )",
     );
 
@@ -96,9 +97,9 @@ pub async fn bulk_save_stats(stats: &[Stats]) -> Result<()> {
             .push_bind(stat.def_td)
             .push_bind(stat.safeties)
             .push_bind(stat.special_teams_td)
-            .push_bind(stat.games)
-            .push_bind(stat.fantasy_pts)
-            .push_bind(stat.fantasy_pts_per_game);
+            .push_bind(stat.games);
+        // .push_bind(stat.fantasy_pts)
+        // .push_bind(stat.fantasy_pts_per_game);
     });
 
     query_builder.build().execute(&*DB_POOL).await?;

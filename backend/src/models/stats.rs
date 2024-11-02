@@ -44,6 +44,6 @@ pub struct Stats {
     pub safeties: f64,
     pub special_teams_td: f64,
     pub games: f64,
-    pub fantasy_pts: f64,
-    pub fantasy_pts_per_game: f64,
+    // pub fantasy_pts: f64,
+    // pub fantasy_pts_per_game: f64,
 }

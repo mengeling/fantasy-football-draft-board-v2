@@ -19,8 +19,8 @@ lazy_static! {
                 "rush_td",
                 "fumbles",
                 "games",
-                "fantasy_pts",
-                "fantasy_pts_per_game",
+                // "fantasy_pts",
+                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -39,8 +39,8 @@ lazy_static! {
                 "rec_td",
                 "fumbles",
                 "games",
-                "fantasy_pts",
-                "fantasy_pts_per_game",
+                // "fantasy_pts",
+                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -58,8 +58,8 @@ lazy_static! {
                 "rush_td",
                 "fumbles",
                 "games",
-                "fantasy_pts",
-                "fantasy_pts_per_game",
+                // "fantasy_pts",
+                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -77,8 +77,8 @@ lazy_static! {
                 "rush_td",
                 "fumbles",
                 "games",
-                "fantasy_pts",
-                "fantasy_pts_per_game",
+                // "fantasy_pts",
+                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -96,8 +96,8 @@ lazy_static! {
                 "extra_points",
                 "xp_att",
                 "games",
-                "fantasy_pts",
-                "fantasy_pts_per_game",
+                // "fantasy_pts",
+                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -111,8 +111,8 @@ lazy_static! {
                 "safeties",
                 "special_teams_td",
                 "games",
-                "fantasy_pts",
-                "fantasy_pts_per_game",
+                // "fantasy_pts",
+                // "fantasy_pts_per_game",
             ]
         ),
     ]);
