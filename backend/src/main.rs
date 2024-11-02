@@ -6,7 +6,7 @@ mod scrapers;
 use anyhow::Result;
 use dotenv::dotenv;
 use headless_chrome::Browser;
-use std::env;
+// use std::env;
 
 use crate::database::operations::{bulk_save_players, bulk_save_rankings, bulk_save_stats};
 use crate::database::pool::init_db;

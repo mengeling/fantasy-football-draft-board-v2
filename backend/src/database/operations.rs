@@ -51,7 +51,9 @@ pub async fn bulk_save_stats(stats: &[Stats]) -> Result<()> {
             rec_yds_per_rec, rec_long, rec_20, rec_td, field_goals, fg_att,
             fg_pct, fg_long, fg_1_19, fg_20_29, fg_30_39, fg_40_49, fg_50,
             extra_points, xp_att, sacks, int, fumbles_recovered, fumbles_forced,
-            def_td, safeties, special_teams_td, games
+            def_td, safeties, special_teams_td, games, standard_pts, 
+            standard_pts_per_game, half_ppr_pts, half_ppr_pts_per_game, 
+            ppr_pts, ppr_pts_per_game
         )",
     );
 
@@ -97,9 +99,13 @@ pub async fn bulk_save_stats(stats: &[Stats]) -> Result<()> {
             .push_bind(stat.def_td)
             .push_bind(stat.safeties)
             .push_bind(stat.special_teams_td)
-            .push_bind(stat.games);
-        // .push_bind(stat.fantasy_pts)
-        // .push_bind(stat.fantasy_pts_per_game);
+            .push_bind(stat.games)
+            .push_bind(stat.standard_pts)
+            .push_bind(stat.standard_pts_per_game)
+            .push_bind(stat.half_ppr_pts)
+            .push_bind(stat.half_ppr_pts_per_game)
+            .push_bind(stat.ppr_pts)
+            .push_bind(stat.ppr_pts_per_game);
     });
 
     query_builder.build().execute(&*DB_POOL).await?;

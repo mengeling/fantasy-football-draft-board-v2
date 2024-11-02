@@ -102,8 +102,12 @@ impl StatsScraper {
                         safeties: 0.0,
                         special_teams_td: 0.0,
                         games: 0.0,
-                        // fantasy_pts: 0.0,
-                        // fantasy_pts_per_game: 0.0,
+                        standard_pts: 0.0,
+                        standard_pts_per_game: 0.0,
+                        half_ppr_pts: 0.0,
+                        half_ppr_pts_per_game: 0.0,
+                        ppr_pts: 0.0,
+                        ppr_pts_per_game: 0.0,
                     };
 
                     // Fill stats with current position's values
@@ -157,13 +161,24 @@ impl StatsScraper {
                                 "safeties" => current_stats.safeties = value,
                                 "special_teams_td" => current_stats.special_teams_td = value,
                                 "games" => current_stats.games = value,
-                                // "fantasy_pts" => current_stats.fantasy_pts = value,
-                                // "fantasy_pts_per_game" => {
-                                //     current_stats.fantasy_pts_per_game = value
-                                // }
                                 _ => (),
                             }
                         }
+                    }
+
+                    // After populating all stats, calculate fantasy points
+                    if current_stats.games > 0.0 {
+                        current_stats.standard_pts = calculate_standard_points(&current_stats);
+                        current_stats.standard_pts_per_game =
+                            current_stats.standard_pts / current_stats.games;
+
+                        current_stats.half_ppr_pts = calculate_half_ppr_points(&current_stats);
+                        current_stats.half_ppr_pts_per_game =
+                            current_stats.half_ppr_pts / current_stats.games;
+
+                        current_stats.ppr_pts = calculate_ppr_points(&current_stats);
+                        current_stats.ppr_pts_per_game =
+                            current_stats.ppr_pts / current_stats.games;
                     }
 
                     if let Some(player_id) = player_id {
@@ -254,11 +269,21 @@ impl StatsScraper {
                                 .special_teams_td
                                 .max(current_stats.special_teams_td);
                             existing_player.games = existing_player.games.max(current_stats.games);
-                            // existing_player.fantasy_pts =
-                            //     existing_player.fantasy_pts.max(current_stats.fantasy_pts);
-                            // existing_player.fantasy_pts_per_game = existing_player
-                            //     .fantasy_pts_per_game
-                            //     .max(current_stats.fantasy_pts_per_game);
+                            existing_player.standard_pts =
+                                existing_player.standard_pts.max(current_stats.standard_pts);
+                            existing_player.standard_pts_per_game = existing_player
+                                .standard_pts_per_game
+                                .max(current_stats.standard_pts_per_game);
+                            existing_player.half_ppr_pts =
+                                existing_player.half_ppr_pts.max(current_stats.half_ppr_pts);
+                            existing_player.half_ppr_pts_per_game = existing_player
+                                .half_ppr_pts_per_game
+                                .max(current_stats.half_ppr_pts_per_game);
+                            existing_player.ppr_pts =
+                                existing_player.ppr_pts.max(current_stats.ppr_pts);
+                            existing_player.ppr_pts_per_game = existing_player
+                                .ppr_pts_per_game
+                                .max(current_stats.ppr_pts_per_game);
                         } else {
                             players.push(current_stats);
                         }
@@ -271,11 +296,41 @@ impl StatsScraper {
     }
 }
 
-pub fn get_player_id(row: &scraper::element_ref::ElementRef) -> Option<i32> {
+fn get_player_id(row: &scraper::element_ref::ElementRef) -> Option<i32> {
     let row_class = row.value().attr("class").unwrap_or("");
     Regex::new(r"(\d+)")
         .unwrap()
         .captures(row_class)
         .and_then(|cap| cap.get(1))
         .and_then(|m| m.as_str().parse::<i32>().ok())
+}
+
+fn calculate_standard_points(stats: &Stats) -> f64 {
+    let mut points = 0.0;
+
+    // Passing
+    points += stats.pass_yds * 0.04; // 1 point per 25 yards
+    points += stats.pass_td * 4.0;
+    points -= stats.pass_int * 2.0;
+
+    // Rushing
+    points += stats.rush_yds * 0.1; // 1 point per 10 yards
+    points += stats.rush_td * 6.0;
+
+    // Receiving
+    points += stats.rec_yds * 0.1; // 1 point per 10 yards
+    points += stats.rec_td * 6.0;
+
+    // Misc
+    points -= stats.fumbles * 2.0;
+
+    points
+}
+
+fn calculate_half_ppr_points(stats: &Stats) -> f64 {
+    calculate_standard_points(stats) + (stats.receptions * 0.5)
+}
+
+fn calculate_ppr_points(stats: &Stats) -> f64 {
+    calculate_standard_points(stats) + stats.receptions
 }

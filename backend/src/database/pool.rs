@@ -42,7 +42,7 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS rankings (
-            player_id INTEGER PRIMARY KEY,
+            player_id INTEGER,
             scoring_settings TEXT,
             overall INTEGER,
             position INTEGER,
@@ -95,7 +95,13 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
             def_td DOUBLE PRECISION,
             safeties DOUBLE PRECISION,
             special_teams_td DOUBLE PRECISION,
-            games DOUBLE PRECISION
+            games DOUBLE PRECISION,
+            standard_pts DOUBLE PRECISION,
+            standard_pts_per_game DOUBLE PRECISION,
+            half_ppr_pts DOUBLE PRECISION,
+            half_ppr_pts_per_game DOUBLE PRECISION,
+            ppr_pts DOUBLE PRECISION,
+            ppr_pts_per_game DOUBLE PRECISION
         )",
     )
     .execute(&*DB_POOL)

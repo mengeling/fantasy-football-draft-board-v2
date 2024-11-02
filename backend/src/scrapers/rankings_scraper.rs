@@ -98,7 +98,6 @@ async fn parse_rankings_html(
         // Only fetch bio and create player if we haven't seen this player ID before
         if let Some(player_id) = player_identity.id {
             if !seen_players.contains(&player_id) {
-                println!("Scraping bio for player: {}", player_identity.bio_url);
                 let player_scraper = PlayerScraper::new(&player_identity.bio_url);
                 let player_bio: PlayerBio = player_scraper.scrape().await?;
 
