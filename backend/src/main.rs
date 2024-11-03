@@ -15,6 +15,7 @@ use crate::scrapers::{rankings_scraper::RankingsScraper, stats_scraper::StatsScr
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenv::dotenv().ok();
     env_logger::init();
     info!("Starting scraper job at {}", Local::now());
 
