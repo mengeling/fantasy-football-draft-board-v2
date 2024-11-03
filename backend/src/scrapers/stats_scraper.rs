@@ -9,14 +9,12 @@ use crate::models::stats::Stats;
 
 pub struct StatsScraper {
     client: Client,
-    // scoring: String,
 }
 
 impl StatsScraper {
     pub fn new() -> Self {
         StatsScraper {
             client: Client::new(),
-            // scoring: scoring.to_string(),
         }
     }
 
@@ -27,17 +25,6 @@ impl StatsScraper {
             .map_err(|_| anyhow::anyhow!("Cannot modify URL"))?
             .push(position)
             .push("");
-
-        // if self.scoring != "standard" {
-        //     url.query_pairs_mut().append_pair(
-        //         "scoring",
-        //         match self.scoring.as_str() {
-        //             "half" => "HALF",
-        //             "ppr" => "PPR",
-        //             _ => "HALF",
-        //         },
-        //     );
-        // }
 
         Ok(url.to_string())
     }
@@ -58,7 +45,6 @@ impl StatsScraper {
                 for row in stats_table.select(&stats_row_selector) {
                     let player_id = get_player_id(&row);
 
-                    // Create temporary stats object for current position
                     let mut current_stats = Stats {
                         player_id: player_id.unwrap(),
                         pass_cmp: 0.0,
@@ -110,7 +96,6 @@ impl StatsScraper {
                         ppr_pts_per_game: 0.0,
                     };
 
-                    // Fill stats with current position's values
                     for (cell_index, cell) in row.select(&stats_cell_selector).enumerate().skip(2) {
                         if cell_index < headers.len() + 2 {
                             let value = cell
@@ -166,7 +151,6 @@ impl StatsScraper {
                         }
                     }
 
-                    // After populating all stats, calculate fantasy points
                     if current_stats.games > 0.0 {
                         current_stats.standard_pts = calculate_standard_points(&current_stats);
                         current_stats.standard_pts_per_game =

@@ -16,8 +16,8 @@ impl<'a> RankingsScraper<'a> {
         Self { tab }
     }
 
-    fn get_urls() -> Vec<(&'static str, &'static str)> {
-        vec![
+    fn get_urls() -> std::collections::HashMap<&'static str, &'static str> {
+        std::collections::HashMap::from([
             (
                 "standard",
                 "https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
@@ -30,7 +30,7 @@ impl<'a> RankingsScraper<'a> {
                 "ppr",
                 "https://www.fantasypros.com/nfl/rankings/ppr-cheatsheets.php",
             ),
-        ]
+        ])
     }
 
     pub async fn scrape(&self) -> Result<(Vec<Player>, Vec<Rankings>)> {
@@ -95,7 +95,6 @@ async fn parse_rankings_html(
         let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
         let bye_week = cells[4].text().collect::<String>().parse::<i32>().ok();
 
-        // Only fetch bio and create player if we haven't seen this player ID before
         if let Some(player_id) = player_identity.id {
             if !seen_players.contains(&player_id) {
                 let player_scraper = PlayerScraper::new(&player_identity.bio_url);
