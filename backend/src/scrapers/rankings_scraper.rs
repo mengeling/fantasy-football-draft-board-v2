@@ -38,19 +38,17 @@ impl<'a> RankingsScraper<'a> {
         let mut all_rankings = Vec::new();
         let mut seen_players = std::collections::HashSet::new();
 
-        // Scrape each scoring type
         for (scoring_settings, url) in Self::get_urls() {
             self.tab.navigate_to(url)?;
             self.tab.wait_until_navigated()?;
             self.tab.wait_for_element("table#ranking-table")?;
 
-            // Scroll to the last player
-            // self.tab.evaluate(
-            //     "let rows = document.querySelectorAll('tbody tr.player-row');
-            //         let lastRow = rows[rows.length - 1];
-            //         lastRow.scrollIntoView();",
-            //     false,
-            // )?;
+            self.tab.evaluate(
+                "let rows = document.querySelectorAll('tbody tr.player-row');
+                    let lastRow = rows[rows.length - 1];
+                    lastRow.scrollIntoView();",
+                false,
+            )?;
 
             let ranking_table = self.tab.wait_for_element("table#ranking-table")?;
             let ranking_table_html =
