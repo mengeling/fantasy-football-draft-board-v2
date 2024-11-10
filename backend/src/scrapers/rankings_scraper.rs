@@ -1,9 +1,11 @@
 use anyhow::Result;
+use futures::stream;
+use futures::StreamExt;
 use headless_chrome::Tab;
 use regex::Regex;
 use scraper::{Html, Selector};
 
-use crate::models::player::{Player, PlayerBio, PlayerIdentity};
+use crate::models::player::{Player, PlayerIdentity};
 use crate::models::rankings::Rankings;
 use crate::scrapers::player_scraper::PlayerScraper;
 
@@ -34,9 +36,7 @@ impl<'a> RankingsScraper<'a> {
     }
 
     pub async fn scrape(&self) -> Result<(Vec<Player>, Vec<Rankings>)> {
-        let mut all_players = Vec::new();
-        let mut all_rankings = Vec::new();
-        let mut seen_players = std::collections::HashSet::new();
+        let mut ranking_tables = Vec::new();
 
         for (scoring_settings, url) in Self::get_urls() {
             self.tab.navigate_to(url)?;
@@ -58,12 +58,17 @@ impl<'a> RankingsScraper<'a> {
                 .and_then(|v| v.as_str().map(|s| s.to_string()))
                 .unwrap();
 
-            let (players, rankings) = parse_rankings_html(
-                &ranking_table_html_value,
-                &mut seen_players,
-                scoring_settings,
-            )
-            .await?;
+            ranking_tables.push((ranking_table_html_value, scoring_settings));
+        }
+        self.tab.close(true)?;
+
+        let mut seen_players = std::collections::HashSet::new();
+        let mut all_players = Vec::new();
+        let mut all_rankings = Vec::new();
+
+        for (ranking_table, scoring_settings) in ranking_tables {
+            let (players, rankings) =
+                parse_ranking_table(&ranking_table, &mut seen_players, scoring_settings).await?;
             all_players.extend(players);
             all_rankings.extend(rankings);
         }
@@ -72,7 +77,7 @@ impl<'a> RankingsScraper<'a> {
     }
 }
 
-async fn parse_rankings_html(
+async fn parse_ranking_table(
     table_html: &str,
     seen_players: &mut std::collections::HashSet<i32>,
     scoring_settings: &str,
@@ -84,6 +89,7 @@ async fn parse_rankings_html(
 
     let mut players = Vec::new();
     let mut rankings = Vec::new();
+    let mut player_tasks = Vec::new();
 
     for row in document.select(&row_selector) {
         let cells: Vec<_> = row.select(&cell_selector).collect();
@@ -94,31 +100,48 @@ async fn parse_rankings_html(
         let bye_week = cells[4].text().collect::<String>().parse::<i32>().ok();
 
         if let Some(player_id) = player_identity.id {
-            if !seen_players.contains(&player_id) {
-                let player_scraper = PlayerScraper::new(&player_identity.bio_url);
-                let player_bio: PlayerBio = player_scraper.scrape().await?;
-
-                players.push(Player {
-                    id: player_identity.id,
-                    name: player_identity.name,
-                    position: position.clone(),
-                    team: player_identity.team,
-                    bye_week,
-                    height: player_bio.height,
-                    weight: player_bio.weight,
-                    age: player_bio.age,
-                    college: player_bio.college,
-                });
-
-                seen_players.insert(player_id);
-            }
-
             rankings.push(Rankings {
                 player_id,
                 overall: overall_ranking,
                 position: position_ranking.parse::<i32>().ok(),
                 scoring_settings: scoring_settings.to_string(),
             });
+
+            if !seen_players.contains(&player_id) {
+                seen_players.insert(player_id);
+                player_tasks.push((player_id, player_identity, position.clone(), bye_week));
+            }
+        }
+    }
+
+    let results: Vec<_> = stream::iter(player_tasks)
+        .map(|(player_id, player_identity, position, bye_week)| {
+            tokio::spawn(async move {
+                let player_scraper = PlayerScraper::new(&player_identity.bio_url);
+                let player_bio = player_scraper.scrape().await?;
+
+                Ok::<_, anyhow::Error>(Player {
+                    id: Some(player_id),
+                    name: player_identity.name,
+                    position,
+                    team: player_identity.team,
+                    bye_week,
+                    height: player_bio.height,
+                    weight: player_bio.weight,
+                    age: player_bio.age,
+                    college: player_bio.college,
+                })
+            })
+        })
+        .buffer_unordered(5)
+        .collect()
+        .await;
+
+    for result in results {
+        match result {
+            Ok(Ok(player)) => players.push(player),
+            Ok(Err(e)) => println!("Error fetching player bio: {}", e),
+            Err(e) => println!("Task join error: {}", e),
         }
     }
 

@@ -154,15 +154,17 @@ impl StatsScraper {
                     if current_stats.games > 0.0 {
                         current_stats.standard_pts = calculate_standard_points(&current_stats);
                         current_stats.standard_pts_per_game =
-                            current_stats.standard_pts / current_stats.games;
+                            ((current_stats.standard_pts / current_stats.games) * 10.0).round()
+                                / 10.0;
 
                         current_stats.half_ppr_pts = calculate_half_ppr_points(&current_stats);
                         current_stats.half_ppr_pts_per_game =
-                            current_stats.half_ppr_pts / current_stats.games;
+                            ((current_stats.half_ppr_pts / current_stats.games) * 10.0).round()
+                                / 10.0;
 
                         current_stats.ppr_pts = calculate_ppr_points(&current_stats);
                         current_stats.ppr_pts_per_game =
-                            current_stats.ppr_pts / current_stats.games;
+                            ((current_stats.ppr_pts / current_stats.games) * 10.0).round() / 10.0;
                     }
 
                     if let Some(player_id) = player_id {
