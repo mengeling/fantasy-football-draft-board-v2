@@ -4,10 +4,7 @@ mod models;
 mod scrapers;
 
 use anyhow::Result;
-use chrono::Local;
-use env_logger;
 use headless_chrome::Browser;
-use log::{error, info};
 
 use crate::database::operations::{bulk_save_players, bulk_save_rankings, bulk_save_stats};
 use crate::database::pool::init_db;
@@ -16,22 +13,6 @@ use crate::scrapers::{rankings_scraper::RankingsScraper, stats_scraper::StatsScr
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
-    env_logger::init();
-    info!("Starting scraper job at {}", Local::now());
-
-    match run_scraper().await {
-        Ok(_) => {
-            info!("Scraper job completed successfully");
-            Ok(())
-        }
-        Err(e) => {
-            error!("Scraper job failed: {}", e);
-            Err(e)
-        }
-    }
-}
-
-async fn run_scraper() -> Result<()> {
     init_db().await?;
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
