@@ -1,13 +1,10 @@
 use anyhow::Result;
-use futures::stream;
-use futures::StreamExt;
 use headless_chrome::Tab;
 use regex::Regex;
 use scraper::{Html, Selector};
 
-use crate::models::player::{Player, PlayerIdentity};
+use crate::models::player::{PlayerIdentity, PlayerTask};
 use crate::models::rankings::Rankings;
-use crate::scrapers::player_scraper::PlayerScraper;
 
 pub struct RankingsScraper<'a> {
     tab: &'a Tab,
@@ -35,7 +32,7 @@ impl<'a> RankingsScraper<'a> {
         ])
     }
 
-    pub async fn scrape(&self) -> Result<(Vec<Player>, Vec<Rankings>)> {
+    pub async fn scrape(&self) -> Result<(Vec<Rankings>, Vec<PlayerTask>)> {
         let mut ranking_tables = Vec::new();
 
         for (scoring_settings, url) in Self::get_urls() {
@@ -63,89 +60,64 @@ impl<'a> RankingsScraper<'a> {
         self.tab.close(true)?;
 
         let mut seen_players = std::collections::HashSet::new();
-        let mut all_players = Vec::new();
         let mut all_rankings = Vec::new();
+        let mut all_player_tasks = Vec::new();
 
         for (ranking_table, scoring_settings) in ranking_tables {
-            let (players, rankings) =
-                parse_ranking_table(&ranking_table, &mut seen_players, scoring_settings).await?;
-            all_players.extend(players);
+            let (rankings, player_tasks) = self
+                .parse_ranking_table(&ranking_table, &mut seen_players, scoring_settings)
+                .await?;
             all_rankings.extend(rankings);
+            all_player_tasks.extend(player_tasks);
         }
 
-        Ok((all_players, all_rankings))
+        Ok((all_rankings, all_player_tasks))
     }
-}
 
-async fn parse_ranking_table(
-    table_html: &str,
-    seen_players: &mut std::collections::HashSet<i32>,
-    scoring_settings: &str,
-) -> Result<(Vec<Player>, Vec<Rankings>)> {
-    let document = Html::parse_document(table_html);
-    let row_selector = Selector::parse("tbody tr.player-row").unwrap();
-    let cell_selector = Selector::parse("td").unwrap();
-    let ranking_regex = Regex::new(r"(\D+)(\d+)").unwrap();
+    async fn parse_ranking_table(
+        &self,
+        table_html: &str,
+        seen_players: &mut std::collections::HashSet<i32>,
+        scoring_settings: &str,
+    ) -> Result<(Vec<Rankings>, Vec<PlayerTask>)> {
+        let document = Html::parse_document(table_html);
+        let row_selector = Selector::parse("tbody tr.player-row").unwrap();
+        let cell_selector = Selector::parse("td").unwrap();
+        let ranking_regex = Regex::new(r"(\D+)(\d+)").unwrap();
 
-    let mut players = Vec::new();
-    let mut rankings = Vec::new();
-    let mut player_tasks = Vec::new();
+        let mut rankings = Vec::new();
+        let mut player_tasks = Vec::new();
 
-    for row in document.select(&row_selector) {
-        let cells: Vec<_> = row.select(&cell_selector).collect();
+        for row in document.select(&row_selector) {
+            let cells: Vec<_> = row.select(&cell_selector).collect();
 
-        let overall_ranking = cells[0].text().collect::<String>().parse::<i32>().ok();
-        let player_identity = get_player_identity(&cells[2]);
-        let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
-        let bye_week = cells[4].text().collect::<String>().parse::<i32>().ok();
+            let overall_ranking = cells[0].text().collect::<String>().parse::<i32>().ok();
+            let player_identity = get_player_identity(&cells[2]);
+            let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
+            let bye_week = cells[4].text().collect::<String>().parse::<i32>().ok();
 
-        if let Some(player_id) = player_identity.id {
-            rankings.push(Rankings {
-                player_id,
-                overall: overall_ranking,
-                position: position_ranking.parse::<i32>().ok(),
-                scoring_settings: scoring_settings.to_string(),
-            });
+            if let Some(player_id) = player_identity.id {
+                rankings.push(Rankings {
+                    player_id,
+                    overall: overall_ranking,
+                    position: position_ranking.parse::<i32>().ok(),
+                    scoring_settings: scoring_settings.to_string(),
+                });
 
-            if !seen_players.contains(&player_id) {
-                seen_players.insert(player_id);
-                player_tasks.push((player_id, player_identity, position.clone(), bye_week));
+                if !seen_players.contains(&player_id) {
+                    seen_players.insert(player_id);
+                    player_tasks.push(PlayerTask {
+                        player_id,
+                        identity: player_identity,
+                        position: position.clone(),
+                        bye_week,
+                    });
+                }
             }
         }
+
+        Ok((rankings, player_tasks))
     }
-
-    let results: Vec<_> = stream::iter(player_tasks)
-        .map(|(player_id, player_identity, position, bye_week)| {
-            tokio::spawn(async move {
-                let player_scraper = PlayerScraper::new(&player_identity.bio_url);
-                let player_bio = player_scraper.scrape().await?;
-
-                Ok::<_, anyhow::Error>(Player {
-                    id: Some(player_id),
-                    name: player_identity.name,
-                    position,
-                    team: player_identity.team,
-                    bye_week,
-                    height: player_bio.height,
-                    weight: player_bio.weight,
-                    age: player_bio.age,
-                    college: player_bio.college,
-                })
-            })
-        })
-        .buffer_unordered(5)
-        .collect()
-        .await;
-
-    for result in results {
-        match result {
-            Ok(Ok(player)) => players.push(player),
-            Ok(Err(e)) => println!("Error fetching player bio: {}", e),
-            Err(e) => println!("Task join error: {}", e),
-        }
-    }
-
-    Ok((players, rankings))
 }
 
 fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> PlayerIdentity {

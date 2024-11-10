@@ -21,10 +21,18 @@ pub struct PlayerBio {
     pub college: String,
 }
 
-//  REMOVE
+#[derive(Debug, Clone)]
 pub struct PlayerIdentity {
     pub id: Option<i32>,
     pub bio_url: String,
     pub name: String,
     pub team: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerTask {
+    pub player_id: i32,
+    pub identity: PlayerIdentity,
+    pub position: String,
+    pub bye_week: Option<i32>,
 }

@@ -1,9 +1,11 @@
 use anyhow::Result;
+use futures::stream;
+use futures::stream::StreamExt;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-use crate::models::player::PlayerBio;
+use crate::models::player::{Player, PlayerBio, PlayerTask};
 
 pub struct PlayerScraper {
     client: Client,
@@ -53,5 +55,41 @@ impl PlayerScraper {
         // NOTE: Don't need to scrape image_url anymore. Can now add player_id to url like this:
         // https://images.fantasypros.com/images/players/nfl/{PLAYER_ID}/headshot/70x70.png
         Ok(player_bio)
+    }
+
+    pub async fn process_tasks(tasks: Vec<PlayerTask>) -> Result<Vec<Player>> {
+        let results: Vec<_> = stream::iter(tasks)
+            .map(|task| {
+                tokio::spawn(async move {
+                    let player_scraper = PlayerScraper::new(&task.identity.bio_url);
+                    let player_bio = player_scraper.scrape().await?;
+
+                    Ok::<_, anyhow::Error>(Player {
+                        id: Some(task.player_id),
+                        name: task.identity.name,
+                        position: task.position,
+                        team: task.identity.team,
+                        bye_week: task.bye_week,
+                        height: player_bio.height,
+                        weight: player_bio.weight,
+                        age: player_bio.age,
+                        college: player_bio.college,
+                    })
+                })
+            })
+            .buffer_unordered(5)
+            .collect()
+            .await;
+
+        let mut players = Vec::new();
+        for result in results {
+            match result {
+                Ok(Ok(player)) => players.push(player),
+                Ok(Err(e)) => println!("Error fetching player bio: {}", e),
+                Err(e) => println!("Task join error: {}", e),
+            }
+        }
+
+        Ok(players)
     }
 }
