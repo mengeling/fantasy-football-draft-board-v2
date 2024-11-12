@@ -24,6 +24,14 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
         .execute(&*DB_POOL)
         .await?;
 
+    sqlx::query("DROP TABLE IF EXISTS drafted_players")
+        .execute(&*DB_POOL)
+        .await?;
+
+    sqlx::query("DROP TABLE IF EXISTS users")
+        .execute(&*DB_POOL)
+        .await?;
+
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY,
@@ -102,6 +110,28 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
             half_ppr_pts_per_game DOUBLE PRECISION,
             ppr_pts DOUBLE PRECISION,
             ppr_pts_per_game DOUBLE PRECISION
+        )",
+    )
+    .execute(&*DB_POOL)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) NOT NULL UNIQUE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+        )",
+    )
+    .execute(&*DB_POOL)
+    .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS drafted_players (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+            drafted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            UNIQUE(user_id, player_id)
         )",
     )
     .execute(&*DB_POOL)

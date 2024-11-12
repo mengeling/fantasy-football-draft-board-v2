@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::QueryBuilder;
 
-use crate::database::pool::DB_POOL;
+use crate::database::setup::DB_POOL;
 use crate::models::player::Player;
 use crate::models::rankings::Rankings;
 use crate::models::stats::Stats;
