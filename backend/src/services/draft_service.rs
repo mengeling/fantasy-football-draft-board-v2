@@ -1,6 +1,5 @@
+use crate::models::drafted_player::DraftedPlayer;
 use crate::models::player::PlayerDenormalized;
-use crate::models::{drafted_player::DraftedPlayer, player};
-use serde::{Deserialize, Serialize};
 use sqlx::{Error, PgPool};
 
 pub async fn draft_player(
@@ -39,24 +38,6 @@ pub async fn undraft_player(
     .await?;
 
     Ok(result.rows_affected() > 0)
-}
-
-pub async fn get_drafted_players(
-    pool: &PgPool,
-    user_id: i32,
-) -> Result<Vec<DraftedPlayer>, sqlx::Error> {
-    sqlx::query_as!(
-        DraftedPlayer,
-        r#"
-        SELECT id, user_id, player_id, drafted_at
-        FROM drafted_players
-        WHERE user_id = $1
-        ORDER BY drafted_at
-        "#,
-        user_id
-    )
-    .fetch_all(pool)
-    .await
 }
 
 pub async fn get_player_data(pool: &PgPool, player_id: i32) -> Result<PlayerDenormalized, Error> {
