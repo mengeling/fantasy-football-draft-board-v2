@@ -119,6 +119,7 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
         "CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username VARCHAR(255) NOT NULL UNIQUE,
+            scoring_settings TEXT,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         )",
     )

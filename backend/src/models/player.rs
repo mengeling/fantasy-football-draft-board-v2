@@ -91,10 +91,6 @@ pub struct PlayerDenormalized {
     pub safeties: Option<f64>,
     pub special_teams_td: Option<f64>,
     pub games: Option<f64>,
-    pub standard_pts: Option<f64>,
-    pub standard_pts_per_game: Option<f64>,
-    pub half_ppr_pts: Option<f64>,
-    pub half_ppr_pts_per_game: Option<f64>,
-    pub ppr_pts: Option<f64>,
-    pub ppr_pts_per_game: Option<f64>,
+    pub points: Option<f64>,
+    pub points_per_game: Option<f64>,
 }

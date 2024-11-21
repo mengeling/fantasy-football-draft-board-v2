@@ -5,5 +5,6 @@ use time::OffsetDateTime;
 pub struct User {
     pub id: i32,
     pub username: String,
+    pub scoring_settings: String,
     pub created_at: OffsetDateTime,
 }

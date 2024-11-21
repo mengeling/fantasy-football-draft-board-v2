@@ -40,8 +40,12 @@ pub async fn undraft_player(
     Ok(result.rows_affected() > 0)
 }
 
-pub async fn get_player_data(pool: &PgPool, player_id: i32) -> Result<PlayerDenormalized, Error> {
-    let player_denormalized = sqlx::query_as!(
+pub async fn get_player_data(
+    pool: &PgPool,
+    player_id: i32,
+    user_id: i32,
+) -> Result<PlayerDenormalized, Error> {
+    sqlx::query_as!(
         PlayerDenormalized,
         r#"
         SELECT 
@@ -97,22 +101,27 @@ pub async fn get_player_data(pool: &PgPool, player_id: i32) -> Result<PlayerDeno
             s.safeties,
             s.special_teams_td,
             s.games,
-            s.standard_pts,
-            s.standard_pts_per_game,
-            s.half_ppr_pts,
-            s.half_ppr_pts_per_game,
-            s.ppr_pts,
-            s.ppr_pts_per_game
+            CASE u.scoring_settings
+                WHEN 'STANDARD' THEN s.standard_pts
+                WHEN 'HALF_PPR' THEN s.half_ppr_pts
+                WHEN 'PPR' THEN s.ppr_pts
+            END as points,
+            CASE u.scoring_settings
+                WHEN 'STANDARD' THEN s.standard_pts_per_game
+                WHEN 'HALF_PPR' THEN s.half_ppr_pts_per_game
+                WHEN 'PPR' THEN s.ppr_pts_per_game
+            END as points_per_game
         FROM players p
-        LEFT JOIN rankings r ON p.id = r.player_id
+        INNER JOIN users u ON u.id = $2
+        LEFT JOIN rankings r ON p.id = r.player_id 
+            AND r.scoring_settings = u.scoring_settings
         LEFT JOIN stats s ON p.id = s.player_id
         WHERE p.id = $1
         "#,
-        player_id
+        player_id,
+        user_id
     )
     .fetch_optional(pool)
     .await?
-    .ok_or_else(|| Error::NotFound(format!("Player not found with id: {}", player_id)))?;
-
-    Ok(player_denormalized)
+    .ok_or(sqlx::Error::RowNotFound)
 }

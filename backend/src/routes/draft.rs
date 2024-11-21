@@ -1,4 +1,4 @@
-use actix_web::{delete, get, post, web, HttpResponse, Result};
+use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Result};
 
 use crate::database::setup::DB_POOL;
 use crate::models::requests::DraftRequest;
@@ -34,8 +34,17 @@ pub async fn undraft_player(draft_req: web::Json<DraftRequest>) -> Result<HttpRe
 }
 
 #[get("/draft/player/{player_id}")]
-pub async fn get_player_data(player_id: web::Path<i32>) -> Result<HttpResponse> {
-    let player_data = draft_service::get_player_data(&*DB_POOL, player_id.into_inner())
+pub async fn get_player_data(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
+    let user_id = req
+        .headers()
+        .get("X-User-Id")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-User-Id header"))?
+        .to_str()
+        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid X-User-Id header format"))?
+        .parse::<i32>()
+        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid X-User-Id header value"))?;
+
+    let player_data = draft_service::get_player_data(&*DB_POOL, player_id.into_inner(), user_id)
         .await
         .map_err(|e| {
             eprintln!("Failed to get player data: {}", e);
