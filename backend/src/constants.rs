@@ -4,7 +4,7 @@ use std::collections::HashMap;
 pub const HEADER_USER_ID: &str = "X-User-Id";
 
 lazy_static! {
-    pub static ref STATS_HEADERS: HashMap<&'static str, Vec<&'static str>> = HashMap::from([
+    pub static ref STATS_BY_POSITION: HashMap<&'static str, Vec<&'static str>> = HashMap::from([
         (
             "qb",
             vec![
@@ -21,8 +21,6 @@ lazy_static! {
                 "rush_td",
                 "fumbles",
                 "games",
-                // "fantasy_pts",
-                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -41,8 +39,6 @@ lazy_static! {
                 "rec_td",
                 "fumbles",
                 "games",
-                // "fantasy_pts",
-                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -60,8 +56,6 @@ lazy_static! {
                 "rush_td",
                 "fumbles",
                 "games",
-                // "fantasy_pts",
-                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -79,8 +73,6 @@ lazy_static! {
                 "rush_td",
                 "fumbles",
                 "games",
-                // "fantasy_pts",
-                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -98,8 +90,6 @@ lazy_static! {
                 "extra_points",
                 "xp_att",
                 "games",
-                // "fantasy_pts",
-                // "fantasy_pts_per_game",
             ]
         ),
         (
@@ -113,8 +103,6 @@ lazy_static! {
                 "safeties",
                 "special_teams_td",
                 "games",
-                // "fantasy_pts",
-                // "fantasy_pts_per_game",
             ]
         ),
     ]);

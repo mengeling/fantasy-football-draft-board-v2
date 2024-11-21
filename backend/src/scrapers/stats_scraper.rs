@@ -4,7 +4,7 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use url::Url;
 
-use crate::constants::STATS_HEADERS;
+use crate::constants::STATS_BY_POSITION;
 use crate::models::stats::Stats;
 
 pub struct StatsScraper {
@@ -32,7 +32,7 @@ impl StatsScraper {
     pub async fn scrape(&self) -> Result<Vec<Stats>> {
         let mut players: Vec<Stats> = Vec::new();
 
-        for (position, headers) in STATS_HEADERS.iter() {
+        for (position, headers) in STATS_BY_POSITION.iter() {
             let url = self.build_url(position)?;
             let response = self.client.get(url).send().await?;
             let html = Html::parse_document(&response.text().await?);
