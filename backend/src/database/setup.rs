@@ -2,6 +2,12 @@ use once_cell::sync::Lazy;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::env;
+use strum::IntoEnumIterator;
+
+use crate::models::{
+    player::{Position, Team},
+    rankings::ScoringSettings,
+};
 
 pub static DB_POOL: Lazy<PgPool> = Lazy::new(|| {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -32,12 +38,39 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
         .execute(&*DB_POOL)
         .await?;
 
+    let position_variants: String = Position::iter()
+        .map(|v| format!("'{}'", v.to_string()))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let team_variants: String = Team::iter()
+        .map(|v| format!("'{}'", v.to_string()))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let scoring_variants: String = ScoringSettings::iter()
+        .map(|v| format!("'{}'", v.to_string()))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    sqlx::query(&format!(
+        "DROP TYPE IF EXISTS POSITION CASCADE;
+         DROP TYPE IF EXISTS TEAM CASCADE;
+         DROP TYPE IF EXISTS SCORING_SETTINGS CASCADE;
+         
+         CREATE TYPE POSITION AS ENUM ({position_variants});
+         CREATE TYPE TEAM AS ENUM ({team_variants});
+         CREATE TYPE SCORING_SETTINGS AS ENUM ({scoring_variants});"
+    ))
+    .execute(&*DB_POOL)
+    .await?;
+
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            position TEXT NOT NULL,
-            team TEXT NOT NULL,
+            position POSITION NOT NULL,
+            team TEAM NOT NULL,
             bye_week INTEGER,
             height TEXT NOT NULL,
             weight TEXT NOT NULL,
@@ -51,7 +84,7 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS rankings (
             player_id INTEGER,
-            scoring_settings TEXT,
+            scoring_settings SCORING_SETTINGS,
             overall INTEGER,
             position INTEGER,
             PRIMARY KEY (player_id, scoring_settings)
@@ -119,7 +152,7 @@ pub async fn init_db() -> Result<(), sqlx::Error> {
         "CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username VARCHAR(255) NOT NULL UNIQUE,
-            scoring_settings TEXT,
+            scoring_settings SCORING_SETTINGS,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         )",
     )

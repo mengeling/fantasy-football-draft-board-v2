@@ -1,11 +1,59 @@
 use serde::{Deserialize, Serialize};
+use strum::{Display, EnumIter, EnumString};
+
+#[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter)]
+pub enum Position {
+    QB,
+    RB,
+    WR,
+    TE,
+    K,
+    DST,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter)]
+pub enum Team {
+    ARI,
+    ATL,
+    BAL,
+    BUF,
+    CAR,
+    CHI,
+    CIN,
+    CLE,
+    DAL,
+    DEN,
+    DET,
+    GB,
+    HOU,
+    IND,
+    JAX,
+    KC,
+    LV,
+    LAC,
+    LAR,
+    MIA,
+    MIN,
+    NE,
+    NO,
+    NYG,
+    NYJ,
+    PHI,
+    PIT,
+    SF,
+    SEA,
+    TB,
+    TEN,
+    WAS,
+    FA,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub id: Option<i32>,
     pub name: String,
-    pub position: String,
-    pub team: String,
+    pub position: Position,
+    pub team: Team,
     pub bye_week: Option<i32>,
     pub height: String,
     pub weight: String,
@@ -26,14 +74,14 @@ pub struct PlayerIdentity {
     pub id: Option<i32>,
     pub bio_url: String,
     pub name: String,
-    pub team: String,
+    pub team: Team,
 }
 
 #[derive(Debug, Clone)]
 pub struct PlayerTask {
     pub player_id: i32,
     pub identity: PlayerIdentity,
-    pub position: String,
+    pub position: Position,
     pub bye_week: Option<i32>,
 }
 
@@ -41,8 +89,8 @@ pub struct PlayerTask {
 pub struct PlayerDenormalized {
     pub id: Option<i32>,
     pub name: String,
-    pub position: String,
-    pub team: String,
+    pub position: Position,
+    pub team: Team,
     pub bye_week: Option<i32>,
     pub height: String,
     pub weight: String,

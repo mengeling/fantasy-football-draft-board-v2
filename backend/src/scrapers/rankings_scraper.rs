@@ -2,9 +2,10 @@ use anyhow::Result;
 use headless_chrome::Tab;
 use regex::Regex;
 use scraper::{Html, Selector};
+use std::str::FromStr;
 
-use crate::models::player::{PlayerIdentity, PlayerTask};
-use crate::models::rankings::Rankings;
+use crate::models::player::{PlayerIdentity, PlayerTask, Position, Team};
+use crate::models::rankings::{Rankings, ScoringSettings};
 
 pub struct RankingsScraper<'a> {
     tab: &'a Tab,
@@ -15,18 +16,18 @@ impl<'a> RankingsScraper<'a> {
         Self { tab }
     }
 
-    fn get_urls() -> std::collections::HashMap<&'static str, &'static str> {
+    fn get_urls() -> std::collections::HashMap<ScoringSettings, &'static str> {
         std::collections::HashMap::from([
             (
-                "standard",
+                ScoringSettings::Standard,
                 "https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
             ),
             (
-                "half",
+                ScoringSettings::Half,
                 "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php",
             ),
             (
-                "ppr",
+                ScoringSettings::PPR,
                 "https://www.fantasypros.com/nfl/rankings/ppr-cheatsheets.php",
             ),
         ])
@@ -78,7 +79,7 @@ impl<'a> RankingsScraper<'a> {
         &self,
         table_html: &str,
         seen_players: &mut std::collections::HashSet<i32>,
-        scoring_settings: &str,
+        scoring_settings: ScoringSettings,
     ) -> Result<(Vec<Rankings>, Vec<PlayerTask>)> {
         let document = Html::parse_document(table_html);
         let row_selector = Selector::parse("tbody tr.player-row").unwrap();
@@ -101,7 +102,7 @@ impl<'a> RankingsScraper<'a> {
                     player_id,
                     overall: overall_ranking,
                     position: position_ranking.parse::<i32>().ok(),
-                    scoring_settings: scoring_settings.to_string(),
+                    scoring_settings: scoring_settings.clone(),
                 });
 
                 if !seen_players.contains(&player_id) {
@@ -128,14 +129,16 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
         .value()
         .attr("data-player")
         .and_then(|s| s.parse::<i32>().ok());
-    let team = player_cell
-        .select(&Selector::parse("span").unwrap())
-        .next()
-        .unwrap()
-        .text()
-        .collect::<String>()
-        .trim_matches(&['(', ')'][..])
-        .to_string();
+    let team = Team::from_str(
+        player_cell
+            .select(&Selector::parse("span").unwrap())
+            .next()
+            .unwrap()
+            .text()
+            .collect::<String>()
+            .trim_matches(&['(', ')'][..]),
+    )
+    .unwrap();
     let player_url_element = player_cell
         .select(&Selector::parse("a").unwrap())
         .next()
@@ -158,11 +161,11 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
 fn get_position_ranking(
     poosition_cell: &scraper::element_ref::ElementRef,
     re: &Regex,
-) -> (String, String) {
+) -> (Position, String) {
     let position_text = poosition_cell.text().collect::<String>();
     if let Some(caps) = re.captures(&position_text) {
-        (caps[1].to_string(), caps[2].to_string())
+        (Position::from_str(&caps[1]).unwrap(), caps[2].to_string())
     } else {
-        (position_text, String::new())
+        (Position::from_str(&position_text).unwrap(), String::new())
     }
 }
