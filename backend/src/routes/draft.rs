@@ -1,5 +1,7 @@
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Result};
 
+use crate::constants::HEADER_USER_ID;
 use crate::database::setup::DB_POOL;
 use crate::models::requests::DraftRequest;
 use crate::services::draft_service;
@@ -11,7 +13,7 @@ pub async fn draft_player(draft_req: web::Json<DraftRequest>) -> Result<HttpResp
             .await
             .map_err(|e| {
                 eprintln!("Failed to draft player: {}", e);
-                actix_web::error::ErrorInternalServerError(e)
+                ErrorInternalServerError(e)
             })?;
 
     Ok(HttpResponse::Ok().json(drafted_player))
@@ -23,7 +25,7 @@ pub async fn undraft_player(draft_req: web::Json<DraftRequest>) -> Result<HttpRe
         .await
         .map_err(|e| {
             eprintln!("Failed to undraft player: {}", e);
-            actix_web::error::ErrorInternalServerError(e)
+            ErrorInternalServerError(e)
         })?;
 
     if success {
@@ -37,18 +39,18 @@ pub async fn undraft_player(draft_req: web::Json<DraftRequest>) -> Result<HttpRe
 pub async fn get_player_data(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
     let user_id = req
         .headers()
-        .get("X-User-Id")
-        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing X-User-Id header"))?
+        .get(HEADER_USER_ID)
+        .ok_or_else(|| ErrorBadRequest(format!("Missing {} header", HEADER_USER_ID)))?
         .to_str()
-        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid X-User-Id header format"))?
+        .map_err(|_| ErrorBadRequest(format!("Invalid {} header format", HEADER_USER_ID)))?
         .parse::<i32>()
-        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid X-User-Id header value"))?;
+        .map_err(|_| ErrorBadRequest(format!("Invalid {} header value", HEADER_USER_ID)))?;
 
     let player_data = draft_service::get_player_data(&*DB_POOL, player_id.into_inner(), user_id)
         .await
         .map_err(|e| {
             eprintln!("Failed to get player data: {}", e);
-            actix_web::error::ErrorInternalServerError(e)
+            ErrorInternalServerError(e)
         })?;
 
     Ok(HttpResponse::Ok().json(player_data))

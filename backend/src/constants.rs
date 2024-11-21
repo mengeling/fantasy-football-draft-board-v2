@@ -1,6 +1,8 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
+pub const HEADER_USER_ID: &str = "X-User-Id";
+
 lazy_static! {
     pub static ref STATS_HEADERS: HashMap<&'static str, Vec<&'static str>> = HashMap::from([
         (
