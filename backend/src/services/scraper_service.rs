@@ -1,8 +1,8 @@
 use anyhow::Result;
 use headless_chrome::Browser;
-use sqlx::QueryBuilder;
+use sqlx::{Executor, QueryBuilder};
 
-use crate::database::connection::DB_POOL;
+use crate::database::connection::{get_raw_connection, DB_POOL};
 use crate::models::player::Player;
 use crate::models::rankings::Rankings;
 use crate::models::stats::Stats;
@@ -12,7 +12,8 @@ use crate::scrapers::{
 
 pub async fn run_scrapers() -> Result<()> {
     let sql = include_str!("../database/refresh_player_data.sql");
-    sqlx::query(sql).execute(&*DB_POOL).await?;
+    let mut conn = get_raw_connection().await?;
+    conn.execute(sql).await?;
 
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
@@ -32,7 +33,7 @@ pub async fn run_scrapers() -> Result<()> {
     Ok(())
 }
 
-pub async fn bulk_save_players(players: &[Player]) -> Result<()> {
+async fn bulk_save_players(players: &[Player]) -> Result<()> {
     let mut query_builder = QueryBuilder::new(
         "INSERT INTO players (id, name, position, team, bye_week, height, weight, age, college)",
     );
@@ -53,7 +54,7 @@ pub async fn bulk_save_players(players: &[Player]) -> Result<()> {
     Ok(())
 }
 
-pub async fn bulk_save_rankings(rankings: &[Rankings]) -> Result<()> {
+async fn bulk_save_rankings(rankings: &[Rankings]) -> Result<()> {
     let mut query_builder =
         QueryBuilder::new("INSERT INTO rankings (player_id, scoring_settings, overall, position)");
 
@@ -68,7 +69,7 @@ pub async fn bulk_save_rankings(rankings: &[Rankings]) -> Result<()> {
     Ok(())
 }
 
-pub async fn bulk_save_stats(stats: &[Stats]) -> Result<()> {
+async fn bulk_save_stats(stats: &[Stats]) -> Result<()> {
     let mut query_builder = QueryBuilder::new(
         "INSERT INTO stats (
             player_id, pass_cmp, pass_att, pass_cmp_pct, pass_yds, pass_yds_per_att,
