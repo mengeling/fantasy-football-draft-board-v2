@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
+use sqlx::Type;
 use strum::{Display, EnumIter, EnumString};
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter)]
+#[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter, Type)]
+#[sqlx(type_name = "position")]
 pub enum Position {
     QB,
     RB,
@@ -11,7 +13,8 @@ pub enum Position {
     DST,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter)]
+#[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter, Type)]
+#[sqlx(type_name = "team")]
 pub enum Team {
     ARI,
     ATL,

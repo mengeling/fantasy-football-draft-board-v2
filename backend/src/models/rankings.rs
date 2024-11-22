@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
+use sqlx::Type;
 use strum::{Display, EnumIter, EnumString};
 
 #[derive(
-    Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, EnumString, Display, EnumIter,
+    Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, EnumString, Display, EnumIter, Type,
 )]
+#[sqlx(type_name = "scoring_settings")]
 pub enum ScoringSettings {
     Standard,
     Half,

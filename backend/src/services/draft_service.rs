@@ -1,5 +1,7 @@
 use crate::models::drafted_player::DraftedPlayer;
 use crate::models::player::PlayerDenormalized;
+use crate::models::player::Position;
+use crate::models::player::Team;
 use sqlx::{Error, PgPool};
 
 pub async fn draft_player(
@@ -51,8 +53,8 @@ pub async fn get_player_data(
         SELECT 
             p.id,
             p.name,
-            p.position,
-            p.team,
+            p.position as "position!: Position",
+            p.team as "team!: Team",
             p.bye_week,
             p.height,
             p.weight,
@@ -102,13 +104,13 @@ pub async fn get_player_data(
             s.special_teams_td,
             s.games,
             CASE u.scoring_settings
-                WHEN 'STANDARD' THEN s.standard_pts
-                WHEN 'HALF_PPR' THEN s.half_ppr_pts
+                WHEN 'Standard' THEN s.standard_pts
+                WHEN 'Half' THEN s.half_ppr_pts
                 WHEN 'PPR' THEN s.ppr_pts
             END as points,
             CASE u.scoring_settings
-                WHEN 'STANDARD' THEN s.standard_pts_per_game
-                WHEN 'HALF_PPR' THEN s.half_ppr_pts_per_game
+                WHEN 'Standard' THEN s.standard_pts_per_game
+                WHEN 'Half' THEN s.half_ppr_pts_per_game
                 WHEN 'PPR' THEN s.ppr_pts_per_game
             END as points_per_game
         FROM players p

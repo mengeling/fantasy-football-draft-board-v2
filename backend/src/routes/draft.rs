@@ -2,7 +2,7 @@ use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Result};
 
 use crate::constants::HEADER_USER_ID;
-use crate::database::setup::DB_POOL;
+use crate::database::connection::DB_POOL;
 use crate::services::draft_service;
 
 #[post("/draft/{player_id}")]

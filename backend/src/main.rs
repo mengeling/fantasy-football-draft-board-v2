@@ -6,16 +6,10 @@ mod scrapers;
 mod services;
 
 use actix_web::{App, HttpServer};
-use database::setup::init_db;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
-
-    if let Err(e) = init_db().await {
-        eprintln!("Failed to initialize database: {}", e);
-        return Ok(());
-    }
 
     HttpServer::new(move || {
         App::new()
