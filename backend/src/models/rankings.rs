@@ -5,7 +5,7 @@ use strum::{Display, EnumIter, EnumString};
 #[derive(
     Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, EnumString, Display, EnumIter, Type,
 )]
-#[sqlx(type_name = "scoring_settings")]
+#[sqlx(type_name = "scoring_settings_type")]
 pub enum ScoringSettings {
     Standard,
     Half,

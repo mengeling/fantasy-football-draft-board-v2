@@ -3,7 +3,7 @@ use sqlx::Type;
 use strum::{Display, EnumIter, EnumString};
 
 #[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter, Type)]
-#[sqlx(type_name = "position")]
+#[sqlx(type_name = "position_type")]
 pub enum Position {
     QB,
     RB,
@@ -14,7 +14,7 @@ pub enum Position {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, EnumString, Display, EnumIter, Type)]
-#[sqlx(type_name = "team")]
+#[sqlx(type_name = "team_type")]
 pub enum Team {
     ARI,
     ATL,
@@ -30,7 +30,7 @@ pub enum Team {
     GB,
     HOU,
     IND,
-    JAX,
+    JAC,
     KC,
     LV,
     LAC,
