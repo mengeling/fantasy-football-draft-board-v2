@@ -135,7 +135,7 @@ pub async fn create_user(
     username: &str,
     scoring_settings: &ScoringSettings,
 ) -> Result<User, sqlx::Error> {
-    let user = sqlx::query_as!(
+    sqlx::query_as!(
         User,
         r#"
         INSERT INTO users (username, scoring_settings)
@@ -143,10 +143,49 @@ pub async fn create_user(
         RETURNING id, username, scoring_settings as "scoring_settings!: ScoringSettings", created_at
         "#,
         username,
-        scoring_settings as _,
+        scoring_settings as _
     )
     .fetch_one(pool)
-    .await?;
+    .await
+}
 
-    Ok(user)
+pub async fn get_user_by_username(
+    pool: &PgPool,
+    username: &str,
+) -> Result<Option<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            id,
+            username,
+            scoring_settings as "scoring_settings!: ScoringSettings",
+            created_at
+        FROM users 
+        WHERE username = $1
+        "#,
+        username
+    )
+    .fetch_optional(pool)
+    .await
+}
+
+pub async fn update_user(
+    pool: &PgPool,
+    username: &str,
+    scoring_settings: &ScoringSettings,
+) -> Result<Option<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+        UPDATE users 
+        SET scoring_settings = $1 
+        WHERE username = $2
+        RETURNING id, username, scoring_settings as "scoring_settings!: ScoringSettings", created_at
+        "#,
+        scoring_settings as _,
+        username
+    )
+    .fetch_optional(pool)
+    .await
 }

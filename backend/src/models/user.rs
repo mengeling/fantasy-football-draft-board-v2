@@ -15,3 +15,8 @@ pub struct CreateUserRequest {
     pub username: String,
     pub scoring_settings: ScoringSettings,
 }
+
+#[derive(Deserialize)]
+pub struct UpdateUserRequest {
+    pub scoring_settings: ScoringSettings,
+}

@@ -1,9 +1,9 @@
 use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
-use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Result};
+use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Result};
 
 use crate::constants::HEADER_USER_ID;
 use crate::database::connection::DB_POOL;
-use crate::models::user::CreateUserRequest;
+use crate::models::user::{CreateUserRequest, UpdateUserRequest};
 use crate::services::draft_service;
 
 #[post("/draft/{player_id}")]
@@ -36,17 +36,56 @@ pub async fn undraft_player(player_id: web::Path<i32>, req: HttpRequest) -> Resu
     }
 }
 
+#[get("/user/{username}")]
+pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
+    let user = draft_service::get_user_by_username(&*DB_POOL, &username)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to get user: {}", e);
+            ErrorInternalServerError(e)
+        })?;
+
+    match user {
+        Some(user) => Ok(HttpResponse::Ok().json(user)),
+        None => Ok(HttpResponse::NotFound().finish()),
+    }
+}
+
 #[post("/user")]
-pub async fn create_user(user_data: web::Json<CreateUserRequest>) -> Result<HttpResponse> {
-    let new_user =
-        draft_service::create_user(&*DB_POOL, &user_data.username, &user_data.scoring_settings)
+pub async fn create_user(
+    create_user_request: web::Json<CreateUserRequest>,
+) -> Result<HttpResponse> {
+    let new_user = draft_service::create_user(
+        &*DB_POOL,
+        &create_user_request.username,
+        &create_user_request.scoring_settings,
+    )
+    .await
+    .map_err(|e| {
+        eprintln!("Failed to create user: {}", e);
+        ErrorInternalServerError(e)
+    })?;
+
+    Ok(HttpResponse::Created().json(new_user))
+}
+
+#[put("/user/{username}")]
+pub async fn update_user(
+    username: web::Path<String>,
+    update_user_request: web::Json<UpdateUserRequest>,
+) -> Result<HttpResponse> {
+    let updated_user =
+        draft_service::update_user(&*DB_POOL, &username, &update_user_request.scoring_settings)
             .await
             .map_err(|e| {
-                eprintln!("Failed to create user: {}", e);
+                eprintln!("Failed to update user: {}", e);
                 ErrorInternalServerError(e)
             })?;
 
-    Ok(HttpResponse::Created().json(new_user))
+    match updated_user {
+        Some(user) => Ok(HttpResponse::Ok().json(user)),
+        None => Ok(HttpResponse::NotFound().finish()),
+    }
 }
 
 #[get("/player/{player_id}")]
