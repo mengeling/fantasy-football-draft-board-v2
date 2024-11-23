@@ -145,3 +145,11 @@ pub struct PlayerDenormalized {
     pub points: Option<f64>,
     pub points_per_game: Option<f64>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PlayerQueryParameters {
+    pub position: Option<Position>,
+    pub team: Option<Team>,
+    pub name: Option<String>,
+    pub drafted: Option<bool>,
+}

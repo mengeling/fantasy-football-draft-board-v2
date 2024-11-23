@@ -130,6 +130,24 @@ pub async fn get_player(
     .ok_or(sqlx::Error::RowNotFound)
 }
 
+pub async fn get_user(pool: &PgPool, username: &str) -> Result<Option<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            id,
+            username,
+            scoring_settings as "scoring_settings!: ScoringSettings",
+            created_at
+        FROM users 
+        WHERE username = $1
+        "#,
+        username
+    )
+    .fetch_optional(pool)
+    .await
+}
+
 pub async fn create_user(
     pool: &PgPool,
     username: &str,
@@ -146,27 +164,6 @@ pub async fn create_user(
         scoring_settings as _
     )
     .fetch_one(pool)
-    .await
-}
-
-pub async fn get_user_by_username(
-    pool: &PgPool,
-    username: &str,
-) -> Result<Option<User>, sqlx::Error> {
-    sqlx::query_as!(
-        User,
-        r#"
-        SELECT 
-            id,
-            username,
-            scoring_settings as "scoring_settings!: ScoringSettings",
-            created_at
-        FROM users 
-        WHERE username = $1
-        "#,
-        username
-    )
-    .fetch_optional(pool)
     .await
 }
 
@@ -188,4 +185,107 @@ pub async fn update_user(
     )
     .fetch_optional(pool)
     .await
+}
+
+pub async fn get_players(
+    pool: &PgPool,
+    user_id: i32,
+    position: Option<&Position>,
+    team: Option<&Team>,
+    name: Option<&str>,
+    drafted: Option<bool>,
+) -> Result<Vec<PlayerDenormalized>, Error> {
+    let players = sqlx::query_as!(
+        PlayerDenormalized,
+        r#"
+        SELECT 
+            p.id,
+            p.name,
+            p.position as "position!: Position",
+            p.team as "team!: Team",
+            p.bye_week,
+            p.height,
+            p.weight,
+            p.age,
+            p.college,
+            r.overall as overall_ranking,
+            r.position as position_ranking,
+            s.pass_cmp,
+            s.pass_att,
+            s.pass_cmp_pct,
+            s.pass_yds,
+            s.pass_yds_per_att,
+            s.pass_td,
+            s.pass_int,
+            s.pass_sacks,
+            s.rush_att,
+            s.rush_yds,
+            s.rush_yds_per_att,
+            s.rush_long,
+            s.rush_20,
+            s.rush_td,
+            s.fumbles,
+            s.receptions,
+            s.rec_tgt,
+            s.rec_yds,
+            s.rec_yds_per_rec,
+            s.rec_long,
+            s.rec_20,
+            s.rec_td,
+            s.field_goals,
+            s.fg_att,
+            s.fg_pct,
+            s.fg_long,
+            s.fg_1_19,
+            s.fg_20_29,
+            s.fg_30_39,
+            s.fg_40_49,
+            s.fg_50,
+            s.extra_points,
+            s.xp_att,
+            s.sacks,
+            s.int,
+            s.fumbles_recovered,
+            s.fumbles_forced,
+            s.def_td,
+            s.safeties,
+            s.special_teams_td,
+            s.games,
+            CASE u.scoring_settings
+                WHEN 'Standard' THEN s.standard_pts
+                WHEN 'Half' THEN s.half_ppr_pts
+                WHEN 'PPR' THEN s.ppr_pts
+            END as points,
+            CASE u.scoring_settings
+                WHEN 'Standard' THEN s.standard_pts_per_game
+                WHEN 'Half' THEN s.half_ppr_pts_per_game
+                WHEN 'PPR' THEN s.ppr_pts_per_game
+            END as points_per_game
+        FROM players p
+        INNER JOIN users u ON u.id = $1
+        LEFT JOIN rankings r ON p.id = r.player_id 
+            AND r.scoring_settings = u.scoring_settings
+        LEFT JOIN stats s ON p.id = s.player_id
+        LEFT JOIN drafted_players d ON d.user_id = $1
+            AND p.id = d.player_id
+        WHERE ($2::position_type IS NULL OR p.position = $2::position_type)
+        AND ($3::team_type IS NULL OR p.team = $3::team_type)
+        AND ($4::text IS NULL OR p.name ILIKE '%' || $4 || '%')
+        AND (
+            $5::boolean IS NULL 
+            OR ($5 = true AND d.player_id IS NOT NULL)
+            OR ($5 = false AND d.player_id IS NULL)
+        )
+        ORDER BY overall_ranking ASC
+        "#,
+        user_id,
+        position as Option<&Position>,
+        team as Option<&Team>,
+        name,
+        drafted
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(players)
 }

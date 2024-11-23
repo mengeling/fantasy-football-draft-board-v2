@@ -3,6 +3,7 @@ use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Result};
 
 use crate::constants::HEADER_USER_ID;
 use crate::database::connection::DB_POOL;
+use crate::models::player::PlayerQueryParameters;
 use crate::models::user::{CreateUserRequest, UpdateUserRequest};
 use crate::services::draft_service;
 
@@ -38,7 +39,7 @@ pub async fn undraft_player(player_id: web::Path<i32>, req: HttpRequest) -> Resu
 
 #[get("/user/{username}")]
 pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
-    let user = draft_service::get_user_by_username(&*DB_POOL, &username)
+    let user = draft_service::get_user(&*DB_POOL, &username)
         .await
         .map_err(|e| {
             eprintln!("Failed to get user: {}", e);
@@ -99,6 +100,29 @@ pub async fn get_player(player_id: web::Path<i32>, req: HttpRequest) -> Result<H
         })?;
 
     Ok(HttpResponse::Ok().json(player_data))
+}
+
+#[get("/players")]
+pub async fn get_players(
+    query_parameters: web::Query<PlayerQueryParameters>,
+    req: HttpRequest,
+) -> Result<HttpResponse> {
+    let user_id = get_user_id(&req)?;
+    let players = draft_service::get_players(
+        &*DB_POOL,
+        user_id,
+        query_parameters.position.as_ref(),
+        query_parameters.team.as_ref(),
+        query_parameters.name.as_deref(),
+        query_parameters.drafted,
+    )
+    .await
+    .map_err(|e| {
+        eprintln!("Failed to get players: {}", e);
+        ErrorInternalServerError(e)
+    })?;
+
+    Ok(HttpResponse::Ok().json(players))
 }
 
 fn get_user_id(req: &HttpRequest) -> Result<i32> {
