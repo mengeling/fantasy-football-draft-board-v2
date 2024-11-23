@@ -14,7 +14,7 @@ pub async fn draft_player(
     sqlx::query_as!(
         DraftedPlayer,
         r#"
-        INSERT INTO drafted_players (user_id, player_id)ss
+        INSERT INTO drafted_players (user_id, player_id)
         VALUES ($1, $2)
         RETURNING id, user_id, player_id, drafted_at
         "#,
@@ -140,10 +140,10 @@ pub async fn create_user(
         r#"
         INSERT INTO users (username, scoring_settings)
         VALUES ($1, $2)
-        RETURNING id, username, scoring_settings, created_at
+        RETURNING id, username, scoring_settings as "scoring_settings!: ScoringSettings", created_at
         "#,
         username,
-        scoring_settings,
+        scoring_settings as _,
     )
     .fetch_one(pool)
     .await?;
