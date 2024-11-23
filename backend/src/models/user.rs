@@ -9,3 +9,9 @@ pub struct User {
     pub scoring_settings: ScoringSettings,
     pub created_at: OffsetDateTime,
 }
+
+#[derive(Deserialize)]
+pub struct CreateUserRequest {
+    pub username: String,
+    pub scoring_settings: ScoringSettings,
+}

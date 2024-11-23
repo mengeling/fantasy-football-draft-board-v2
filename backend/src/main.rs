@@ -16,6 +16,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::scrape::scrape)
             .service(routes::draft::draft_player)
             .service(routes::draft::undraft_player)
+            .service(routes::draft::create_user)
             .service(routes::draft::get_player)
     })
     .bind(("127.0.0.1", 8080))?

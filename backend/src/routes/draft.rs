@@ -3,6 +3,7 @@ use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Result};
 
 use crate::constants::HEADER_USER_ID;
 use crate::database::connection::DB_POOL;
+use crate::models::user::CreateUserRequest;
 use crate::services::draft_service;
 
 #[post("/draft/{player_id}")]
@@ -33,6 +34,19 @@ pub async fn undraft_player(player_id: web::Path<i32>, req: HttpRequest) -> Resu
     } else {
         Ok(HttpResponse::NotFound().finish())
     }
+}
+
+#[post("/user")]
+pub async fn create_user(user_data: web::Json<CreateUserRequest>) -> Result<HttpResponse> {
+    let new_user =
+        draft_service::create_user(&*DB_POOL, &user_data.username, &user_data.scoring_settings)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to create user: {}", e);
+                ErrorInternalServerError(e)
+            })?;
+
+    Ok(HttpResponse::Created().json(new_user))
 }
 
 #[get("/player/{player_id}")]

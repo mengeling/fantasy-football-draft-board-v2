@@ -2,6 +2,8 @@ use crate::models::drafted_player::DraftedPlayer;
 use crate::models::player::PlayerDenormalized;
 use crate::models::player::Position;
 use crate::models::player::Team;
+use crate::models::rankings::ScoringSettings;
+use crate::models::user::User;
 use sqlx::{Error, PgPool};
 
 pub async fn draft_player(
@@ -12,7 +14,7 @@ pub async fn draft_player(
     sqlx::query_as!(
         DraftedPlayer,
         r#"
-        INSERT INTO drafted_players (user_id, player_id)
+        INSERT INTO drafted_players (user_id, player_id)ss
         VALUES ($1, $2)
         RETURNING id, user_id, player_id, drafted_at
         "#,
@@ -126,4 +128,25 @@ pub async fn get_player(
     .fetch_optional(pool)
     .await?
     .ok_or(sqlx::Error::RowNotFound)
+}
+
+pub async fn create_user(
+    pool: &PgPool,
+    username: &str,
+    scoring_settings: &ScoringSettings,
+) -> Result<User, sqlx::Error> {
+    let user = sqlx::query_as!(
+        User,
+        r#"
+        INSERT INTO users (username, scoring_settings)
+        VALUES ($1, $2)
+        RETURNING id, username, scoring_settings, created_at
+        "#,
+        username,
+        scoring_settings,
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(user)
 }
