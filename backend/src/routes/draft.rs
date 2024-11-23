@@ -35,10 +35,10 @@ pub async fn undraft_player(player_id: web::Path<i32>, req: HttpRequest) -> Resu
     }
 }
 
-#[get("/draft/player/{player_id}")]
-pub async fn get_player_data(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
+#[get("/player/{player_id}")]
+pub async fn get_player(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
     let user_id = get_user_id(&req)?;
-    let player_data = draft_service::get_player_data(&*DB_POOL, player_id.into_inner(), user_id)
+    let player_data = draft_service::get_player(&*DB_POOL, player_id.into_inner(), user_id)
         .await
         .map_err(|e| {
             eprintln!("Failed to get player data: {}", e);

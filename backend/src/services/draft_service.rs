@@ -42,7 +42,7 @@ pub async fn undraft_player(
     Ok(result.rows_affected() > 0)
 }
 
-pub async fn get_player_data(
+pub async fn get_player(
     pool: &PgPool,
     player_id: i32,
     user_id: i32,
