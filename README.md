@@ -44,6 +44,7 @@ This web application provides the same interactive fantasy football drafting exp
 
 9. Run `sudo systemctl restart postgresql`
    i. Run `PGPASSWORD=ffball psql -U ffball -d ffball` to access database
-10. Run `cargo run` from the `backend` directory
-11. Run `npm run dev` from the `frontend` directory
-12. Open your browser and navigate to `http://localhost:3000`
+10. Run `./src/scripts/setup_db.sql` from the `backend` directory to perform initial DB setup
+11. Run `cargo run` from the `backend` directory
+12. Run `npm run dev` from the `frontend` directory
+13. Open your browser and navigate to `http://localhost:3000`
