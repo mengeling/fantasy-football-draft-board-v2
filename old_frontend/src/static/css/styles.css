@@ -1,0 +1,371 @@
+/* Start general formatting */
+body {
+  text-align: center;
+  display: block;
+  font-family: "Playfair Display SC", "Helvetica", "Sans";
+  background-color: #fcfcff;
+  margin-left: 2%;
+  margin-right: 2%;
+}
+
+button {
+  font-family: "Playfair Display SC", "Helvetica", "Sans";
+  font-size: 0.7em;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.25%;
+}
+
+table {
+  text-align: left;
+  border-collapse: collapse;
+}
+
+tr td,
+tr th {
+  padding-top: 0.4%;
+  padding-bottom: 0.4%;
+  padding-left: 0.7%;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+th {
+  font-size: 0.9em;
+}
+
+td {
+  padding: 0.7%;
+}
+/* End general formatting */
+
+
+/* Start formatting for login, pop-ups, and loading GIF */
+.username-div {
+  width: 100%;
+  margin-bottom: 3%;
+}
+
+.username-input {
+  width: 40%;
+}
+
+.login-background {
+    background: rgba(0,0,0,.4);
+    display: block;
+    height: 100%;
+    position: fixed;
+    text-align: center;
+    top: 0;
+    width: 100%;
+}
+
+.download-background,
+.popup-background {
+    background: rgba(0,0,0,.4);
+    display: none;
+    height: 100%;
+    position: fixed;
+    text-align: center;
+    top: 0;
+    width: 100%;
+}
+
+.login-background .login-helper,
+.download-background .download-helper,
+.popup-background .background-helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.login-content,
+.download-content,
+.popup-content {
+    background-color: #fff;
+    box-shadow: 10px 10px 60px #555;
+    display: inline-block;
+    height: auto;
+    max-width: 400px;
+    min-height: 100px;
+    vertical-align: middle;
+    width: 60%;
+    position: relative;
+    border-radius: 8px;
+    padding: 15px 5%;
+}
+
+.loader {
+   width: 100%;
+   height: 100%;
+   top: 0;
+   left: 0;
+   position: fixed;
+   display: none;
+   opacity: 0.95;
+   background-color: #fff;
+   z-index: 99;
+   text-align: center;
+}
+
+.loader-image {
+  height: 40%;
+  padding-top: 5%;
+}
+
+.login-button,
+.login-scoring-button,
+.login-cancel-button,
+.popup-scoring-button,
+.popup-cancel-button {
+  font-size: 0.85em;
+  margin: 1%;
+  padding: 1%;
+}
+
+.back-update-data {
+  width: 98%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1.5%;
+  margin-bottom: 1.2%;
+  position: relative;
+}
+
+.back-login-button {
+  float: left;
+  font-size: 0.8em;
+  padding: 0.5%;
+}
+
+.update-rankings-button {
+  font-size: 0.8em;
+  padding: 0.5%;
+}
+
+.refresh-date {
+  font-size: 0.8em;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  margin: 0;
+  transform: translate(0, -50%);
+}
+/* End formatting for pop-ups and loading GIF */
+
+
+/* Start formatting for player details */
+.player-details {
+  width: 98%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2.5%;
+  background-color: #e6f2ff;
+  text-align: left;
+  height: 160px;
+}
+
+.player-pic-container {
+  height: 160px;
+  width: 170px;
+  margin: 0;
+  float: left;
+}
+
+.player-pic {
+  width: 160px;
+}
+
+.player-bio-container {
+  height: 100%;
+  width: 16.5%;
+  float: left;
+}
+
+.player-name,
+.player-team-pos {
+  margin-top: 0;
+  margin-bottom: 2%;
+}
+
+.player-name {
+  margin-top: 2%;
+  margin-right: 2%;
+}
+
+.player-bio-sub {
+  float: left;
+  font-size: 0.8em;
+  margin-right: 8%;
+}
+
+.player-detail-desc {
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.player-detail-height,
+.player-detail-weight,
+.player-detail-age,
+.player-detail-college {
+  margin: 0;
+}
+
+.player-tables {
+  height: 100%;
+  margin-right: 1%;
+  overflow: hidden;
+}
+
+.player-table {
+  font-size: 0.75em;
+  height: 50%;
+  width: 100%;
+}
+
+.player-table table {
+  background-color: #fcfcff;
+}
+
+.player-table tr td,
+.player-table tr th {
+  padding-left: 1%;
+}
+
+.rank-table table {
+  width: 35%;
+}
+
+.stats-table table {
+  width: 100%;
+}
+
+.rank-header,
+.stats-header {
+  margin-top: 0;
+  margin-bottom: 0.2%;
+  padding-top: 1.5%;
+}
+
+.draft-undraft-container {
+  height: 100%;
+  width: 12%;
+  display: flex;
+  align-items: center;
+  vertical-align: top;
+  float: left;
+}
+
+#draft-undraft-button {
+  font-size: 0.8em;
+  padding: 3%;
+  margin-top: 5%;
+  margin-right: 35%;
+  font-weight: 600;
+  display: inline-block;
+  vertical-align: middle;
+}
+/* End formatting for player details */
+
+
+
+/* Start formatting for draft board */
+.board-container {
+  width: 98%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.search-board-wrapper {
+  border: 1.5px solid #e6f2ff;
+  background-color: #e6f2ff;
+}
+
+.available-drafted-container {
+  width: 95%;
+  margin-top: 0;
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.available-button, .drafted-button {
+  padding-top: 0.5%;
+  padding-left: 0.5%;
+  padding-right: 0.5%;
+  margin: 0;
+  margin-right: -0.3%;
+  font-size: 0.7em;
+  border: 1.5px solid #e6f2ff;
+  cursor: pointer;
+}
+
+.available-button {
+  padding-bottom: 0.1%;
+  background-color: #e6f2ff;
+}
+
+.drafted-button {
+  padding-bottom: 0.1%;
+  background-color: #fcfcff;
+}
+
+.position-team-player-search {
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1%;
+  margin-bottom: 1%;
+  text-align: left;
+}
+
+.position-text, .team-text {
+  font-size: 0.7em;
+  margin-left: 0.2%;
+}
+
+.position-dropdown, .team-dropdown {
+  margin-right: 1%;
+}
+
+.player-search {
+  width: 15%
+}
+
+.clear-search-button {
+  margin-left: 0.75%;
+}
+
+.table-wrapper {
+  background-color: #fcfcff;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.table-wrapper table {
+  width: 100%;
+}
+
+.draft-board {
+  height: 550px;
+  overflow: scroll;
+  font-size: 0.72em;
+  cursor: default;
+}
+
+.draft-board tr:nth-child(even) td {
+  background-color: #fcfcff;
+}
+
+.draft-board tr:nth-child(odd) td {
+  background-color: #e6f2ff;
+}
+
+.draft-board tr:hover td {
+  background-color: #cce6ff;
+}
+
+.fake-link {
+  color: blue;
+}
+/* End formatting for draft board */
