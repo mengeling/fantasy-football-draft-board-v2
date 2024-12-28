@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Stats {
     pub player_id: i32,
     pub pass_cmp: f64,
@@ -50,4 +50,71 @@ pub struct Stats {
     pub half_ppr_pts_per_game: f64,
     pub ppr_pts: f64,
     pub ppr_pts_per_game: f64,
+}
+
+impl Stats {
+    pub fn new(player_id: i32) -> Self {
+        Self {
+            player_id,
+            ..Default::default()
+        }
+    }
+
+    pub fn update_from(&mut self, other: &Stats) {
+        macro_rules! update_max {
+            ($($field:ident),*) => {
+                $(self.$field = self.$field.max(other.$field);)*
+            }
+        }
+
+        update_max!(
+            pass_cmp,
+            pass_att,
+            pass_cmp_pct,
+            pass_yds,
+            pass_yds_per_att,
+            pass_td,
+            pass_int,
+            pass_sacks,
+            rush_att,
+            rush_yds,
+            rush_yds_per_att,
+            rush_long,
+            rush_20,
+            rush_td,
+            fumbles,
+            receptions,
+            rec_tgt,
+            rec_yds,
+            rec_yds_per_rec,
+            rec_long,
+            rec_20,
+            rec_td,
+            field_goals,
+            fg_att,
+            fg_pct,
+            fg_long,
+            fg_1_19,
+            fg_20_29,
+            fg_30_39,
+            fg_40_49,
+            fg_50,
+            extra_points,
+            xp_att,
+            sacks,
+            int,
+            fumbles_recovered,
+            fumbles_forced,
+            def_td,
+            safeties,
+            special_teams_td,
+            games,
+            standard_pts,
+            standard_pts_per_game,
+            half_ppr_pts,
+            half_ppr_pts_per_game,
+            ppr_pts,
+            ppr_pts_per_game
+        );
+    }
 }
