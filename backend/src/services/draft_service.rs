@@ -44,6 +44,63 @@ pub async fn undraft_player(
     Ok(result.rows_affected() > 0)
 }
 
+pub async fn get_user(pool: &PgPool, username: &str) -> Result<Option<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            id,
+            username,
+            scoring_settings as "scoring_settings!: ScoringSettings",
+            created_at
+        FROM users 
+        WHERE username = $1
+        "#,
+        username
+    )
+    .fetch_optional(pool)
+    .await
+}
+
+pub async fn create_user(
+    pool: &PgPool,
+    username: &str,
+    scoring_settings: &ScoringSettings,
+) -> Result<User, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+        INSERT INTO users (username, scoring_settings)
+        VALUES ($1, $2)
+        RETURNING id, username, scoring_settings as "scoring_settings!: ScoringSettings", created_at
+        "#,
+        username,
+        scoring_settings as _
+    )
+    .fetch_one(pool)
+    .await
+}
+
+pub async fn update_user(
+    pool: &PgPool,
+    username: &str,
+    scoring_settings: &ScoringSettings,
+) -> Result<Option<User>, sqlx::Error> {
+    sqlx::query_as!(
+        User,
+        r#"
+        UPDATE users 
+        SET scoring_settings = $1 
+        WHERE username = $2
+        RETURNING id, username, scoring_settings as "scoring_settings!: ScoringSettings", created_at
+        "#,
+        scoring_settings as _,
+        username
+    )
+    .fetch_optional(pool)
+    .await
+}
+
 pub async fn get_player(
     pool: &PgPool,
     player_id: i32,
@@ -128,63 +185,6 @@ pub async fn get_player(
     .fetch_optional(pool)
     .await?
     .ok_or(sqlx::Error::RowNotFound)
-}
-
-pub async fn get_user(pool: &PgPool, username: &str) -> Result<Option<User>, sqlx::Error> {
-    sqlx::query_as!(
-        User,
-        r#"
-        SELECT 
-            id,
-            username,
-            scoring_settings as "scoring_settings!: ScoringSettings",
-            created_at
-        FROM users 
-        WHERE username = $1
-        "#,
-        username
-    )
-    .fetch_optional(pool)
-    .await
-}
-
-pub async fn create_user(
-    pool: &PgPool,
-    username: &str,
-    scoring_settings: &ScoringSettings,
-) -> Result<User, sqlx::Error> {
-    sqlx::query_as!(
-        User,
-        r#"
-        INSERT INTO users (username, scoring_settings)
-        VALUES ($1, $2)
-        RETURNING id, username, scoring_settings as "scoring_settings!: ScoringSettings", created_at
-        "#,
-        username,
-        scoring_settings as _
-    )
-    .fetch_one(pool)
-    .await
-}
-
-pub async fn update_user(
-    pool: &PgPool,
-    username: &str,
-    scoring_settings: &ScoringSettings,
-) -> Result<Option<User>, sqlx::Error> {
-    sqlx::query_as!(
-        User,
-        r#"
-        UPDATE users 
-        SET scoring_settings = $1 
-        WHERE username = $2
-        RETURNING id, username, scoring_settings as "scoring_settings!: ScoringSettings", created_at
-        "#,
-        scoring_settings as _,
-        username
-    )
-    .fetch_optional(pool)
-    .await
 }
 
 pub async fn get_players(
