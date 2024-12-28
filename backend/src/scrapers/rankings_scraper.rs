@@ -101,7 +101,7 @@ impl<'a> RankingsScraper<'a> {
                 rankings.push(Rankings {
                     player_id,
                     overall: overall_ranking,
-                    position: position_ranking.parse::<i32>().ok(),
+                    position: position_ranking,
                     scoring_settings: scoring_settings.clone(),
                 });
 
@@ -161,11 +161,14 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
 fn get_position_ranking(
     poosition_cell: &scraper::element_ref::ElementRef,
     re: &Regex,
-) -> (Position, String) {
+) -> (Position, Option<i32>) {
     let position_text = poosition_cell.text().collect::<String>();
     if let Some(caps) = re.captures(&position_text) {
-        (Position::from_str(&caps[1]).unwrap(), caps[2].to_string())
+        (
+            Position::from_str(&caps[1]).unwrap(),
+            caps[2].parse::<i32>().ok(),
+        )
     } else {
-        (Position::from_str(&position_text).unwrap(), String::new())
+        (Position::from_str(&position_text).unwrap(), None)
     }
 }
