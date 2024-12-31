@@ -1,19 +1,52 @@
-<script>
+<script lang="ts">
     import { onMount } from 'svelte';
-    import { fetchApi } from '$lib/api';
+    import LoginModal from '$lib/components/LoginModal.svelte';
+    import ScoringModal from '$lib/components/ScoringModal.svelte';
+    import Header from '$lib/components/Header.svelte';
+    import PlayerDetails from '$lib/components/PlayerDetails.svelte';
+    import DraftBoard from '$lib/components/DraftBoard.svelte';
 
-    let data = [];
+    let showLoginModal = true;
+    let showScoringModal = false;
+    let playerData = {
+        id: '',
+        name: '',
+        team: '',
+        position: '',
+        height: '',
+        age: '',
+        weight: '',
+        college: '',
+        img_url: '',
+        rankings: '',
+        stats: ''
+    };
+    let refreshDate = '';
 
-    onMount(async () => {
-        try {
-            // Replace with your actual API endpoint
-            data = await fetchApi('/api/your-endpoint');
-        } catch (error) {
-            console.error('Failed to fetch data:', error);
-        }
-    });
+    // Add your state management and event handlers here
 </script>
 
 <main>
-    <h1>Welcome to Your New Frontend</h1>
+    {#if showLoginModal}
+        <LoginModal 
+            on:login={(e) => {/* handle login */}} 
+        />
+    {/if}
+
+    {#if showScoringModal}
+        <ScoringModal 
+            on:select={(e) => {/* handle scoring selection */}}
+            on:cancel={() => showScoringModal = false}
+        />
+    {/if}
+
+    <Header 
+        {refreshDate}
+        on:updateRankings={() => {/* handle rankings update */}}
+    />
+
+    <div class="main-content">
+        <PlayerDetails {playerData} />
+        <DraftBoard />
+    </div>
 </main>
