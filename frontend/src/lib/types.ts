@@ -50,3 +50,17 @@ export enum Position {
 	K = 'K',
 	DST = 'DST'
 }
+
+export interface PlayerData {
+	id: string;
+	name: string;
+	team: string;
+	position: string;
+	height: string;
+	age: string;
+	weight: string;
+	college: string;
+	img_url: string;
+	rankings: string;
+	stats: string;
+}
