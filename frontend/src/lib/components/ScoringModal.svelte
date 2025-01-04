@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { ScoringType } from '$lib/types';
+    import { ScoringSettings } from '$lib/types';
     
-    export let onSelect: (scoring: ScoringType) => void;
+    export let onSelect: (scoring: ScoringSettings) => void;
     export let onCancel: () => void;
 
-    function handleSelect(scoring: ScoringType) {
+    function handleSelect(scoring: ScoringSettings) {
         onSelect(scoring);
     }
 
@@ -20,13 +20,13 @@
             No draft boards exist under that name.<br/>
             Choose a scoring option to create a board.
         </p>
-        <button class="login-scoring-button" on:click={() => handleSelect(ScoringType.STANDARD)}>
+        <button class="login-scoring-button" on:click={() => handleSelect(ScoringSettings.Standard)}>
             Standard
         </button>
-        <button class="login-scoring-button" on:click={() => handleSelect(ScoringType.HALF)}>
+        <button class="login-scoring-button" on:click={() => handleSelect(ScoringSettings.Half)}>
             Half PPR
         </button>
-        <button class="login-scoring-button" on:click={() => handleSelect(ScoringType.PPR)}>
+        <button class="login-scoring-button" on:click={() => handleSelect(ScoringSettings.PPR)}>
             Full PPR
         </button>
         <button class="login-cancel-button" on:click={handleCancel}>

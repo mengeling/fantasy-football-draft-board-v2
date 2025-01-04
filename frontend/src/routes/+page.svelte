@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { ScoringType } from '$lib/types';
+    import { ScoringSettings } from '$lib/types';
     import LoginModal from '$lib/components/LoginModal.svelte';
     import ScoringModal from '$lib/components/ScoringModal.svelte';
     import Header from '$lib/components/Header.svelte';
@@ -24,19 +24,25 @@
     };
     let refreshDate = '';
 
-    function handleLogin(username: string) {
+    function handleLogin(username: string, userData: any) {
+        console.log('Login successful:', { username, userData });
         showLoginModal = false;
         showScoringModal = true;
     }
 
-    function handleScoringSelect(scoring: ScoringType) {
+    function handleScoringSelect(scoring: ScoringSettings) {
         showScoringModal = false;
         // Add logic to create board with selected scoring
     }
 
-    function handleUpdateRankings(scoring: ScoringType) {
+    function handleUpdateRankings(scoring: ScoringSettings) {
         // Add logic to update rankings with selected scoring
         refreshDate = new Date().toLocaleString();
+    }
+
+    function handleLogout() {
+        showLoginModal = true;
+        // Add any other logout logic here (clearing state, etc.)
     }
 </script>
 
@@ -55,6 +61,7 @@
     <Header 
         {refreshDate}
         onUpdateRankings={handleUpdateRankings}
+        onLogout={handleLogout}
     />
 
     <div class="main-content">
