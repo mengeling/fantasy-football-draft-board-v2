@@ -35,8 +35,8 @@
         // Add logic to create board with selected scoring
     }
 
-    function handleUpdateRankings(scoring: ScoringSettings) {
-        // Add logic to update rankings with selected scoring
+    function handleUpdateRankings() {
+        // Add logic to update rankings using current scoring settings
         refreshDate = new Date().toLocaleString();
     }
 
