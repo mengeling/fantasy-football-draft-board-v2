@@ -13,9 +13,9 @@
     }
 </script>
 
-<div class="download-background">
-    <span class="download-helper"></span>
-    <div class="download-content">
+<div class="login-background">
+    <span class="login-helper"></span>
+    <div class="login-content">
         <p>
             No draft boards exist under that name.<br/>
             Choose a scoring option to create a board.

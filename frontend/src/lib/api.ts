@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = '/api';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 	const response = await fetch(`${BASE_URL}${endpoint}`, {
@@ -9,9 +9,5 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 		}
 	});
 
-	if (!response.ok) {
-		throw new Error(`API call failed: ${response.statusText}`);
-	}
-
-	return response.json();
+	return response;
 }

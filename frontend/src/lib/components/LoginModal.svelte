@@ -1,33 +1,29 @@
 <script lang="ts">
     import { ScoringSettings } from '$lib/types';
+    import { fetchApi } from '$lib/api';
     import ScoringModal from './ScoringModal.svelte';
     export let onLogin: (username: string, userData: any) => void;
 
     let username = '';
     let errorMessage = '';
     let loading = false;
-    let showScoringOptions = false;
+    let currentView: 'login' | 'scoring' = 'login';
 
-    async function handleLogin() {
-        if (!username.trim()) return;
-        
+    async function handleLogin() {        
         loading = true;
         errorMessage = '';
         
         try {
-            // First check if user exists
-            const response = await fetch(`/api/user/${username}`);
-            
+            const response = await fetchApi(`/user/${username}`);
             if (response.ok) {
-                // User exists, use their existing data
                 const userData = await response.json();
-                console.log('Existing user found:', userData);
                 onLogin(username, userData);
             } else if (response.status === 404) {
-                // User doesn't exist, show scoring options
-                showScoringOptions = true;
+                // User doesnt exist so show scoring options to create new user
+                currentView = 'scoring';
             } else {
-                errorMessage = 'Something went wrong';
+                console.error('Failed to get user:', response.status);
+                errorMessage = 'Failed to connect to server';
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -40,66 +36,61 @@
     async function createUserWithScoring(scoring: ScoringSettings) {
         loading = true;
         try {
-            const createResponse = await fetch('/api/user', {
+            const response = await fetchApi('/user', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({
                     username,
-                    scoring_settings: { type: scoring }
+                    scoring_settings: ScoringSettings[scoring],
                 })
             });
-
-            if (createResponse.ok) {
-                const newUser = await createResponse.json();
-                console.log('New user created:', newUser);
-                onLogin(username, newUser);
+            
+            if (response.ok) {
+                const userData = await response.json();
+                onLogin(username, userData);
             } else {
-                errorMessage = 'Failed to create user';
-                showScoringOptions = false;
+                console.error('Failed to create user:', response.status);
+                errorMessage = 'Failed to connect to server';
             }
         } catch (error) {
-            console.error('Create user error:', error);
+            console.error('Failed to create user:', error);
             errorMessage = 'Failed to connect to server';
-            showScoringOptions = false;
         } finally {
             loading = false;
         }
     }
 </script>
 
-<div class="login-background" class:hidden={showScoringOptions}>
-    <span class="login-helper"></span>
-    <div class="login-content">
-        <p>Enter Your Full Name</p>
-        <div class="username-div">
-            <input 
-                type="search" 
-                bind:value={username}
-                placeholder="First and Last Name" 
-                class="username-input"
+{#if currentView === 'login'}
+    <div class="login-background">
+        <span class="login-helper"></span>
+        <div class="login-content">
+            <p>Enter Your Full Name</p>
+            <div class="username-div">
+                <input 
+                    type="search" 
+                    bind:value={username}
+                    placeholder="First and Last Name" 
+                    class="username-input"
+                    disabled={loading}
+                >
+            </div>
+            {#if errorMessage}
+                <p class="error">{errorMessage}</p>
+            {/if}
+            <button 
+                type="button" 
+                class="login-button" 
+                on:click={handleLogin}
                 disabled={loading}
             >
+                {loading ? 'Loading...' : 'View My Draft Board'}
+            </button>
         </div>
-        {#if errorMessage}
-            <p class="error">{errorMessage}</p>
-        {/if}
-        <button 
-            type="button" 
-            class="login-button" 
-            on:click={handleLogin}
-            disabled={loading}
-        >
-            {loading ? 'Loading...' : 'View My Draft Board'}
-        </button>
     </div>
-</div>
-
-{#if showScoringOptions}
+{:else}
     <ScoringModal 
         onSelect={createUserWithScoring}
-        onCancel={() => showScoringOptions = false}
+        onCancel={() => currentView = 'login'}
     />
 {/if}
 
@@ -108,9 +99,5 @@
         color: red;
         font-size: 0.9em;
         margin-top: 0.5em;
-    }
-
-    .hidden {
-        display: none;
     }
 </style>

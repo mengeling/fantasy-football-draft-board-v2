@@ -1,14 +1,10 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { ScoringSettings } from '$lib/types';
     import LoginModal from '$lib/components/LoginModal.svelte';
-    import ScoringModal from '$lib/components/ScoringModal.svelte';
     import Header from '$lib/components/Header.svelte';
     import PlayerDetails from '$lib/components/PlayerDetails.svelte';
     import DraftBoard from '$lib/components/DraftBoard.svelte';
 
     let showLoginModal = true;
-    let showScoringModal = false;
     let playerData = {
         id: '',
         name: '',
@@ -25,14 +21,7 @@
     let refreshDate = '';
 
     function handleLogin(username: string, userData: any) {
-        console.log('Login successful:', { username, userData });
         showLoginModal = false;
-        showScoringModal = true;
-    }
-
-    function handleScoringSelect(scoring: ScoringSettings) {
-        showScoringModal = false;
-        // Add logic to create board with selected scoring
     }
 
     function handleUpdateRankings() {
@@ -49,13 +38,6 @@
 <main>
     {#if showLoginModal}
         <LoginModal onLogin={handleLogin} />
-    {/if}
-
-    {#if showScoringModal}
-        <ScoringModal 
-            onSelect={handleScoringSelect}
-            onCancel={() => showScoringModal = false}
-        />
     {/if}
 
     <Header 
