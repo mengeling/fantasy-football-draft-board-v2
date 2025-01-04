@@ -1,6 +1,6 @@
-<script lang="ts">
-    import '../../static/styles/styles.css';
-</script>
+<svelte:head>
+    <link rel="stylesheet" href="/styles/styles.css">
+</svelte:head>
 
 <div class="app">
     <slot />

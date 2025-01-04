@@ -1,12 +1,11 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-    const dispatch = createEventDispatcher();
-
     let username = '';
+    
+    export let onLogin: (username: string) => void;
 
     function handleLogin() {
         if (username.trim()) {
-            dispatch('login', { username });
+            onLogin(username);
         }
     }
 </script>
@@ -21,7 +20,6 @@
                 bind:value={username}
                 placeholder="First and Last Name" 
                 class="username-input" 
-                autofocus
             >
         </div>
         <button type="button" class="login-button" on:click={handleLogin}>

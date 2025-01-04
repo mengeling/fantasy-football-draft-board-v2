@@ -1,8 +1,9 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-    const dispatch = createEventDispatcher();
-
+    import { ScoringType } from '$lib/types';
+    
     export let refreshDate = '';
+    export let onUpdateRankings: (scoring: ScoringType) => void;
+    
     let showPopup = false;
     let loading = false;
 
@@ -10,10 +11,10 @@
         showPopup = true;
     }
 
-    function handleScoringSelect(scoring: 'standard' | 'half' | 'ppr') {
+    function handleScoringSelect(scoring: ScoringType) {
         loading = true;
         showPopup = false;
-        dispatch('updateRankings', { scoring });
+        onUpdateRankings(scoring);
     }
 </script>
 
@@ -32,13 +33,13 @@
                     Choose your league's scoring settings below.
                     <br/>It might take up to 10 minutes to download everything.
                 </p>
-                <button class="popup-scoring-button" on:click={() => handleScoringSelect('standard')}>
+                <button class="popup-scoring-button" on:click={() => handleScoringSelect(ScoringType.STANDARD)}>
                     Standard
                 </button>
-                <button class="popup-scoring-button" on:click={() => handleScoringSelect('half')}>
+                <button class="popup-scoring-button" on:click={() => handleScoringSelect(ScoringType.HALF)}>
                     Half PPR
                 </button>
-                <button class="popup-scoring-button" on:click={() => handleScoringSelect('ppr')}>
+                <button class="popup-scoring-button" on:click={() => handleScoringSelect(ScoringType.PPR)}>
                     Full PPR
                 </button>
                 <button class="popup-cancel-button" on:click={() => showPopup = false}>
@@ -50,7 +51,7 @@
 
     {#if loading}
         <div class="loader">
-            <img class="loader-image" src="../../../static/img/loader.gif" alt="Loading..." />
+            <img class="loader-image" src="/img/loader.gif" alt="Loading..." />
         </div>
     {/if}
 </div> 

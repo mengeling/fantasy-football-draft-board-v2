@@ -1,13 +1,15 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-    const dispatch = createEventDispatcher();
+    import { ScoringType } from '$lib/types';
+    
+    export let onSelect: (scoring: ScoringType) => void;
+    export let onCancel: () => void;
 
-    function handleSelect(scoring: 'standard' | 'half' | 'ppr') {
-        dispatch('select', { scoring });
+    function handleSelect(scoring: ScoringType) {
+        onSelect(scoring);
     }
 
     function handleCancel() {
-        dispatch('cancel');
+        onCancel();
     }
 </script>
 
@@ -18,13 +20,13 @@
             No draft boards exist under that name.<br/>
             Choose a scoring option to create a board.
         </p>
-        <button class="login-scoring-button" on:click={() => handleSelect('standard')}>
+        <button class="login-scoring-button" on:click={() => handleSelect(ScoringType.STANDARD)}>
             Standard
         </button>
-        <button class="login-scoring-button" on:click={() => handleSelect('half')}>
+        <button class="login-scoring-button" on:click={() => handleSelect(ScoringType.HALF)}>
             Half PPR
         </button>
-        <button class="login-scoring-button" on:click={() => handleSelect('ppr')}>
+        <button class="login-scoring-button" on:click={() => handleSelect(ScoringType.PPR)}>
             Full PPR
         </button>
         <button class="login-cancel-button" on:click={handleCancel}>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { ScoringType } from '$lib/types';
     import LoginModal from '$lib/components/LoginModal.svelte';
     import ScoringModal from '$lib/components/ScoringModal.svelte';
     import Header from '$lib/components/Header.svelte';
@@ -23,26 +24,37 @@
     };
     let refreshDate = '';
 
-    // Add your state management and event handlers here
+    function handleLogin(username: string) {
+        showLoginModal = false;
+        showScoringModal = true;
+    }
+
+    function handleScoringSelect(scoring: ScoringType) {
+        showScoringModal = false;
+        // Add logic to create board with selected scoring
+    }
+
+    function handleUpdateRankings(scoring: ScoringType) {
+        // Add logic to update rankings with selected scoring
+        refreshDate = new Date().toLocaleString();
+    }
 </script>
 
 <main>
     {#if showLoginModal}
-        <LoginModal 
-            on:login={(e) => {/* handle login */}} 
-        />
+        <LoginModal onLogin={handleLogin} />
     {/if}
 
     {#if showScoringModal}
         <ScoringModal 
-            on:select={(e) => {/* handle scoring selection */}}
-            on:cancel={() => showScoringModal = false}
+            onSelect={handleScoringSelect}
+            onCancel={() => showScoringModal = false}
         />
     {/if}
 
     <Header 
         {refreshDate}
-        on:updateRankings={() => {/* handle rankings update */}}
+        onUpdateRankings={handleUpdateRankings}
     />
 
     <div class="main-content">

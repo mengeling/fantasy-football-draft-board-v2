@@ -1,57 +1,50 @@
 <script>
+    import { Team, Position } from '$lib/types';
     let showAvailable = true;
-    let position = 'ALL';
-    let team = 'ALL';
+    let position = Position.ALL;
+    let team = Team.ALL;
     let searchTerm = '';
 
-    const teams = [
-        'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE', 'DAL', 'DEN', 
-        'DET', 'FA', 'GB', 'HOU', 'IND', 'JAC', 'KC', 'LAC', 'LAR', 'MIA', 
-        'MIN', 'NE', 'NO', 'NYG', 'NYJ', 'OAK', 'PHI', 'PIT', 'SEA', 'SF', 
-        'TB', 'TEN', 'WAS'
-    ];
-
     function clearSearch() {
-        position = 'ALL';
-        team = 'ALL';
+        position = Position.ALL;
+        team = Team.ALL;
         searchTerm = '';
     }
 </script>
 
 <div class="board-container">
     <div class="available-drafted-container">
-        <span 
+        <button 
+            type="button"
             class="available-button" 
             class:active={showAvailable}
             on:click={() => showAvailable = true}
+            on:keydown={(e) => e.key === 'Enter' && (showAvailable = true)}
         >
             Available Players
-        </span>
-        <span 
+        </button>
+        <button 
+            type="button"
             class="drafted-button"
             class:active={!showAvailable}
             on:click={() => showAvailable = false}
+            on:keydown={(e) => e.key === 'Enter' && (showAvailable = false)}
         >
             Drafted Players
-        </span>
+        </button>
     </div>
     <div class="search-board-wrapper">
         <div class="position-team-player-search">
             <span class="position-text">Position:</span>
             <select class="position-dropdown" bind:value={position}>
-                <option value="ALL">ALL</option>
-                <option value="QB">QB</option>
-                <option value="RB">RB</option>
-                <option value="WR">WR</option>
-                <option value="TE">TE</option>
-                <option value="K">K</option>
-                <option value="DST">DST</option>
+                {#each Object.values(Position) as positionOption}
+                    <option value={positionOption}>{positionOption}</option>
+                {/each}
             </select>
 
             <span class="team-text">Team:</span>
             <select class="team-dropdown" bind:value={team}>
-                <option value="ALL">ALL</option>
-                {#each teams as teamOption}
+                {#each Object.values(Team) as teamOption}
                     <option value={teamOption}>{teamOption}</option>
                 {/each}
             </select>
