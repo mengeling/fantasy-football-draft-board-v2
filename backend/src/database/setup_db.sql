@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS stats;
 DROP TABLE IF EXISTS drafted_players;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS players;
+DROP TABLE IF EXISTS scraper_runs;
 
 DROP TYPE IF EXISTS position_type;
 DROP TYPE IF EXISTS team_type;
