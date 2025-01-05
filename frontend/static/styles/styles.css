@@ -129,26 +129,19 @@ td {
 	margin-top: 1.5%;
 	margin-bottom: 1.2%;
 	position: relative;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 
 .back-login-button {
-	float: left;
-	font-size: 0.8em;
-	padding: 0.5%;
-}
-
-.update-rankings-button {
 	font-size: 0.8em;
 	padding: 0.5%;
 }
 
 .refresh-date {
 	font-size: 0.8em;
-	position: absolute;
-	top: 50%;
-	right: 0;
 	margin: 0;
-	transform: translate(0, -50%);
 }
 /* End formatting for pop-ups and loading GIF */
 

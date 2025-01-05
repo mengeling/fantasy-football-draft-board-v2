@@ -25,13 +25,11 @@
     }
 
     function handleUpdateRankings() {
-        // Add logic to update rankings using current scoring settings
         refreshDate = new Date().toLocaleString();
     }
 
     function handleLogout() {
         showLoginModal = true;
-        // Add any other logout logic here (clearing state, etc.)
     }
 </script>
 
@@ -40,9 +38,8 @@
         <LoginModal onLogin={handleLogin} />
     {/if}
 
-    <Header 
+    <Header
         {refreshDate}
-        onUpdateRankings={handleUpdateRankings}
         onLogout={handleLogout}
     />
 
