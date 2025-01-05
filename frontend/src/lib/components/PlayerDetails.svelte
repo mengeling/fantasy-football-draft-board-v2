@@ -2,6 +2,7 @@
     import type { PlayerData } from '$lib/types';
     import PlayerImage from './PlayerImage.svelte';
     import PlayerBio from './PlayerBio.svelte';
+    import PlayerTable from './PlayerTable.svelte';
     
     export let playerData: PlayerData = {
         id: '',
@@ -52,18 +53,8 @@
         </button>
     </div>
     
-    <div class="player-tables">
-        <div class="player-table">
-            <h4 class="rank-header">Rankings</h4>
-            <div class="rank-table">
-                {@html playerData.rankings}
-            </div>
-        </div>
-        <div class="player-table">
-            <h4 class="stats-header">Previous Stats</h4>
-            <div class="stats-table">
-                {@html playerData.stats}
-            </div>
-        </div>
-    </div>
+    <PlayerTable
+        rankings={playerData.rankings}
+        stats={playerData.stats}
+    />
 </div> 
