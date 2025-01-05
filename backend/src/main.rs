@@ -11,6 +11,12 @@ use actix_web::{App, HttpServer};
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
 
+    let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse::<u16>()
+        .expect("PORT must be a number");
+
     HttpServer::new(move || {
         App::new()
             .service(routes::scrape::scrape)
@@ -22,7 +28,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::draft::get_player)
             .service(routes::draft::get_players)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind((host, port))?
     .run()
     .await
 }
