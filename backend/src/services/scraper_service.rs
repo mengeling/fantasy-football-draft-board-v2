@@ -2,7 +2,7 @@ use anyhow::Result;
 use headless_chrome::Browser;
 
 use crate::database::connection::get_db_connection;
-use crate::database::operations::{
+use crate::database::operations::scraper_operations::{
     bulk_save_players, bulk_save_rankings, bulk_save_stats, delete_old_scraped_data,
     record_scraper_run,
 };
@@ -11,7 +11,6 @@ use crate::scrapers::{
 };
 
 pub async fn run_scrapers() -> Result<()> {
-    // Scrape all data
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
 

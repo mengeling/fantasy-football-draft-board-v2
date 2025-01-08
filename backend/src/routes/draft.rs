@@ -2,14 +2,14 @@ use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Result};
 
 use crate::constants::HEADER_USER_ID;
+use crate::database::operations::{draft_operations, player_operations, user_operations};
 use crate::models::player::PlayerQueryParameters;
 use crate::models::user::{CreateUserRequest, UpdateUserRequest};
-use crate::services::draft_service;
 
 #[post("/draft/{player_id}")]
 pub async fn draft_player(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
     let user_id = get_user_id(&req)?;
-    let drafted_player = draft_service::draft_player(user_id, player_id.into_inner())
+    let drafted_player = draft_operations::draft_player(user_id, player_id.into_inner())
         .await
         .map_err(|e| {
             eprintln!("Failed to draft player: {}", e);
@@ -22,7 +22,7 @@ pub async fn draft_player(player_id: web::Path<i32>, req: HttpRequest) -> Result
 #[delete("/draft/{player_id}")]
 pub async fn undraft_player(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
     let user_id = get_user_id(&req)?;
-    let success = draft_service::undraft_player(user_id, player_id.into_inner())
+    let success = draft_operations::undraft_player(user_id, player_id.into_inner())
         .await
         .map_err(|e| {
             eprintln!("Failed to undraft player: {}", e);
@@ -38,7 +38,7 @@ pub async fn undraft_player(player_id: web::Path<i32>, req: HttpRequest) -> Resu
 
 #[get("/user/{username}")]
 pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
-    let user = draft_service::get_user(&username).await.map_err(|e| {
+    let user = user_operations::get_user(&username).await.map_err(|e| {
         eprintln!("Failed to get user: {}", e);
         ErrorInternalServerError(e)
     })?;
@@ -53,7 +53,7 @@ pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
 pub async fn create_user(
     create_user_request: web::Json<CreateUserRequest>,
 ) -> Result<HttpResponse> {
-    let new_user = draft_service::create_user(
+    let new_user = user_operations::create_user(
         &create_user_request.username,
         &create_user_request.scoring_settings,
     )
@@ -71,12 +71,13 @@ pub async fn update_user(
     username: web::Path<String>,
     update_user_request: web::Json<UpdateUserRequest>,
 ) -> Result<HttpResponse> {
-    let updated_user = draft_service::update_user(&username, &update_user_request.scoring_settings)
-        .await
-        .map_err(|e| {
-            eprintln!("Failed to update user: {}", e);
-            ErrorInternalServerError(e)
-        })?;
+    let updated_user =
+        user_operations::update_user(&username, &update_user_request.scoring_settings)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to update user: {}", e);
+                ErrorInternalServerError(e)
+            })?;
 
     match updated_user {
         Some(user) => Ok(HttpResponse::Ok().json(user)),
@@ -87,7 +88,7 @@ pub async fn update_user(
 #[get("/player/{player_id}")]
 pub async fn get_player(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
     let user_id = get_user_id(&req)?;
-    let player_data = draft_service::get_player(player_id.into_inner(), user_id)
+    let player_data = player_operations::get_player(player_id.into_inner(), user_id)
         .await
         .map_err(|e| {
             eprintln!("Failed to get player data: {}", e);
@@ -103,7 +104,7 @@ pub async fn get_players(
     req: HttpRequest,
 ) -> Result<HttpResponse> {
     let user_id = get_user_id(&req)?;
-    let players = draft_service::get_players(
+    let players = player_operations::get_players(
         user_id,
         query_parameters.position.as_ref(),
         query_parameters.team.as_ref(),
