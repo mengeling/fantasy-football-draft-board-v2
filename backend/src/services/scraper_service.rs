@@ -1,7 +1,7 @@
 use anyhow::Result;
 use headless_chrome::Browser;
 
-use crate::database::connection::DB_POOL;
+use crate::database::connection::get_db_connection;
 use crate::database::operations::{
     bulk_save_players, bulk_save_rankings, bulk_save_stats, delete_old_scraped_data,
     record_scraper_run,
@@ -23,7 +23,8 @@ pub async fn run_scrapers() -> Result<()> {
     let stats_scraper = StatsScraper::new();
     let stats = stats_scraper.scrape().await?;
 
-    let mut tx = DB_POOL.begin().await?;
+    let conn = get_db_connection().await?;
+    let mut tx = conn.begin().await?;
     delete_old_scraped_data(&mut tx).await?;
     bulk_save_players(&players, &mut tx).await?;
     bulk_save_rankings(&rankings, &mut tx).await?;

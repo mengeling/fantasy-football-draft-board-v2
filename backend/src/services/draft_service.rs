@@ -1,16 +1,14 @@
+use crate::database::connection::get_db_connection;
 use crate::models::drafted_player::DraftedPlayer;
 use crate::models::player::PlayerDenormalized;
 use crate::models::player::Position;
 use crate::models::player::Team;
 use crate::models::rankings::ScoringSettings;
 use crate::models::user::User;
-use sqlx::{Error, PgPool};
+use sqlx::Error;
 
-pub async fn draft_player(
-    pool: &PgPool,
-    user_id: i32,
-    player_id: i32,
-) -> Result<DraftedPlayer, sqlx::Error> {
+pub async fn draft_player(user_id: i32, player_id: i32) -> Result<DraftedPlayer, sqlx::Error> {
+    let pool = get_db_connection().await?;
     sqlx::query_as!(
         DraftedPlayer,
         r#"
@@ -21,15 +19,12 @@ pub async fn draft_player(
         user_id,
         player_id
     )
-    .fetch_one(pool)
+    .fetch_one(&pool)
     .await
 }
 
-pub async fn undraft_player(
-    pool: &PgPool,
-    user_id: i32,
-    player_id: i32,
-) -> Result<bool, sqlx::Error> {
+pub async fn undraft_player(user_id: i32, player_id: i32) -> Result<bool, sqlx::Error> {
+    let pool = get_db_connection().await?;
     let result = sqlx::query!(
         r#"
         DELETE FROM drafted_players
@@ -38,13 +33,14 @@ pub async fn undraft_player(
         user_id,
         player_id
     )
-    .execute(pool)
+    .execute(&pool)
     .await?;
 
     Ok(result.rows_affected() > 0)
 }
 
-pub async fn get_user(pool: &PgPool, username: &str) -> Result<Option<User>, sqlx::Error> {
+pub async fn get_user(username: &str) -> Result<Option<User>, sqlx::Error> {
+    let pool = get_db_connection().await?;
     sqlx::query_as!(
         User,
         r#"
@@ -58,15 +54,15 @@ pub async fn get_user(pool: &PgPool, username: &str) -> Result<Option<User>, sql
         "#,
         username
     )
-    .fetch_optional(pool)
+    .fetch_optional(&pool)
     .await
 }
 
 pub async fn create_user(
-    pool: &PgPool,
     username: &str,
     scoring_settings: &ScoringSettings,
 ) -> Result<User, sqlx::Error> {
+    let pool = get_db_connection().await?;
     sqlx::query_as!(
         User,
         r#"
@@ -77,15 +73,15 @@ pub async fn create_user(
         username,
         scoring_settings as _
     )
-    .fetch_one(pool)
+    .fetch_one(&pool)
     .await
 }
 
 pub async fn update_user(
-    pool: &PgPool,
     username: &str,
     scoring_settings: &ScoringSettings,
 ) -> Result<Option<User>, sqlx::Error> {
+    let pool = get_db_connection().await?;
     sqlx::query_as!(
         User,
         r#"
@@ -97,15 +93,12 @@ pub async fn update_user(
         scoring_settings as _,
         username
     )
-    .fetch_optional(pool)
+    .fetch_optional(&pool)
     .await
 }
 
-pub async fn get_player(
-    pool: &PgPool,
-    player_id: i32,
-    user_id: i32,
-) -> Result<PlayerDenormalized, Error> {
+pub async fn get_player(player_id: i32, user_id: i32) -> Result<PlayerDenormalized, Error> {
+    let pool = get_db_connection().await?;
     sqlx::query_as!(
         PlayerDenormalized,
         r#"
@@ -182,19 +175,19 @@ pub async fn get_player(
         player_id,
         user_id
     )
-    .fetch_optional(pool)
+    .fetch_optional(&pool)
     .await?
     .ok_or(sqlx::Error::RowNotFound)
 }
 
 pub async fn get_players(
-    pool: &PgPool,
     user_id: i32,
     position: Option<&Position>,
     team: Option<&Team>,
     name: Option<&str>,
     drafted: Option<bool>,
 ) -> Result<Vec<PlayerDenormalized>, Error> {
+    let pool = get_db_connection().await?;
     let players = sqlx::query_as!(
         PlayerDenormalized,
         r#"
@@ -284,7 +277,7 @@ pub async fn get_players(
         name,
         drafted
     )
-    .fetch_all(pool)
+    .fetch_all(&pool)
     .await?;
 
     Ok(players)

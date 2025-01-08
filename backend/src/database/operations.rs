@@ -1,23 +1,30 @@
 use anyhow::Result;
-use sqlx::{postgres::PgExecutor, QueryBuilder};
+use sqlx::{Postgres, QueryBuilder, Transaction};
 
 use crate::models::{player::Player, rankings::Rankings, stats::Stats};
 
-pub async fn delete_old_scraped_data(tx: impl PgExecutor<'_> + Copy) -> Result<()> {
-    sqlx::query!("DELETE FROM players").execute(tx).await?;
-    sqlx::query!("DELETE FROM rankings").execute(tx).await?;
-    sqlx::query!("DELETE FROM stats").execute(tx).await?;
+pub async fn delete_old_scraped_data(tx: &mut Transaction<'_, Postgres>) -> Result<()> {
+    sqlx::query!("DELETE FROM players")
+        .execute(&mut **tx)
+        .await?;
+    sqlx::query!("DELETE FROM rankings")
+        .execute(&mut **tx)
+        .await?;
+    sqlx::query!("DELETE FROM stats").execute(&mut **tx).await?;
     Ok(())
 }
 
-pub async fn record_scraper_run(tx: impl PgExecutor<'_>) -> Result<()> {
-    sqlx::query!("INSERT INTO scraper_runs DEFAULT VALUES")
-        .execute(tx)
+pub async fn record_scraper_run(tx: &mut Transaction<'_, Postgres>) -> Result<()> {
+    sqlx::query("INSERT INTO scraper_runs DEFAULT VALUES")
+        .execute(&mut **tx)
         .await?;
     Ok(())
 }
 
-pub async fn bulk_save_players(players: &[Player], tx: impl PgExecutor<'_>) -> Result<()> {
+pub async fn bulk_save_players(
+    players: &[Player],
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<()> {
     let mut query_builder = QueryBuilder::new(
         "INSERT INTO players (id, name, position, team, bye_week, height, weight, age, college)",
     );
@@ -34,11 +41,14 @@ pub async fn bulk_save_players(players: &[Player], tx: impl PgExecutor<'_>) -> R
             .push_bind(&player.college);
     });
 
-    query_builder.build().execute(tx).await?;
+    query_builder.build().execute(&mut **tx).await?;
     Ok(())
 }
 
-pub async fn bulk_save_rankings(rankings: &[Rankings], tx: impl PgExecutor<'_>) -> Result<()> {
+pub async fn bulk_save_rankings(
+    rankings: &[Rankings],
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<()> {
     let mut query_builder =
         QueryBuilder::new("INSERT INTO rankings (player_id, scoring_settings, overall, position)");
 
@@ -49,11 +59,11 @@ pub async fn bulk_save_rankings(rankings: &[Rankings], tx: impl PgExecutor<'_>) 
             .push_bind(ranking.position);
     });
 
-    query_builder.build().execute(tx).await?;
+    query_builder.build().execute(&mut **tx).await?;
     Ok(())
 }
 
-pub async fn bulk_save_stats(stats: &[Stats], tx: impl PgExecutor<'_>) -> Result<()> {
+pub async fn bulk_save_stats(stats: &[Stats], tx: &mut Transaction<'_, Postgres>) -> Result<()> {
     let mut query_builder = QueryBuilder::new(
         "INSERT INTO stats (
             player_id, pass_cmp, pass_att, pass_cmp_pct, pass_yds, pass_yds_per_att,
@@ -119,6 +129,6 @@ pub async fn bulk_save_stats(stats: &[Stats], tx: impl PgExecutor<'_>) -> Result
             .push_bind(stat.ppr_pts_per_game);
     });
 
-    query_builder.build().execute(tx).await?;
+    query_builder.build().execute(&mut **tx).await?;
     Ok(())
 }
