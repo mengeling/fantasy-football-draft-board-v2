@@ -2,15 +2,15 @@ use anyhow::Result;
 use headless_chrome::Browser;
 
 use crate::database::connection::get_db_connection;
-use crate::database::operations::scraper_operations::{
-    bulk_save_players, bulk_save_rankings, bulk_save_stats, delete_old_scraped_data,
-    record_scraper_run,
+use crate::database::operations::fantasy_data_operations::{
+    bulk_save_players, bulk_save_rankings, bulk_save_stats, delete_old_data,
+    record_fantasy_data_update,
 };
 use crate::scrapers::{
     player_scraper::PlayerScraper, rankings_scraper::RankingsScraper, stats_scraper::StatsScraper,
 };
 
-pub async fn run_scrapers() -> Result<()> {
+pub async fn update() -> Result<()> {
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
 
@@ -24,11 +24,11 @@ pub async fn run_scrapers() -> Result<()> {
 
     let conn = get_db_connection().await?;
     let mut tx = conn.begin().await?;
-    delete_old_scraped_data(&mut tx).await?;
+    delete_old_data(&mut tx).await?;
     bulk_save_players(&players, &mut tx).await?;
     bulk_save_rankings(&rankings, &mut tx).await?;
     bulk_save_stats(&stats, &mut tx).await?;
-    record_scraper_run(&mut tx).await?;
+    record_fantasy_data_update(&mut tx).await?;
     tx.commit().await?;
 
     Ok(())

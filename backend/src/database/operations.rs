@@ -1,5 +1,6 @@
 use anyhow::Result;
 use sqlx::{Error, Postgres, QueryBuilder, Transaction};
+use time::OffsetDateTime;
 
 use crate::database::connection::get_pool;
 use crate::models::drafted_player::DraftedPlayer;
@@ -8,10 +9,10 @@ use crate::models::rankings::{Rankings, ScoringSettings};
 use crate::models::stats::Stats;
 use crate::models::user::User;
 
-pub mod scraper_operations {
+pub mod fantasy_data_operations {
     use super::*;
 
-    pub async fn delete_old_scraped_data(tx: &mut Transaction<'_, Postgres>) -> Result<()> {
+    pub async fn delete_old_data(tx: &mut Transaction<'_, Postgres>) -> Result<()> {
         sqlx::query!("DELETE FROM players")
             .execute(&mut **tx)
             .await?;
@@ -22,11 +23,25 @@ pub mod scraper_operations {
         Ok(())
     }
 
-    pub async fn record_scraper_run(tx: &mut Transaction<'_, Postgres>) -> Result<()> {
-        sqlx::query("INSERT INTO scraper_runs DEFAULT VALUES")
+    pub async fn record_fantasy_data_update(tx: &mut Transaction<'_, Postgres>) -> Result<()> {
+        sqlx::query("INSERT INTO fantasy_data_updates DEFAULT VALUES")
             .execute(&mut **tx)
             .await?;
         Ok(())
+    }
+
+    pub async fn get_last_fantasy_data_update() -> Result<Option<OffsetDateTime>, Error> {
+        let pool = get_pool()?;
+        sqlx::query_scalar!(
+            r#"
+            SELECT completed_at
+            FROM fantasy_data_updates
+            ORDER BY completed_at DESC
+            LIMIT 1
+            "#
+        )
+        .fetch_optional(pool)
+        .await
     }
 
     pub async fn bulk_save_players(

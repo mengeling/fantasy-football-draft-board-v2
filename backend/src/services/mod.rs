@@ -1,1 +1,1 @@
-pub mod scraper_service;
+pub mod fantasy_data_service;

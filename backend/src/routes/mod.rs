@@ -1,2 +1,5 @@
 pub mod draft;
-pub mod scrape;
+pub mod fantasy_data;
+pub mod player;
+pub mod user;
+mod utils;

@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS stats;
 DROP TABLE IF EXISTS drafted_players;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS players;
-DROP TABLE IF EXISTS scraper_runs;
+DROP TABLE IF EXISTS fantasy_data_updates;
 
 DROP TYPE IF EXISTS position_type;
 DROP TYPE IF EXISTS team_type;
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS drafted_players (
     UNIQUE(user_id, player_id)
 );
 
-CREATE TABLE IF NOT EXISTS scraper_runs (
+CREATE TABLE IF NOT EXISTS fantasy_data_updates (
     id SERIAL PRIMARY KEY,
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
