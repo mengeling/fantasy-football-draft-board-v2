@@ -1,9 +1,9 @@
 use crate::database::operations::fantasy_data_operations;
 use crate::services::fantasy_data_service;
-use actix_web::{error::ErrorInternalServerError, get, HttpResponse, Result};
+use actix_web::{error::ErrorInternalServerError, get, post, HttpResponse, Result};
 use serde_json::json;
 
-#[get("/fantasy-data/update")]
+#[post("/fantasy-data/update")]
 pub async fn update_fantasy_data() -> HttpResponse {
     match fantasy_data_service::update().await {
         Ok(_) => HttpResponse::Ok().json("Fantasy data update completed successfully"),
