@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ScoringSettings } from '$lib/types';
+    import { ScoringSettings } from '$lib/enums';
     
     export let onSelect: (scoring: ScoringSettings) => void;
     export let onCancel: () => void;

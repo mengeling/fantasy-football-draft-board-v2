@@ -2,22 +2,17 @@
     import { onMount } from 'svelte';
     import { fetchApi } from '$lib/api';
     
-    export let refreshDate = '';
+    let refreshDate = '';
     export let onLogout: () => void;
 
     async function fetchLastUpdate() {
         try {
-            const response = await fetchApi('/fantasy-data/last-update');
-            if (response.ok) {
-                const data = await response.json();
-                refreshDate = new Date(data.last_update).toLocaleString(undefined, {
-                    year: 'numeric',
-                    month: 'numeric',
-                    day: 'numeric'
-                });
-            } else {
-                console.error('Failed to fetch last update time');
-            }
+            const data = await fetchApi('/fantasy-data/last-update');
+            refreshDate = new Date(data.last_update).toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric'
+            });
         } catch (error) {
             console.error('Error fetching last update time:', error);
         }

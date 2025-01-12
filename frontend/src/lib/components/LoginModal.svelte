@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ScoringSettings } from '$lib/types';
+    import { ScoringSettings } from '$lib/enums';
     import { fetchApi } from '$lib/api';
     import ScoringModal from './ScoringModal.svelte';
     export let onLogin: (username: string, userData: any) => void;
@@ -14,16 +14,12 @@
         errorMessage = '';
         
         try {
-            const response = await fetchApi(`/user/${username}`);
-            if (response.ok) {
-                const userData = await response.json();
+            try {
+                const userData = await fetchApi(`/user/${username}`);
                 onLogin(username, userData);
-            } else if (response.status === 404) {
+            } catch (e) {
                 // User doesnt exist so show scoring options to create new user
                 currentView = 'scoring';
-            } else {
-                console.error('Failed to get user:', response.status);
-                errorMessage = 'Failed to connect to server';
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -36,7 +32,7 @@
     async function createUserWithScoring(scoring: ScoringSettings) {
         loading = true;
         try {
-            const response = await fetchApi('/user', {
+            const userData = await fetchApi('/user', {
                 method: 'POST',
                 body: JSON.stringify({
                     username,
@@ -44,13 +40,7 @@
                 })
             });
             
-            if (response.ok) {
-                const userData = await response.json();
-                onLogin(username, userData);
-            } else {
-                console.error('Failed to create user:', response.status);
-                errorMessage = 'Failed to connect to server';
-            }
+            onLogin(username, userData);
         } catch (error) {
             console.error('Failed to create user:', error);
             errorMessage = 'Failed to connect to server';

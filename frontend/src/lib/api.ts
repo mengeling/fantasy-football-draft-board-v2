@@ -1,13 +1,27 @@
-const BASE_URL = '/api';
+let userId = '';
+
+export function setUserId(id: string) {
+	userId = id;
+}
+
+export function clearUserId() {
+	userId = '';
+}
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
-	const response = await fetch(`${BASE_URL}${endpoint}`, {
+	const headers = {
+		...options.headers,
+		...(userId && { 'X-User-ID': userId })
+	};
+
+	const response = await fetch(`/api${endpoint}`, {
 		...options,
-		headers: {
-			'Content-Type': 'application/json',
-			...options.headers
-		}
+		headers
 	});
 
-	return response;
+	if (!response.ok) {
+		throw new Error(`API call failed: ${response.statusText}`);
+	}
+
+	return response.json();
 }

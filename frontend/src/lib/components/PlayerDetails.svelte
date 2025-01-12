@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type { PlayerData } from '$lib/types';
+    import type { Player } from '$lib/types';
     import PlayerImage from './PlayerImage.svelte';
     import PlayerBio from './PlayerBio.svelte';
     import PlayerTable from './PlayerTable.svelte';
     
-    export let playerData: PlayerData = {
+    export let player: Player = {
         id: '',
         name: '',
         team: '',
@@ -27,19 +27,19 @@
 
 <div class="player-details">
     <PlayerImage 
-        id={playerData.id}
-        imgUrl={playerData.img_url}
-        name={playerData.name}
+        id={player.id}
+        imgUrl={player.img_url}
+        name={player.name}
     />
     
     <PlayerBio 
-        name={playerData.name}
-        team={playerData.team}
-        position={playerData.position}
-        height={playerData.height}
-        age={playerData.age}
-        weight={playerData.weight}
-        college={playerData.college}
+        name={player.name}
+        team={player.team}
+        position={player.position}
+        height={player.height}
+        age={player.age}
+        weight={player.weight}
+        college={player.college}
     />
     
     <div class="draft-undraft-container">
@@ -54,7 +54,7 @@
     </div>
     
     <PlayerTable
-        rankings={playerData.rankings}
-        stats={playerData.stats}
+        rankings={player.rankings}
+        stats={player.stats}
     />
 </div> 

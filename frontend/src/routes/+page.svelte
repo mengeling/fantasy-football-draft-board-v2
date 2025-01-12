@@ -3,9 +3,19 @@
     import Header from '$lib/components/Header.svelte';
     import PlayerDetails from '$lib/components/PlayerDetails.svelte';
     import DraftBoard from '$lib/components/DraftBoard.svelte';
+    import { Team, Position } from '$lib/enums';
+    import type { Player } from '$lib/types';
+    import { fetchApi, setUserId, clearUserId } from '$lib/api';
+    import { onMount } from 'svelte';
 
-    let showLoginModal = true;
-    let playerData = {
+    let loggedIn = false;
+    let players: Player[] = [];
+    let showAvailable = true;
+    let position: Position = Position.ALL;
+    let team: Team = Team.ALL;
+    let searchTerm = '';
+    
+    let player = {
         id: '',
         name: '',
         team: '',
@@ -18,33 +28,65 @@
         rankings: '',
         stats: ''
     };
-    let refreshDate = '';
 
-    function handleLogin(username: string, userData: any) {
-        showLoginModal = false;
+    async function fetchPlayers() {
+        try {
+            const queryParams = new URLSearchParams({});
+            if (position !== Position.ALL) {
+                queryParams.append('position', position);
+            }
+            if (team !== Team.ALL) {
+                queryParams.append('team', team);
+            }
+            if (searchTerm) {
+                queryParams.append('name', searchTerm);
+            }
+
+            players = await fetchApi(`/players?${queryParams}`);
+        } catch (e) {
+            console.error('Error fetching players:', e);
+        }
     }
 
-    function handleUpdateRankings() {
-        refreshDate = new Date().toLocaleString();
+    $: if (loggedIn) {
+        fetchPlayers();
+    }
+
+    function handleLogin(username: string, userData: any) {
+        loggedIn = true;
+        setUserId(userData.id);
     }
 
     function handleLogout() {
-        showLoginModal = true;
+        loggedIn = false;
+        clearUserId();
+        players = [];
     }
+
+    onMount(() => {
+        if (loggedIn) {
+            fetchPlayers();
+        }
+    });
 </script>
 
 <main>
-    {#if showLoginModal}
+    {#if !loggedIn}
         <LoginModal onLogin={handleLogin} />
     {/if}
 
     <Header
-        {refreshDate}
         onLogout={handleLogout}
     />
 
     <div class="main-content">
-        <PlayerDetails {playerData} />
-        <DraftBoard />
+        <PlayerDetails {player} />
+        <DraftBoard 
+            {players}
+            bind:showAvailable
+            bind:position
+            bind:team
+            bind:searchTerm
+        />
     </div>
 </main>

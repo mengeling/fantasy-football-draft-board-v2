@@ -1,9 +1,12 @@
-<script>
-    import { Team, Position } from '$lib/types';
-    let showAvailable = true;
-    let position = Position.ALL;
-    let team = Team.ALL;
-    let searchTerm = '';
+<script lang="ts">
+    import { Team, Position } from '$lib/enums';
+    import type { Player } from '$lib/types';
+
+    export let players: Player[] = [];
+    export let showAvailable = true;
+    export let position: Position = Position.ALL;
+    export let team: Team = Team.ALL;
+    export let searchTerm = '';
 
     function clearSearch() {
         position = Position.ALL;
@@ -60,9 +63,30 @@
             </button>
         </div>
         <div class="table-wrapper">
-            <div class="draft-board">
-                <!-- Draft board content will be dynamically populated -->
-            </div>
+            {#if players.length > 0}
+                <table class="draft-board">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Team</th>
+                            <th>College</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each players as player, i}
+                            <tr>
+                                <td>{i + 1}</td>
+                                <td>{player.name}</td>
+                                <td>{player.position}</td>
+                                <td>{player.team}</td>
+                                <td>{player.college}</td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            {/if}
         </div>
     </div>
-</div> 
+</div>
