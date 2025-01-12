@@ -26,6 +26,7 @@
         college: '',
         img_url: '',
         rankings: '',
+        drafted: '',
         stats: ''
     };
 

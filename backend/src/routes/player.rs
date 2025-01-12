@@ -8,14 +8,14 @@ use crate::routes::utils::get_user_id;
 #[get("/player/{player_id}")]
 pub async fn get_player(player_id: web::Path<i32>, req: HttpRequest) -> Result<HttpResponse> {
     let user_id = get_user_id(&req)?;
-    let player_data = player_operations::get_player(player_id.into_inner(), user_id)
+    let player = player_operations::get_player(user_id, player_id.into_inner())
         .await
         .map_err(|e| {
             eprintln!("Failed to get player data: {}", e);
             ErrorInternalServerError(e)
         })?;
 
-    Ok(HttpResponse::Ok().json(player_data))
+    Ok(HttpResponse::Ok().json(player))
 }
 
 #[get("/players")]
@@ -29,7 +29,6 @@ pub async fn get_players(
         query_parameters.position.as_ref(),
         query_parameters.team.as_ref(),
         query_parameters.name.as_deref(),
-        query_parameters.drafted,
     )
     .await
     .map_err(|e| {

@@ -101,6 +101,7 @@ pub struct PlayerDenormalized {
     pub college: String,
     pub overall_ranking: Option<i32>,
     pub position_ranking: Option<i32>,
+    pub drafted: bool,
     pub pass_cmp: Option<f64>,
     pub pass_att: Option<f64>,
     pub pass_cmp_pct: Option<f64>,
@@ -151,5 +152,4 @@ pub struct PlayerQueryParameters {
     pub position: Option<Position>,
     pub team: Option<Team>,
     pub name: Option<String>,
-    pub drafted: Option<bool>,
 }

@@ -9,5 +9,6 @@ export type Player = {
 	college: string;
 	img_url: string;
 	rankings: string;
+	drafted: string;
 	stats: string;
 };

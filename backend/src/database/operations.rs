@@ -226,7 +226,7 @@ pub mod user_operations {
 pub mod player_operations {
     use super::*;
 
-    pub async fn get_player(player_id: i32, user_id: i32) -> Result<PlayerDenormalized, Error> {
+    pub async fn get_player(user_id: i32, player_id: i32) -> Result<PlayerDenormalized, Error> {
         let pool = get_pool()?;
         sqlx::query_as!(
             PlayerDenormalized,
@@ -243,6 +243,7 @@ pub mod player_operations {
                 p.college,
                 r.overall as overall_ranking,
                 r.position as position_ranking,
+                d.player_id IS NOT NULL as "drafted!: bool",
                 s.pass_cmp,
                 s.pass_att,
                 s.pass_cmp_pct,
@@ -295,14 +296,16 @@ pub mod player_operations {
                     WHEN 'PPR' THEN s.ppr_pts_per_game
                 END as points_per_game
             FROM players p
-            INNER JOIN users u ON u.id = $2
+            INNER JOIN users u ON u.id = $1
             LEFT JOIN rankings r ON p.id = r.player_id 
                 AND r.scoring_settings = u.scoring_settings
             LEFT JOIN stats s ON p.id = s.player_id
-            WHERE p.id = $1
+            LEFT JOIN drafted_players d ON u.id = d.user_id
+                AND p.id = d.player_id
+            WHERE p.id = $2
             "#,
-            player_id,
-            user_id
+            user_id,
+            player_id
         )
         .fetch_optional(pool)
         .await?
@@ -314,7 +317,6 @@ pub mod player_operations {
         position: Option<&Position>,
         team: Option<&Team>,
         name: Option<&str>,
-        drafted: Option<bool>,
     ) -> Result<Vec<PlayerDenormalized>, Error> {
         let pool = get_pool()?;
         sqlx::query_as!(
@@ -332,6 +334,7 @@ pub mod player_operations {
                 p.college,
                 r.overall as overall_ranking,
                 r.position as position_ranking,
+                d.player_id IS NOT NULL as "drafted!: bool",
                 s.pass_cmp,
                 s.pass_att,
                 s.pass_cmp_pct,
@@ -393,18 +396,12 @@ pub mod player_operations {
             WHERE ($2::position_type IS NULL OR p.position = $2::position_type)
             AND ($3::team_type IS NULL OR p.team = $3::team_type)
             AND ($4::text IS NULL OR p.name ILIKE '%' || $4 || '%')
-            AND (
-                $5::boolean IS NULL 
-                OR ($5 = true AND d.player_id IS NOT NULL)
-                OR ($5 = false AND d.player_id IS NULL)
-            )
             ORDER BY overall_ranking ASC
             "#,
             user_id,
             position as Option<&Position>,
             team as Option<&Team>,
             name,
-            drafted
         )
         .fetch_all(pool)
         .await
