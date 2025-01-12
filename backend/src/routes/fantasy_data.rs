@@ -24,7 +24,9 @@ pub async fn get_last_update() -> Result<HttpResponse> {
         })?;
 
     match last_update {
-        Some(timestamp) => Ok(HttpResponse::Ok().json(json!({ "last_update": timestamp }))),
+        Some(timestamp) => Ok(HttpResponse::Ok().json(json!({
+            "last_update": timestamp.unix_timestamp() * 1000
+        }))),
         None => Ok(HttpResponse::NotFound().finish()),
     }
 }
