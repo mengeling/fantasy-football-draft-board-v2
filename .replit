@@ -1,4 +1,4 @@
-modules = ["rust-stable", "web", "nodejs-20"]
+modules = ["rust-stable", "web", "nodejs-20", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
@@ -22,4 +22,9 @@ args = "cd frontend && npm run dev"
 [[ports]]
 localPort = 5173
 externalPort = 80
+exposeLocalhost = true
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
 exposeLocalhost = true
