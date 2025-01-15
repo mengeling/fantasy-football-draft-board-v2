@@ -11,7 +11,7 @@ use crate::scrapers::{
 };
 
 pub async fn update() -> Result<()> {
-    let browser = Browser::default()?;
+    let browser = Browser::new(Browser::default_builder().with_port(Some(9500)))?;
     let tab = browser.new_tab()?;
 
     let rankings_scraper = RankingsScraper::new(&tab);
