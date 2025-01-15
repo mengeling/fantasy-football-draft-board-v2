@@ -2,3 +2,24 @@ modules = ["rust-stable", "web", "nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
+
+[workflows]
+runButton = "Run"
+
+[[workflows.workflow]]
+name = "Run"
+mode = "parallel"
+author = 38891026
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && cargo run"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && npm run dev"
+
+[[ports]]
+localPort = 5173
+externalPort = 80
+exposeLocalhost = true
