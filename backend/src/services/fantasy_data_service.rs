@@ -1,5 +1,5 @@
 use anyhow::Result;
-use headless_chrome::Browser;
+use headless_chrome::{Browser, LaunchOptions};
 
 use crate::database::connection::get_db_connection;
 use crate::database::operations::fantasy_data_operations::{
@@ -11,7 +11,11 @@ use crate::scrapers::{
 };
 
 pub async fn update() -> Result<()> {
-    let browser = Browser::new(Browser::default_builder().with_port(Some(9500)))?;
+    let launch_options = LaunchOptions {
+        port: Some(9500),
+        ..Default::default()
+    };
+    let browser = Browser::new(launch_options)?;
     let tab = browser.new_tab()?;
 
     let rankings_scraper = RankingsScraper::new(&tab);
