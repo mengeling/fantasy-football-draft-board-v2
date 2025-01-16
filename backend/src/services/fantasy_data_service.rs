@@ -14,14 +14,6 @@ pub async fn update() -> Result<()> {
     let launch_options = LaunchOptions {
         port: Some(9500),
         headless: true,
-        path: None,
-        args: vec![
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-        ],
-        idle_browser_timeout: std::time::Duration::from_secs(30),
         ..Default::default()
     };
     let browser = Browser::new(launch_options)?;
