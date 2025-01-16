@@ -13,7 +13,7 @@ use crate::scrapers::{
 pub async fn update() -> Result<()> {
     let launch_options = LaunchOptions {
         port: Some(9500),
-        headless: true,
+        headless: false,
         ..Default::default()
     };
     let browser = Browser::new(launch_options)?;
