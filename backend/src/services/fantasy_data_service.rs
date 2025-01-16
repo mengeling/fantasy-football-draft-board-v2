@@ -13,6 +13,7 @@ use crate::scrapers::{
 pub async fn update() -> Result<()> {
     let launch_options = LaunchOptions {
         port: Some(9500),
+        connect_timeout: Some(std::time::Duration::from_secs(30)),
         ..Default::default()
     };
     let browser = Browser::new(launch_options)?;
