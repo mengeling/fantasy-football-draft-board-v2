@@ -13,7 +13,7 @@ use crate::scrapers::{
 pub async fn update() -> Result<()> {
     let launch_options = LaunchOptions {
         port: Some(9500),
-        headless: false,
+        headless: true,
         path: None,
         args: vec![
             std::ffi::OsStr::new("--no-sandbox"),
@@ -27,7 +27,8 @@ pub async fn update() -> Result<()> {
             std::ffi::OsStr::new("--disable-popup-blocking"),
             std::ffi::OsStr::new("--disable-sync"),
         ],
-        idle_browser_timeout: std::time::Duration::from_secs(60),
+        idle_browser_timeout: std::time::Duration::from_secs(300),
+        process_timeout: std::time::Duration::from_secs(300),
         ..Default::default()
     };
     let browser = Browser::new(launch_options)?;
