@@ -28,7 +28,6 @@ pub async fn update() -> Result<()> {
             std::ffi::OsStr::new("--disable-sync"),
         ],
         idle_browser_timeout: std::time::Duration::from_secs(300),
-        process_timeout: std::time::Duration::from_secs(300),
         ..Default::default()
     };
     let browser = Browser::new(launch_options)?;
