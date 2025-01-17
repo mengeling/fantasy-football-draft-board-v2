@@ -34,7 +34,6 @@ async fn main() -> std::io::Result<()> {
             .service(routes::user::get_user)
             .service(routes::user::update_user)
     })
-    .workers(1)
     .bind((host, port))?
     .run()
     .await
