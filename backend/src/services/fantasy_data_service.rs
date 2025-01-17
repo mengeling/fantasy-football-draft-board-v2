@@ -13,25 +13,10 @@ use crate::scrapers::{
 pub async fn update() -> Result<()> {
     let launch_options = LaunchOptions {
         port: Some(9500),
-        // headless: true,
-        // path: None,
-        // args: vec![
-        //     std::ffi::OsStr::new("--no-sandbox"),
-        //     std::ffi::OsStr::new("--disable-setuid-sandbox"),
-        //     std::ffi::OsStr::new("--disable-dev-shm-usage"),
-        //     std::ffi::OsStr::new("--disable-gpu"),
-        //     std::ffi::OsStr::new("--no-first-run"),
-        //     std::ffi::OsStr::new("--no-zygote"),
-        //     std::ffi::OsStr::new("--single-process"),
-        //     std::ffi::OsStr::new("--disable-default-apps"),
-        //     std::ffi::OsStr::new("--disable-popup-blocking"),
-        //     std::ffi::OsStr::new("--disable-sync"),
-        // ],
-        // idle_browser_timeout: std::time::Duration::from_secs(10),
+        args: vec![std::ffi::OsStr::new("--no-sandbox")],
         ..Default::default()
     };
     let browser = Browser::new(launch_options)?;
-    // let browser = Browser::default()?;
     let tab = browser.new_tab()?;
 
     let rankings_scraper = RankingsScraper::new(&tab);
