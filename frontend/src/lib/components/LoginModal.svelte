@@ -18,7 +18,6 @@
                 const userData = await fetchApi(`/user/${username}`);
                 onLogin(username, userData);
             } catch (e) {
-                // User doesnt exist so show scoring options to create new user
                 currentView = 'scoring';
             }
         } catch (error) {

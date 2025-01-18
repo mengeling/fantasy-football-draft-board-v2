@@ -10,6 +10,7 @@ export function clearUserId() {
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 	const headers = {
+		'Content-Type': 'application/json',
 		...options.headers,
 		...(userId && { 'X-User-ID': userId })
 	};

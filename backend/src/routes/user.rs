@@ -6,7 +6,6 @@ use crate::models::user::{CreateUserRequest, UpdateUserRequest};
 
 #[get("/user/{username}")]
 pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
-    println!("Getting user: {:?}", username);
     let user = user_operations::get_user(&username).await.map_err(|e| {
         eprintln!("Failed to get user: {}", e);
         ErrorInternalServerError(e)
@@ -22,7 +21,6 @@ pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
 pub async fn create_user(
     create_user_request: web::Json<CreateUserRequest>,
 ) -> Result<HttpResponse> {
-    println!("Received create user request: {:?}", create_user_request);
     let new_user = user_operations::create_user(
         &create_user_request.username,
         &create_user_request.scoring_settings,
