@@ -1,0 +1,8 @@
+
+[build]
+incremental = true
+jobs = 3
+
+[profile.dev]
+opt-level = 0
+debug = 1
