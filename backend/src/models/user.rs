@@ -10,7 +10,7 @@ pub struct User {
     pub created_at: OffsetDateTime,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct CreateUserRequest {
     pub username: String,
     pub scoring_settings: ScoringSettings,
