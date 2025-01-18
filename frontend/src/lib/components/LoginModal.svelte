@@ -36,7 +36,7 @@
                 method: 'POST',
                 body: JSON.stringify({
                     username,
-                    scoring_settings: ScoringSettings[scoring],
+                    scoring_settings: scoring,
                 })
             });
             
