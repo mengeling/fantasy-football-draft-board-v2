@@ -17,6 +17,7 @@ pub async fn update() -> Result<()> {
         ..Default::default()
     };
     let browser = Browser::new(launch_options)?;
+    // let browser = Browser::default()?;
     let tab = browser.new_tab()?;
 
     let rankings_scraper = RankingsScraper::new(&tab);

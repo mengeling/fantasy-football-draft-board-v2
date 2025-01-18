@@ -6,6 +6,7 @@ use crate::models::user::{CreateUserRequest, UpdateUserRequest};
 
 #[get("/user/{username}")]
 pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
+    println!("Getting user: {:?}", username);
     let user = user_operations::get_user(&username).await.map_err(|e| {
         eprintln!("Failed to get user: {}", e);
         ErrorInternalServerError(e)
