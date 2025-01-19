@@ -1,6 +1,8 @@
 <script lang="ts">
-    export let rankings: string;
-    export let stats: string;
+    import type { Rankings, Stats } from '$lib/types';
+    
+    export let rankings: Rankings;
+    export let stats: Stats;
 </script>
 
 <div class="player-tables">

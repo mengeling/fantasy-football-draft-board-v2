@@ -1,23 +1,11 @@
 <script lang="ts">
     import type { Player } from '$lib/types';
+    import { defaultPlayer } from '$lib/types';
     import PlayerImage from './PlayerImage.svelte';
     import PlayerBio from './PlayerBio.svelte';
     import PlayerTable from './PlayerTable.svelte';
     
-    export let player: Player = {
-        id: '',
-        name: '',
-        team: '',
-        position: '',
-        height: '',
-        age: '',
-        weight: '',
-        college: '',
-        img_url: '',
-        rankings: '',
-        drafted: '',
-        stats: ''
-    };
+    export let player: Player = defaultPlayer;
 
     let isDrafted = false;
 

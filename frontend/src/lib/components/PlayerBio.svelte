@@ -1,10 +1,12 @@
 <script lang="ts">
+	import type { Position, Team } from "$lib/enums";
+
     export let name: string;
-    export let team: string;
-    export let position: string;
+    export let position: Position | null;
+    export let team: Team | null;
     export let height: string;
-    export let age: string;
     export let weight: string;
+    export let age: number | null;
     export let college: string;
 </script>
 

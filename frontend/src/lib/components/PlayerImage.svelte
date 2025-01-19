@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let id: string;
+    export let id: number;
     export let name: string;
 
     $: imgUrl = `https://images.fantasypros.com/images/players/nfl/${id}/headshot/250x250.png`;
@@ -9,7 +9,7 @@
 <div class="player-pic-container">
     <img 
         class="player-pic" 
-        {id}
+        id={id.toString()}
         src={imgUrl} 
         on:error={(e) => (e.target as HTMLImageElement).src = fallbackImgUrl}
         alt={name}
