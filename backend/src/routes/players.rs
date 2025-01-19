@@ -2,7 +2,7 @@ use actix_web::error::ErrorInternalServerError;
 use actix_web::{get, web, HttpRequest, HttpResponse, Result};
 
 use crate::database::operations::player_operations;
-use crate::models::player::PlayerQueryParameters;
+use crate::models::players::PlayerQueryParameters;
 use crate::routes::utils::get_user_id;
 
 #[get("/players")]

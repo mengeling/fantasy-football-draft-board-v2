@@ -7,7 +7,7 @@ use crate::database::operations::fantasy_data_operations::{
     record_fantasy_data_update,
 };
 use crate::scrapers::{
-    player_scraper::PlayerScraper, rankings_scraper::RankingsScraper, stats_scraper::StatsScraper,
+    players_scraper::PlayersScraper, rankings_scraper::RankingsScraper, stats_scraper::StatsScraper,
 };
 
 pub async fn update() -> Result<()> {
@@ -17,7 +17,7 @@ pub async fn update() -> Result<()> {
     let rankings_scraper = RankingsScraper::new(&tab);
     let (rankings, player_tasks) = rankings_scraper.scrape().await?;
 
-    let players = PlayerScraper::process_tasks(player_tasks).await?;
+    let players = PlayersScraper::process_tasks(player_tasks).await?;
 
     let stats_scraper = StatsScraper::new();
     let stats = stats_scraper.scrape().await?;

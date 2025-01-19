@@ -5,16 +5,16 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
 
-use crate::models::player::{Player, PlayerBio, PlayerTask};
+use crate::models::players::{Player, PlayerBio, PlayerTask};
 
-pub struct PlayerScraper {
+pub struct PlayersScraper {
     client: Client,
     url: String,
 }
 
-impl PlayerScraper {
+impl PlayersScraper {
     pub fn new(url: &str) -> Self {
-        PlayerScraper {
+        PlayersScraper {
             client: Client::new(),
             url: url.to_string(),
         }
@@ -59,7 +59,7 @@ impl PlayerScraper {
         let results: Vec<_> = stream::iter(tasks)
             .map(|task| {
                 tokio::spawn(async move {
-                    let player_scraper = PlayerScraper::new(&task.identity.bio_url);
+                    let player_scraper = PlayersScraper::new(&task.identity.bio_url);
                     let player_bio = player_scraper.scrape().await?;
 
                     Ok::<_, anyhow::Error>(Player {

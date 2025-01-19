@@ -24,14 +24,14 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .service(routes::draft::draft_player)
-            .service(routes::draft::undraft_player)
+            .service(routes::drafted_players::draft_player)
+            .service(routes::drafted_players::undraft_player)
             .service(routes::fantasy_data::get_last_update)
             .service(routes::fantasy_data::update_fantasy_data)
-            .service(routes::player::get_players)
-            .service(routes::user::create_user)
-            .service(routes::user::get_user)
-            .service(routes::user::update_user)
+            .service(routes::players::get_players)
+            .service(routes::users::create_user)
+            .service(routes::users::get_user)
+            .service(routes::users::update_user)
     })
     .bind((host, port))?
     .run()

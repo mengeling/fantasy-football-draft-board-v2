@@ -4,7 +4,7 @@ use regex::Regex;
 use scraper::{Html, Selector};
 use std::str::FromStr;
 
-use crate::models::player::{PlayerIdentity, PlayerTask, Position, Team};
+use crate::models::players::{PlayerIdentity, PlayerTask, Position, Team};
 use crate::models::rankings::{Rankings, RankingsBase, ScoringSettings};
 
 pub struct RankingsScraper<'a> {

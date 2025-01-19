@@ -1,5 +1,5 @@
-pub mod draft;
+pub mod drafted_players;
 pub mod fantasy_data;
-pub mod player;
-pub mod user;
+pub mod players;
+pub mod users;
 mod utils;

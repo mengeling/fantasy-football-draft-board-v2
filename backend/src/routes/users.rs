@@ -2,9 +2,9 @@ use actix_web::error::ErrorInternalServerError;
 use actix_web::{get, post, put, web, HttpResponse, Result};
 
 use crate::database::operations::user_operations;
-use crate::models::user::{CreateUserRequest, UpdateUserRequest};
+use crate::models::users::{CreateUserRequest, UpdateUserRequest};
 
-#[get("/user/{username}")]
+#[get("/users/{username}")]
 pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
     let user = user_operations::get_user(&username).await.map_err(|e| {
         eprintln!("Failed to get user: {}", e);
@@ -17,7 +17,7 @@ pub async fn get_user(username: web::Path<String>) -> Result<HttpResponse> {
     }
 }
 
-#[post("/user")]
+#[post("/users")]
 pub async fn create_user(
     create_user_request: web::Json<CreateUserRequest>,
 ) -> Result<HttpResponse> {
@@ -34,7 +34,7 @@ pub async fn create_user(
     Ok(HttpResponse::Created().json(new_user))
 }
 
-#[put("/user/{username}")]
+#[put("/users/{username}")]
 pub async fn update_user(
     username: web::Path<String>,
     update_user_request: web::Json<UpdateUserRequest>,

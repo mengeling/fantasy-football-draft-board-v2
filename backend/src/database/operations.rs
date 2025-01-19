@@ -3,11 +3,11 @@ use sqlx::{Error, Postgres, QueryBuilder, Transaction};
 use time::OffsetDateTime;
 
 use crate::database::connection::get_pool;
-use crate::models::drafted_player::DraftedPlayer;
-use crate::models::player::{Player, PlayerResponse, Position, Team};
+use crate::models::drafted_players::DraftedPlayer;
+use crate::models::players::{Player, PlayerResponse, Position, Team};
 use crate::models::rankings::{Rankings, ScoringSettings};
 use crate::models::stats::Stats;
-use crate::models::user::User;
+use crate::models::users::User;
 
 pub mod fantasy_data_operations {
     use super::*;
@@ -337,7 +337,7 @@ pub mod player_operations {
     }
 }
 
-pub mod draft_operations {
+pub mod drafted_player_operations {
     use super::*;
 
     pub async fn draft_player(user_id: i32, player_id: i32) -> Result<DraftedPlayer, Error> {
