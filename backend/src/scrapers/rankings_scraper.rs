@@ -95,7 +95,13 @@ impl<'a> RankingsScraper<'a> {
             let overall_ranking = cells[0].text().collect::<String>().parse::<i32>().ok();
             let player_identity = get_player_identity(&cells[2]);
             let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
-            let bye_week = cells[4].text().collect::<String>().parse::<i32>().ok();
+            // TODO: Click on cell 3 to open player bio modal and get bye week
+            let bye_week = None;
+            let best_ranking = cells[4].text().collect::<String>().parse::<i32>().ok();
+            let worst_ranking = cells[5].text().collect::<String>().parse::<i32>().ok();
+            let average_ranking = cells[6].text().collect::<String>().parse::<f32>().ok();
+            let standard_deviation_ranking =
+                cells[7].text().collect::<String>().parse::<f32>().ok();
 
             if let Some(player_id) = player_identity.id {
                 rankings.push(Rankings {
@@ -103,6 +109,10 @@ impl<'a> RankingsScraper<'a> {
                     overall: overall_ranking,
                     position: position_ranking,
                     scoring_settings: scoring_settings.clone(),
+                    best: best_ranking,
+                    worst: worst_ranking,
+                    average: average_ranking,
+                    standard_deviation: standard_deviation_ranking,
                 });
 
                 if !seen_players.contains(&player_id) {

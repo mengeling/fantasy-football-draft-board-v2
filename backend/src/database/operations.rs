@@ -73,14 +73,21 @@ pub mod fantasy_data_operations {
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<()> {
         let mut query_builder = QueryBuilder::new(
-            "INSERT INTO rankings (player_id, scoring_settings, overall, position)",
+            "INSERT INTO rankings (
+                player_id, scoring_settings, overall, position, 
+                best, worst, average, standard_deviation
+            )",
         );
 
         query_builder.push_values(rankings, |mut b, ranking| {
             b.push_bind(ranking.player_id)
                 .push_bind(&ranking.scoring_settings)
                 .push_bind(ranking.overall)
-                .push_bind(ranking.position);
+                .push_bind(ranking.position)
+                .push_bind(ranking.best)
+                .push_bind(ranking.worst)
+                .push_bind(ranking.average)
+                .push_bind(ranking.standard_deviation);
         });
 
         query_builder.build().execute(&mut **tx).await?;
@@ -226,92 +233,6 @@ pub mod user_operations {
 pub mod player_operations {
     use super::*;
 
-    pub async fn get_player(user_id: i32, player_id: i32) -> Result<PlayerDenormalized, Error> {
-        let pool = get_pool()?;
-        sqlx::query_as!(
-            PlayerDenormalized,
-            r#"
-            SELECT 
-                p.id,
-                p.name,
-                p.position as "position!: Position",
-                p.team as "team!: Team",
-                p.bye_week,
-                p.height,
-                p.weight,
-                p.age,
-                p.college,
-                r.overall as overall_ranking,
-                r.position as position_ranking,
-                d.player_id IS NOT NULL as "drafted!: bool",
-                s.pass_cmp,
-                s.pass_att,
-                s.pass_cmp_pct,
-                s.pass_yds,
-                s.pass_yds_per_att,
-                s.pass_td,
-                s.pass_int,
-                s.pass_sacks,
-                s.rush_att,
-                s.rush_yds,
-                s.rush_yds_per_att,
-                s.rush_long,
-                s.rush_20,
-                s.rush_td,
-                s.fumbles,
-                s.receptions,
-                s.rec_tgt,
-                s.rec_yds,
-                s.rec_yds_per_rec,
-                s.rec_long,
-                s.rec_20,
-                s.rec_td,
-                s.field_goals,
-                s.fg_att,
-                s.fg_pct,
-                s.fg_long,
-                s.fg_1_19,
-                s.fg_20_29,
-                s.fg_30_39,
-                s.fg_40_49,
-                s.fg_50,
-                s.extra_points,
-                s.xp_att,
-                s.sacks,
-                s.int,
-                s.fumbles_recovered,
-                s.fumbles_forced,
-                s.def_td,
-                s.safeties,
-                s.special_teams_td,
-                s.games,
-                CASE u.scoring_settings
-                    WHEN 'Standard' THEN s.standard_pts
-                    WHEN 'Half' THEN s.half_ppr_pts
-                    WHEN 'PPR' THEN s.ppr_pts
-                END as points,
-                CASE u.scoring_settings
-                    WHEN 'Standard' THEN s.standard_pts_per_game
-                    WHEN 'Half' THEN s.half_ppr_pts_per_game
-                    WHEN 'PPR' THEN s.ppr_pts_per_game
-                END as points_per_game
-            FROM players p
-            INNER JOIN users u ON u.id = $1
-            LEFT JOIN rankings r ON p.id = r.player_id 
-                AND r.scoring_settings = u.scoring_settings
-            LEFT JOIN stats s ON p.id = s.player_id
-            LEFT JOIN drafted_players d ON u.id = d.user_id
-                AND p.id = d.player_id
-            WHERE p.id = $2
-            "#,
-            user_id,
-            player_id
-        )
-        .fetch_optional(pool)
-        .await?
-        .ok_or(sqlx::Error::RowNotFound)
-    }
-
     pub async fn get_players(
         user_id: i32,
         position: Option<&Position>,
@@ -334,6 +255,10 @@ pub mod player_operations {
                 p.college,
                 r.overall as overall_ranking,
                 r.position as position_ranking,
+                r.best as best_ranking,
+                r.worst as worst_ranking,
+                r.average as average_ranking,
+                r.standard_deviation as standard_deviation_ranking,
                 d.player_id IS NOT NULL as "drafted!: bool",
                 s.pass_cmp,
                 s.pass_att,

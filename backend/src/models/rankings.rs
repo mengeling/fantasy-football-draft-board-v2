@@ -18,4 +18,8 @@ pub struct Rankings {
     pub scoring_settings: ScoringSettings,
     pub overall: Option<i32>,
     pub position: Option<i32>,
+    pub best: Option<i32>,
+    pub worst: Option<i32>,
+    pub average: Option<f32>,
+    pub standard_deviation: Option<f32>,
 }

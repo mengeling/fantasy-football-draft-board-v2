@@ -44,6 +44,10 @@ CREATE TABLE IF NOT EXISTS rankings (
     scoring_settings scoring_settings_type,
     overall INTEGER,
     position INTEGER,
+    best INTEGER,
+    worst INTEGER,
+    average REAL,
+    standard_deviation REAL,
     PRIMARY KEY (player_id, scoring_settings)
 );
 
