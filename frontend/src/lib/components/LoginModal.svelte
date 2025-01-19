@@ -15,7 +15,7 @@
         
         try {
             try {
-                const userData = await fetchApi(`/user/${username}`);
+                const userData = await fetchApi(`/users/${username}`);
                 onLogin(username, userData);
             } catch (e) {
                 currentView = 'scoring';
@@ -31,7 +31,7 @@
     async function createUserWithScoring(scoring: ScoringSettings) {
         loading = true;
         try {
-            const userData = await fetchApi('/user', {
+            const userData = await fetchApi('/users', {
                 method: 'POST',
                 body: JSON.stringify({
                     username,
