@@ -6,7 +6,7 @@ export type Rankings = {
 	best: number | null;
 	worst: number | null;
 	average: number | null;
-	standardDeviation: number | null;
+	standard_deviation: number | null;
 };
 
 export const defaultRankings: Rankings = {
@@ -15,99 +15,99 @@ export const defaultRankings: Rankings = {
 	best: null,
 	worst: null,
 	average: null,
-	standardDeviation: null
+	standard_deviation: null
 };
 
 export type Stats = {
-	passCmp: number | null;
-	passAtt: number | null;
-	passCmpPct: number | null;
-	passYds: number | null;
-	passYdsPerAtt: number | null;
-	passTd: number | null;
-	passInt: number | null;
-	passSacks: number | null;
-	rushAtt: number | null;
-	rushYds: number | null;
-	rushYdsPerAtt: number | null;
-	rushLong: number | null;
-	rush20: number | null;
-	rushTd: number | null;
+	pass_cmp: number | null;
+	pass_att: number | null;
+	pass_cmp_pct: number | null;
+	pass_yds: number | null;
+	pass_yds_per_att: number | null;
+	pass_td: number | null;
+	pass_int: number | null;
+	pass_sacks: number | null;
+	rush_att: number | null;
+	rush_yds: number | null;
+	rush_yds_per_att: number | null;
+	rush_long: number | null;
+	rush_20: number | null;
+	rush_td: number | null;
 	fumbles: number | null;
 	receptions: number | null;
-	recTgt: number | null;
-	recYds: number | null;
-	recYdsPerRec: number | null;
-	recLong: number | null;
-	rec20: number | null;
-	recTd: number | null;
-	fieldGoals: number | null;
-	fgAtt: number | null;
-	fgPct: number | null;
-	fgLong: number | null;
-	fg119: number | null;
-	fg2029: number | null;
-	fg3039: number | null;
-	fg4049: number | null;
-	fg50: number | null;
-	extraPoints: number | null;
-	xpAtt: number | null;
+	rec_tgt: number | null;
+	rec_yds: number | null;
+	rec_yds_per_rec: number | null;
+	rec_long: number | null;
+	rec_20: number | null;
+	rec_td: number | null;
+	field_goals: number | null;
+	fg_att: number | null;
+	fg_pct: number | null;
+	fg_long: number | null;
+	fg_1_19: number | null;
+	fg_20_29: number | null;
+	fg_30_39: number | null;
+	fg_40_49: number | null;
+	fg_50: number | null;
+	extra_points: number | null;
+	xp_att: number | null;
 	sacks: number | null;
 	int: number | null;
-	fumblesRecovered: number | null;
-	fumblesForced: number | null;
-	defTd: number | null;
+	fumbles_recovered: number | null;
+	fumbles_forced: number | null;
+	def_td: number | null;
 	safeties: number | null;
-	specialTeamsTd: number | null;
+	special_teams_td: number | null;
 	games: number | null;
 	points: number | null;
-	pointsPerGame: number | null;
+	points_per_game: number | null;
 };
 
 export const defaultStats: Stats = {
-	passCmp: null,
-	passAtt: null,
-	passCmpPct: null,
-	passYds: null,
-	passYdsPerAtt: null,
-	passTd: null,
-	passInt: null,
-	passSacks: null,
-	rushAtt: null,
-	rushYds: null,
-	rushYdsPerAtt: null,
-	rushLong: null,
-	rush20: null,
-	rushTd: null,
+	pass_cmp: null,
+	pass_att: null,
+	pass_cmp_pct: null,
+	pass_yds: null,
+	pass_yds_per_att: null,
+	pass_td: null,
+	pass_int: null,
+	pass_sacks: null,
+	rush_att: null,
+	rush_yds: null,
+	rush_yds_per_att: null,
+	rush_long: null,
+	rush_20: null,
+	rush_td: null,
 	fumbles: null,
 	receptions: null,
-	recTgt: null,
-	recYds: null,
-	recYdsPerRec: null,
-	recLong: null,
-	rec20: null,
-	recTd: null,
-	fieldGoals: null,
-	fgAtt: null,
-	fgPct: null,
-	fgLong: null,
-	fg119: null,
-	fg2029: null,
-	fg3039: null,
-	fg4049: null,
-	fg50: null,
-	extraPoints: null,
-	xpAtt: null,
+	rec_tgt: null,
+	rec_yds: null,
+	rec_yds_per_rec: null,
+	rec_long: null,
+	rec_20: null,
+	rec_td: null,
+	field_goals: null,
+	fg_att: null,
+	fg_pct: null,
+	fg_long: null,
+	fg_1_19: null,
+	fg_20_29: null,
+	fg_30_39: null,
+	fg_40_49: null,
+	fg_50: null,
+	extra_points: null,
+	xp_att: null,
 	sacks: null,
 	int: null,
-	fumblesRecovered: null,
-	fumblesForced: null,
-	defTd: null,
+	fumbles_recovered: null,
+	fumbles_forced: null,
+	def_td: null,
 	safeties: null,
-	specialTeamsTd: null,
+	special_teams_td: null,
 	games: null,
 	points: null,
-	pointsPerGame: null
+	points_per_game: null
 };
 
 export type Player = {
@@ -115,7 +115,7 @@ export type Player = {
 	name: string;
 	position: Position | null;
 	team: Team | null;
-	byeWeek: number | null;
+	bye_week: number | null;
 	height: string;
 	weight: string;
 	age: number | null;
@@ -130,7 +130,7 @@ export const defaultPlayer: Player = {
 	name: '',
 	position: null,
 	team: null,
-	byeWeek: null,
+	bye_week: null,
 	height: '',
 	weight: '',
 	age: null,

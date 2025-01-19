@@ -72,24 +72,53 @@
                 <table class="draft-board">
                     <thead>
                         <tr>
-                            <th>Rank</th>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>Team</th>
-                            <th>College</th>
+                            <th>RANK</th>
+                            <th>PLAYER</th>
+                            <th>BYE</th>
+                            <th>POS RANK</th>
+                            <th>BEST</th>
+                            <th>WORST</th>
+                            <th>AVG</th>
+                            <th>STDEV</th>
+                            <th>PTS</th>
+                            <th>PAC</th>
+                            <th>PAYD</th>
+                            <th>PATD</th>
+                            <th>PAINT</th>
+                            <th>RUSH</th>
+                            <th>RUYD</th>
+                            <th>RUTD</th>
+                            <th>REC</th>
+                            <th>REYD</th>
+                            <th>RETD</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#each players as player, i}
                             <tr
+                                data-player-id={player.id}
                                 on:click={() => selectedPlayer = player}
                                 role="button"
                             >
-                                <td>{i + 1}</td>
-                                <td>{player.name}</td>
-                                <td>{player.position}</td>
-                                <td>{player.team}</td>
-                                <td>{player.college}</td>
+                                <td>{player.rankings.overall}</td>
+                                <td>{player.name}, {player.team}, {player.position}</td>
+                                <td>{player.bye_week}</td>
+                                <td>{player.rankings.position}</td>
+                                <td>{player.rankings.best}</td>
+                                <td>{player.rankings.worst}</td>
+                                <td>{player.rankings.average}</td>
+                                <td>{player.rankings.standard_deviation}</td>
+                                <td>{player.stats.points?.toFixed(1)}</td>
+                                <td>{player.stats.pass_cmp}</td>
+                                <td>{player.stats.pass_yds}</td>
+                                <td>{player.stats.pass_td}</td>
+                                <td>{player.stats.pass_int}</td>
+                                <td>{player.stats.rush_att}</td>
+                                <td>{player.stats.rush_yds}</td>
+                                <td>{player.stats.rush_td}</td>
+                                <td>{player.stats.receptions}</td>
+                                <td>{player.stats.rec_yds}</td>
+                                <td>{player.stats.rec_td}</td>
                             </tr>
                         {/each}
                     </tbody>
