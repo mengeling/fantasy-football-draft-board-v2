@@ -2,6 +2,7 @@
     import type { Rankings, Stats } from '$lib/types';
     import { Position } from '$lib/enums';
     import { POSITION_STATS } from '$lib/constants';
+
     type PositionType = typeof Position[keyof typeof Position];
     
     export let rankings: Rankings;

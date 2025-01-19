@@ -4,7 +4,7 @@
     import PlayerDetails from '$lib/components/PlayerDetails.svelte';
     import DraftBoard from '$lib/components/DraftBoard.svelte';
     import { Team, Position } from '$lib/enums';
-    import type { Player } from '$lib/types';
+    import { defaultPlayer, type Player } from '$lib/types';
     import { fetchApi, setUserId, clearUserId } from '$lib/api';
     import { onMount } from 'svelte';
 
@@ -14,7 +14,7 @@
     let position: Position = Position.ALL;
     let team: Team = Team.ALL;
     let searchTerm = '';
-    let selectedPlayer: Player | undefined;
+    let selectedPlayer: Player = defaultPlayer;
 
     async function fetchPlayers() {
         try {

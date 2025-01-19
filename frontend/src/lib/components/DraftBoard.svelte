@@ -1,13 +1,13 @@
 <script lang="ts">
     import { Team, Position } from '$lib/enums';
-    import type { Player } from '$lib/types';
+    import { defaultPlayer, type Player } from '$lib/types';
 
     export let players: Player[] = [];
     export let showAvailable = true;
     export let position: Position = Position.ALL;
     export let team: Team = Team.ALL;
     export let searchTerm = '';
-    export let selectedPlayer: Player | undefined = undefined;
+    export let selectedPlayer: Player = defaultPlayer;
 
     function clearSearch() {
         position = Position.ALL;
@@ -15,8 +15,12 @@
         searchTerm = '';
     }
 
-    $: if (players.length > 0 && !selectedPlayer) {
-        selectedPlayer = players[0];
+    $: {
+        if (players.length === 0) {
+            selectedPlayer = defaultPlayer;
+        } else if (selectedPlayer === defaultPlayer) {
+            selectedPlayer = players[0];
+        }
     }
 </script>
 

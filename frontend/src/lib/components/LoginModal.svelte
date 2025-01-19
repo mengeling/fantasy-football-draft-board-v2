@@ -2,6 +2,7 @@
     import { ScoringSettings } from '$lib/enums';
     import { fetchApi } from '$lib/api';
     import ScoringModal from './ScoringModal.svelte';
+    
     export let onLogin: (username: string, userData: any) => void;
 
     let username = '';

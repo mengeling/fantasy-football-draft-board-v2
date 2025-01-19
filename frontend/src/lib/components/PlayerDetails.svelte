@@ -1,6 +1,5 @@
 <script lang="ts">
-    import type { Player } from '$lib/types';
-    import { defaultPlayer } from '$lib/types';
+    import { defaultPlayer, type Player } from '$lib/types';
     import PlayerImage from './PlayerImage.svelte';
     import PlayerBio from './PlayerBio.svelte';
     import PlayerTable from './PlayerTable.svelte';
