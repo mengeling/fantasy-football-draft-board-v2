@@ -44,5 +44,6 @@
     <PlayerTable
         rankings={player.rankings}
         stats={player.stats}
+        position={player.position}
     />
 </div> 

@@ -19,6 +19,7 @@ export const defaultRankings: Rankings = {
 };
 
 export type Stats = {
+	[key: string]: number | null;
 	pass_cmp: number | null;
 	pass_att: number | null;
 	pass_cmp_pct: number | null;

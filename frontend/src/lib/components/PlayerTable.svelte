@@ -1,8 +1,14 @@
 <script lang="ts">
     import type { Rankings, Stats } from '$lib/types';
+    import { Position } from '$lib/enums';
+    import { POSITION_STATS } from '$lib/constants';
+    type PositionType = typeof Position[keyof typeof Position];
     
     export let rankings: Rankings;
     export let stats: Stats;
+    export let position: PositionType | null;
+
+    $: positionStats = position ? POSITION_STATS[position] : [];
 </script>
 
 <div class="player-tables">
@@ -39,32 +45,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Points</th>
-                        <th>Pass Comp</th>
-                        <th>Pass Yds</th>
-                        <th>Pass TD</th>
-                        <th>Pass Int</th>
-                        <th>Rush Att</th>
-                        <th>Rush Yds</th>
-                        <th>Rush TD</th>
-                        <th>Receptions</th>
-                        <th>Rec Yds</th>
-                        <th>Rec TD</th>
+                        {#each positionStats as stat}
+                            <th>{stat.label}</th>
+                        {/each}
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{stats.points?.toFixed(1)}</td>
-                        <td>{stats.pass_cmp}</td>
-                        <td>{stats.pass_yds}</td>
-                        <td>{stats.pass_td}</td>
-                        <td>{stats.pass_int}</td>
-                        <td>{stats.rush_att}</td>
-                        <td>{stats.rush_yds}</td>
-                        <td>{stats.rush_td}</td>
-                        <td>{stats.receptions}</td>
-                        <td>{stats.rec_yds}</td>
-                        <td>{stats.rec_td}</td>
+                        {#each positionStats as stat}
+                            <td>{stats[stat.key]}</td>
+                        {/each}
                     </tr>
                 </tbody>
             </table>
