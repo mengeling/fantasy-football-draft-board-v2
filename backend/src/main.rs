@@ -28,7 +28,6 @@ async fn main() -> std::io::Result<()> {
             .service(routes::draft::undraft_player)
             .service(routes::fantasy_data::get_last_update)
             .service(routes::fantasy_data::update_fantasy_data)
-            .service(routes::player::get_player)
             .service(routes::player::get_players)
             .service(routes::user::create_user)
             .service(routes::user::get_user)
