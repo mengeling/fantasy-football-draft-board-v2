@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct Stats {
-    pub player_id: i32,
+pub struct StatsBase {
     pub pass_cmp: f64,
     pub pass_att: f64,
     pub pass_cmp_pct: f64,
@@ -44,6 +43,27 @@ pub struct Stats {
     pub safeties: f64,
     pub special_teams_td: f64,
     pub games: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatsResponse {
+    #[serde(flatten)]
+    pub base: StatsBase,
+    pub points: Option<f64>,
+    pub points_per_game: Option<f64>,
+}
+
+impl From<serde_json::Value> for StatsResponse {
+    fn from(value: serde_json::Value) -> Self {
+        serde_json::from_value(value).unwrap()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Stats {
+    pub player_id: i32,
+    #[serde(flatten)]
+    pub base: StatsBase,
     pub standard_pts: f64,
     pub standard_pts_per_game: f64,
     pub half_ppr_pts: f64,
@@ -61,13 +81,19 @@ impl Stats {
     }
 
     pub fn update_from(&mut self, other: &Stats) {
-        macro_rules! update_max {
+        macro_rules! update_max_base {
+            ($($field:ident),*) => {
+                $(self.base.$field = self.base.$field.max(other.base.$field);)*
+            }
+        }
+
+        macro_rules! update_max_scoring {
             ($($field:ident),*) => {
                 $(self.$field = self.$field.max(other.$field);)*
             }
         }
 
-        update_max!(
+        update_max_base!(
             pass_cmp,
             pass_att,
             pass_cmp_pct,
@@ -108,7 +134,10 @@ impl Stats {
             def_td,
             safeties,
             special_teams_td,
-            games,
+            games
+        );
+
+        update_max_scoring!(
             standard_pts,
             standard_pts_per_game,
             half_ppr_pts,

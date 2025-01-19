@@ -63,7 +63,7 @@ impl PlayerScraper {
                     let player_bio = player_scraper.scrape().await?;
 
                     Ok::<_, anyhow::Error>(Player {
-                        id: Some(task.player_id),
+                        id: task.player_id,
                         name: task.identity.name,
                         position: task.position,
                         team: task.identity.team,

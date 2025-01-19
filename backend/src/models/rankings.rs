@@ -13,13 +13,25 @@ pub enum ScoringSettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RankingsBase {
+    pub overall: i32,
+    pub position: i32,
+    pub best: i32,
+    pub worst: i32,
+    pub average: f32,
+    pub standard_deviation: f32,
+}
+
+impl From<serde_json::Value> for RankingsBase {
+    fn from(value: serde_json::Value) -> Self {
+        serde_json::from_value(value).unwrap()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rankings {
     pub player_id: i32,
     pub scoring_settings: ScoringSettings,
-    pub overall: Option<i32>,
-    pub position: Option<i32>,
-    pub best: Option<i32>,
-    pub worst: Option<i32>,
-    pub average: Option<f32>,
-    pub standard_deviation: Option<f32>,
+    #[serde(flatten)]
+    pub base: RankingsBase,
 }

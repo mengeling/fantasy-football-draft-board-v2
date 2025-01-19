@@ -4,7 +4,7 @@ use time::OffsetDateTime;
 
 use crate::database::connection::get_pool;
 use crate::models::drafted_player::DraftedPlayer;
-use crate::models::player::{Player, PlayerDenormalized, Position, Team};
+use crate::models::player::{Player, PlayerResponse, Position, Team};
 use crate::models::rankings::{Rankings, ScoringSettings};
 use crate::models::stats::Stats;
 use crate::models::user::User;
@@ -82,12 +82,12 @@ pub mod fantasy_data_operations {
         query_builder.push_values(rankings, |mut b, ranking| {
             b.push_bind(ranking.player_id)
                 .push_bind(&ranking.scoring_settings)
-                .push_bind(ranking.overall)
-                .push_bind(ranking.position)
-                .push_bind(ranking.best)
-                .push_bind(ranking.worst)
-                .push_bind(ranking.average)
-                .push_bind(ranking.standard_deviation);
+                .push_bind(ranking.base.overall)
+                .push_bind(ranking.base.position)
+                .push_bind(ranking.base.best)
+                .push_bind(ranking.base.worst)
+                .push_bind(ranking.base.average)
+                .push_bind(ranking.base.standard_deviation);
         });
 
         query_builder.build().execute(&mut **tx).await?;
@@ -114,47 +114,47 @@ pub mod fantasy_data_operations {
 
         query_builder.push_values(stats, |mut b, stat| {
             b.push_bind(stat.player_id)
-                .push_bind(stat.pass_cmp)
-                .push_bind(stat.pass_att)
-                .push_bind(stat.pass_cmp_pct)
-                .push_bind(stat.pass_yds)
-                .push_bind(stat.pass_yds_per_att)
-                .push_bind(stat.pass_td)
-                .push_bind(stat.pass_int)
-                .push_bind(stat.pass_sacks)
-                .push_bind(stat.rush_att)
-                .push_bind(stat.rush_yds)
-                .push_bind(stat.rush_yds_per_att)
-                .push_bind(stat.rush_long)
-                .push_bind(stat.rush_20)
-                .push_bind(stat.rush_td)
-                .push_bind(stat.fumbles)
-                .push_bind(stat.receptions)
-                .push_bind(stat.rec_tgt)
-                .push_bind(stat.rec_yds)
-                .push_bind(stat.rec_yds_per_rec)
-                .push_bind(stat.rec_long)
-                .push_bind(stat.rec_20)
-                .push_bind(stat.rec_td)
-                .push_bind(stat.field_goals)
-                .push_bind(stat.fg_att)
-                .push_bind(stat.fg_pct)
-                .push_bind(stat.fg_long)
-                .push_bind(stat.fg_1_19)
-                .push_bind(stat.fg_20_29)
-                .push_bind(stat.fg_30_39)
-                .push_bind(stat.fg_40_49)
-                .push_bind(stat.fg_50)
-                .push_bind(stat.extra_points)
-                .push_bind(stat.xp_att)
-                .push_bind(stat.sacks)
-                .push_bind(stat.int)
-                .push_bind(stat.fumbles_recovered)
-                .push_bind(stat.fumbles_forced)
-                .push_bind(stat.def_td)
-                .push_bind(stat.safeties)
-                .push_bind(stat.special_teams_td)
-                .push_bind(stat.games)
+                .push_bind(stat.base.pass_cmp)
+                .push_bind(stat.base.pass_att)
+                .push_bind(stat.base.pass_cmp_pct)
+                .push_bind(stat.base.pass_yds)
+                .push_bind(stat.base.pass_yds_per_att)
+                .push_bind(stat.base.pass_td)
+                .push_bind(stat.base.pass_int)
+                .push_bind(stat.base.pass_sacks)
+                .push_bind(stat.base.rush_att)
+                .push_bind(stat.base.rush_yds)
+                .push_bind(stat.base.rush_yds_per_att)
+                .push_bind(stat.base.rush_long)
+                .push_bind(stat.base.rush_20)
+                .push_bind(stat.base.rush_td)
+                .push_bind(stat.base.fumbles)
+                .push_bind(stat.base.receptions)
+                .push_bind(stat.base.rec_tgt)
+                .push_bind(stat.base.rec_yds)
+                .push_bind(stat.base.rec_yds_per_rec)
+                .push_bind(stat.base.rec_long)
+                .push_bind(stat.base.rec_20)
+                .push_bind(stat.base.rec_td)
+                .push_bind(stat.base.field_goals)
+                .push_bind(stat.base.fg_att)
+                .push_bind(stat.base.fg_pct)
+                .push_bind(stat.base.fg_long)
+                .push_bind(stat.base.fg_1_19)
+                .push_bind(stat.base.fg_20_29)
+                .push_bind(stat.base.fg_30_39)
+                .push_bind(stat.base.fg_40_49)
+                .push_bind(stat.base.fg_50)
+                .push_bind(stat.base.extra_points)
+                .push_bind(stat.base.xp_att)
+                .push_bind(stat.base.sacks)
+                .push_bind(stat.base.int)
+                .push_bind(stat.base.fumbles_recovered)
+                .push_bind(stat.base.fumbles_forced)
+                .push_bind(stat.base.def_td)
+                .push_bind(stat.base.safeties)
+                .push_bind(stat.base.special_teams_td)
+                .push_bind(stat.base.games)
                 .push_bind(stat.standard_pts)
                 .push_bind(stat.standard_pts_per_game)
                 .push_bind(stat.half_ppr_pts)
@@ -238,10 +238,10 @@ pub mod player_operations {
         position: Option<&Position>,
         team: Option<&Team>,
         name: Option<&str>,
-    ) -> Result<Vec<PlayerDenormalized>, Error> {
+    ) -> Result<Vec<PlayerResponse>, Error> {
         let pool = get_pool()?;
         sqlx::query_as!(
-            PlayerDenormalized,
+            PlayerResponse,
             r#"
             SELECT 
                 p.id,
@@ -253,75 +253,79 @@ pub mod player_operations {
                 p.weight,
                 p.age,
                 p.college,
-                r.overall as overall_ranking,
-                r.position as position_ranking,
-                r.best as best_ranking,
-                r.worst as worst_ranking,
-                r.average as average_ranking,
-                r.standard_deviation as standard_deviation_ranking,
-                d.player_id IS NOT NULL as "drafted!: bool",
-                s.pass_cmp,
-                s.pass_att,
-                s.pass_cmp_pct,
-                s.pass_yds,
-                s.pass_yds_per_att,
-                s.pass_td,
-                s.pass_int,
-                s.pass_sacks,
-                s.rush_att,
-                s.rush_yds,
-                s.rush_yds_per_att,
-                s.rush_long,
-                s.rush_20,
-                s.rush_td,
-                s.fumbles,
-                s.receptions,
-                s.rec_tgt,
-                s.rec_yds,
-                s.rec_yds_per_rec,
-                s.rec_long,
-                s.rec_20,
-                s.rec_td,
-                s.field_goals,
-                s.fg_att,
-                s.fg_pct,
-                s.fg_long,
-                s.fg_1_19,
-                s.fg_20_29,
-                s.fg_30_39,
-                s.fg_40_49,
-                s.fg_50,
-                s.extra_points,
-                s.xp_att,
-                s.sacks,
-                s.int,
-                s.fumbles_recovered,
-                s.fumbles_forced,
-                s.def_td,
-                s.safeties,
-                s.special_teams_td,
-                s.games,
-                CASE u.scoring_settings
-                    WHEN 'Standard' THEN s.standard_pts
-                    WHEN 'Half' THEN s.half_ppr_pts
-                    WHEN 'PPR' THEN s.ppr_pts
-                END as points,
-                CASE u.scoring_settings
-                    WHEN 'Standard' THEN s.standard_pts_per_game
-                    WHEN 'Half' THEN s.half_ppr_pts_per_game
-                    WHEN 'PPR' THEN s.ppr_pts_per_game
-                END as points_per_game
+                jsonb_build_object(
+                    'overall', r.overall,
+                    'position', r.position,
+                    'best', r.best,
+                    'worst', r.worst,
+                    'average', r.average,
+                    'standard_deviation', r.standard_deviation
+                ) as "rankings!: serde_json::Value",
+                jsonb_build_object(
+                    'pass_cmp', s.pass_cmp,
+                    'pass_att', s.pass_att,
+                    'pass_cmp_pct', s.pass_cmp_pct,
+                    'pass_yds', s.pass_yds,
+                    'pass_yds_per_att', s.pass_yds_per_att,
+                    'pass_td', s.pass_td,
+                    'pass_int', s.pass_int,
+                    'pass_sacks', s.pass_sacks,
+                    'rush_att', s.rush_att,
+                    'rush_yds', s.rush_yds,
+                    'rush_yds_per_att', s.rush_yds_per_att,
+                    'rush_long', s.rush_long,
+                    'rush_20', s.rush_20,
+                    'rush_td', s.rush_td,
+                    'fumbles', s.fumbles,
+                    'receptions', s.receptions,
+                    'rec_tgt', s.rec_tgt,
+                    'rec_yds', s.rec_yds,
+                    'rec_yds_per_rec', s.rec_yds_per_rec,
+                    'rec_long', s.rec_long,
+                    'rec_20', s.rec_20,
+                    'rec_td', s.rec_td,
+                    'field_goals', s.field_goals,
+                    'fg_att', s.fg_att,
+                    'fg_pct', s.fg_pct,
+                    'fg_long', s.fg_long,
+                    'fg_1_19', s.fg_1_19,
+                    'fg_20_29', s.fg_20_29,
+                    'fg_30_39', s.fg_30_39,
+                    'fg_40_49', s.fg_40_49,
+                    'fg_50', s.fg_50,
+                    'extra_points', s.extra_points,
+                    'xp_att', s.xp_att,
+                    'sacks', s.sacks,
+                    'int', s.int,
+                    'fumbles_recovered', s.fumbles_recovered,
+                    'fumbles_forced', s.fumbles_forced,
+                    'def_td', s.def_td,
+                    'safeties', s.safeties,
+                    'special_teams_td', s.special_teams_td,
+                    'games', s.games,
+                    'points', CASE u.scoring_settings
+                        WHEN 'Standard' THEN s.standard_pts
+                        WHEN 'Half' THEN s.half_ppr_pts
+                        WHEN 'PPR' THEN s.ppr_pts
+                    END,
+                    'points_per_game', CASE u.scoring_settings
+                        WHEN 'Standard' THEN s.standard_pts_per_game
+                        WHEN 'Half' THEN s.half_ppr_pts_per_game
+                        WHEN 'PPR' THEN s.ppr_pts_per_game
+                    END
+                ) as "stats!: serde_json::Value",
+                d.player_id IS NOT NULL as "drafted!: bool"
             FROM players p
             INNER JOIN users u ON u.id = $1
-            LEFT JOIN rankings r ON p.id = r.player_id 
+            INNER JOIN rankings r ON p.id = r.player_id 
                 AND r.scoring_settings = u.scoring_settings
-            LEFT JOIN stats s ON p.id = s.player_id
+            INNER JOIN stats s ON p.id = s.player_id
             LEFT JOIN drafted_players d ON d.user_id = $1
                 AND p.id = d.player_id
             WHERE ($2::position_type IS NULL OR p.position = $2::position_type)
             AND ($3::team_type IS NULL OR p.team = $3::team_type)
             AND ($4::text IS NULL OR p.name ILIKE '%' || $4 || '%')
-            ORDER BY overall_ranking ASC
+            ORDER BY r.overall ASC
             "#,
             user_id,
             position as Option<&Position>,

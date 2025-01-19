@@ -5,7 +5,7 @@ use scraper::{Html, Selector};
 use std::str::FromStr;
 
 use crate::models::player::{PlayerIdentity, PlayerTask, Position, Team};
-use crate::models::rankings::{Rankings, ScoringSettings};
+use crate::models::rankings::{Rankings, RankingsBase, ScoringSettings};
 
 pub struct RankingsScraper<'a> {
     tab: &'a Tab,
@@ -92,38 +92,57 @@ impl<'a> RankingsScraper<'a> {
         for row in document.select(&row_selector) {
             let cells: Vec<_> = row.select(&cell_selector).collect();
 
-            let overall_ranking = cells[0].text().collect::<String>().parse::<i32>().ok();
+            let overall_ranking = cells[0]
+                .text()
+                .collect::<String>()
+                .parse::<i32>()
+                .expect("Overall ranking should always be present");
             let player_identity = get_player_identity(&cells[2]);
             let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
             // TODO: Click on cell 3 to open player bio modal and get bye week
             let bye_week = None;
-            let best_ranking = cells[4].text().collect::<String>().parse::<i32>().ok();
-            let worst_ranking = cells[5].text().collect::<String>().parse::<i32>().ok();
-            let average_ranking = cells[6].text().collect::<String>().parse::<f32>().ok();
-            let standard_deviation_ranking =
-                cells[7].text().collect::<String>().parse::<f32>().ok();
+            let best_ranking = cells[4]
+                .text()
+                .collect::<String>()
+                .parse::<i32>()
+                .expect("Best ranking should always be present");
+            let worst_ranking = cells[5]
+                .text()
+                .collect::<String>()
+                .parse::<i32>()
+                .expect("Worst ranking should always be present");
+            let average_ranking = cells[6]
+                .text()
+                .collect::<String>()
+                .parse::<f32>()
+                .expect("Average ranking should always be present");
+            let standard_deviation_ranking = cells[7]
+                .text()
+                .collect::<String>()
+                .parse::<f32>()
+                .expect("Standard deviation ranking should always be present");
 
-            if let Some(player_id) = player_identity.id {
-                rankings.push(Rankings {
-                    player_id,
+            rankings.push(Rankings {
+                player_id: player_identity.id,
+                scoring_settings: scoring_settings.clone(),
+                base: RankingsBase {
                     overall: overall_ranking,
                     position: position_ranking,
-                    scoring_settings: scoring_settings.clone(),
                     best: best_ranking,
                     worst: worst_ranking,
                     average: average_ranking,
                     standard_deviation: standard_deviation_ranking,
-                });
+                },
+            });
 
-                if !seen_players.contains(&player_id) {
-                    seen_players.insert(player_id);
-                    player_tasks.push(PlayerTask {
-                        player_id,
-                        identity: player_identity,
-                        position: position.clone(),
-                        bye_week,
-                    });
-                }
+            if !seen_players.contains(&player_identity.id) {
+                seen_players.insert(player_identity.id);
+                player_tasks.push(PlayerTask {
+                    player_id: player_identity.id,
+                    identity: player_identity,
+                    position: position.clone(),
+                    bye_week,
+                });
             }
         }
 
@@ -138,7 +157,8 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
         .unwrap()
         .value()
         .attr("data-player")
-        .and_then(|s| s.parse::<i32>().ok());
+        .and_then(|s| s.parse::<i32>().ok())
+        .expect("Player ID should always be present");
     let team = Team::from_str(
         player_cell
             .select(&Selector::parse("span").unwrap())
@@ -169,16 +189,17 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
 }
 
 fn get_position_ranking(
-    poosition_cell: &scraper::element_ref::ElementRef,
+    position_cell: &scraper::element_ref::ElementRef,
     re: &Regex,
-) -> (Position, Option<i32>) {
-    let position_text = poosition_cell.text().collect::<String>();
-    if let Some(caps) = re.captures(&position_text) {
-        (
-            Position::from_str(&caps[1]).unwrap(),
-            caps[2].parse::<i32>().ok(),
-        )
-    } else {
-        (Position::from_str(&position_text).unwrap(), None)
-    }
+) -> (Position, i32) {
+    let position_text = position_cell.text().collect::<String>();
+    let caps = re
+        .captures(&position_text)
+        .expect("Position and ranking should always be present");
+    (
+        Position::from_str(&caps[1]).unwrap(),
+        caps[2]
+            .parse::<i32>()
+            .expect("Position ranking should always be present"),
+    )
 }

@@ -55,66 +55,69 @@ impl StatsScraper {
                                 .unwrap_or(0.0);
 
                             match headers[cell_index - 2] {
-                                "pass_cmp" => current_stats.pass_cmp = value,
-                                "pass_att" => current_stats.pass_att = value,
-                                "pass_cmp_pct" => current_stats.pass_cmp_pct = value,
-                                "pass_yds" => current_stats.pass_yds = value,
-                                "pass_yds_per_att" => current_stats.pass_yds_per_att = value,
-                                "pass_td" => current_stats.pass_td = value,
-                                "pass_int" => current_stats.pass_int = value,
-                                "pass_sacks" => current_stats.pass_sacks = value,
-                                "rush_att" => current_stats.rush_att = value,
-                                "rush_yds" => current_stats.rush_yds = value,
-                                "rush_yds_per_att" => current_stats.rush_yds_per_att = value,
-                                "rush_long" => current_stats.rush_long = value,
-                                "rush_20" => current_stats.rush_20 = value,
-                                "rush_td" => current_stats.rush_td = value,
-                                "fumbles" => current_stats.fumbles = value,
-                                "receptions" => current_stats.receptions = value,
-                                "rec_tgt" => current_stats.rec_tgt = value,
-                                "rec_yds" => current_stats.rec_yds = value,
-                                "rec_yds_per_rec" => current_stats.rec_yds_per_rec = value,
-                                "rec_long" => current_stats.rec_long = value,
-                                "rec_20" => current_stats.rec_20 = value,
-                                "rec_td" => current_stats.rec_td = value,
-                                "field_goals" => current_stats.field_goals = value,
-                                "fg_att" => current_stats.fg_att = value,
-                                "fg_pct" => current_stats.fg_pct = value,
-                                "fg_long" => current_stats.fg_long = value,
-                                "fg_1_19" => current_stats.fg_1_19 = value,
-                                "fg_20_29" => current_stats.fg_20_29 = value,
-                                "fg_30_39" => current_stats.fg_30_39 = value,
-                                "fg_40_49" => current_stats.fg_40_49 = value,
-                                "fg_50" => current_stats.fg_50 = value,
-                                "extra_points" => current_stats.extra_points = value,
-                                "xp_att" => current_stats.xp_att = value,
-                                "sacks" => current_stats.sacks = value,
-                                "int" => current_stats.int = value,
-                                "fumbles_recovered" => current_stats.fumbles_recovered = value,
-                                "fumbles_forced" => current_stats.fumbles_forced = value,
-                                "def_td" => current_stats.def_td = value,
-                                "safeties" => current_stats.safeties = value,
-                                "special_teams_td" => current_stats.special_teams_td = value,
-                                "games" => current_stats.games = value,
+                                "pass_cmp" => current_stats.base.pass_cmp = value,
+                                "pass_att" => current_stats.base.pass_att = value,
+                                "pass_cmp_pct" => current_stats.base.pass_cmp_pct = value,
+                                "pass_yds" => current_stats.base.pass_yds = value,
+                                "pass_yds_per_att" => current_stats.base.pass_yds_per_att = value,
+                                "pass_td" => current_stats.base.pass_td = value,
+                                "pass_int" => current_stats.base.pass_int = value,
+                                "pass_sacks" => current_stats.base.pass_sacks = value,
+                                "rush_att" => current_stats.base.rush_att = value,
+                                "rush_yds" => current_stats.base.rush_yds = value,
+                                "rush_yds_per_att" => current_stats.base.rush_yds_per_att = value,
+                                "rush_long" => current_stats.base.rush_long = value,
+                                "rush_20" => current_stats.base.rush_20 = value,
+                                "rush_td" => current_stats.base.rush_td = value,
+                                "fumbles" => current_stats.base.fumbles = value,
+                                "receptions" => current_stats.base.receptions = value,
+                                "rec_tgt" => current_stats.base.rec_tgt = value,
+                                "rec_yds" => current_stats.base.rec_yds = value,
+                                "rec_yds_per_rec" => current_stats.base.rec_yds_per_rec = value,
+                                "rec_long" => current_stats.base.rec_long = value,
+                                "rec_20" => current_stats.base.rec_20 = value,
+                                "rec_td" => current_stats.base.rec_td = value,
+                                "field_goals" => current_stats.base.field_goals = value,
+                                "fg_att" => current_stats.base.fg_att = value,
+                                "fg_pct" => current_stats.base.fg_pct = value,
+                                "fg_long" => current_stats.base.fg_long = value,
+                                "fg_1_19" => current_stats.base.fg_1_19 = value,
+                                "fg_20_29" => current_stats.base.fg_20_29 = value,
+                                "fg_30_39" => current_stats.base.fg_30_39 = value,
+                                "fg_40_49" => current_stats.base.fg_40_49 = value,
+                                "fg_50" => current_stats.base.fg_50 = value,
+                                "extra_points" => current_stats.base.extra_points = value,
+                                "xp_att" => current_stats.base.xp_att = value,
+                                "sacks" => current_stats.base.sacks = value,
+                                "int" => current_stats.base.int = value,
+                                "fumbles_recovered" => current_stats.base.fumbles_recovered = value,
+                                "fumbles_forced" => current_stats.base.fumbles_forced = value,
+                                "def_td" => current_stats.base.def_td = value,
+                                "safeties" => current_stats.base.safeties = value,
+                                "special_teams_td" => current_stats.base.special_teams_td = value,
+                                "games" => current_stats.base.games = value,
                                 _ => (),
                             }
                         }
                     }
 
-                    if current_stats.games > 0.0 {
+                    if current_stats.base.games > 0.0 {
                         current_stats.standard_pts = calculate_standard_points(&current_stats);
                         current_stats.standard_pts_per_game =
-                            ((current_stats.standard_pts / current_stats.games) * 10.0).round()
+                            ((current_stats.standard_pts / current_stats.base.games) * 10.0)
+                                .round()
                                 / 10.0;
 
                         current_stats.half_ppr_pts = calculate_half_ppr_points(&current_stats);
                         current_stats.half_ppr_pts_per_game =
-                            ((current_stats.half_ppr_pts / current_stats.games) * 10.0).round()
+                            ((current_stats.half_ppr_pts / current_stats.base.games) * 10.0)
+                                .round()
                                 / 10.0;
 
                         current_stats.ppr_pts = calculate_ppr_points(&current_stats);
                         current_stats.ppr_pts_per_game =
-                            ((current_stats.ppr_pts / current_stats.games) * 10.0).round() / 10.0;
+                            ((current_stats.ppr_pts / current_stats.base.games) * 10.0).round()
+                                / 10.0;
                     }
 
                     if let Some(player_id) = player_id {
@@ -145,33 +148,33 @@ fn get_player_id(row: &scraper::element_ref::ElementRef) -> Option<i32> {
 
 fn calculate_standard_points(stats: &Stats) -> f64 {
     let mut points = 0.0;
-    points += stats.pass_yds * 0.04;
-    points += stats.pass_td * 4.0;
-    points += stats.pass_int * -2.0;
-    points += stats.rush_yds * 0.1;
-    points += stats.rush_td * 6.0;
-    points += stats.fumbles * -2.0;
-    points += stats.rec_yds * 0.1;
-    points += stats.rec_td * 6.0;
-    points += stats.fg_1_19 * 3.0;
-    points += stats.fg_20_29 * 3.0;
-    points += stats.fg_30_39 * 3.0;
-    points += stats.fg_40_49 * 4.0;
-    points += stats.fg_50 * 5.0;
-    points += stats.extra_points * 1.0;
-    points += stats.sacks * 1.0;
-    points += stats.int * 2.0;
-    points += stats.fumbles_recovered * 2.0;
-    points += stats.def_td * 6.0;
-    points += stats.safeties * 2.0;
-    points += stats.special_teams_td * 6.0;
+    points += stats.base.pass_yds * 0.04;
+    points += stats.base.pass_td * 4.0;
+    points += stats.base.pass_int * -2.0;
+    points += stats.base.rush_yds * 0.1;
+    points += stats.base.rush_td * 6.0;
+    points += stats.base.fumbles * -2.0;
+    points += stats.base.rec_yds * 0.1;
+    points += stats.base.rec_td * 6.0;
+    points += stats.base.fg_1_19 * 3.0;
+    points += stats.base.fg_20_29 * 3.0;
+    points += stats.base.fg_30_39 * 3.0;
+    points += stats.base.fg_40_49 * 4.0;
+    points += stats.base.fg_50 * 5.0;
+    points += stats.base.extra_points * 1.0;
+    points += stats.base.sacks * 1.0;
+    points += stats.base.int * 2.0;
+    points += stats.base.fumbles_recovered * 2.0;
+    points += stats.base.def_td * 6.0;
+    points += stats.base.safeties * 2.0;
+    points += stats.base.special_teams_td * 6.0;
     points
 }
 
 fn calculate_half_ppr_points(stats: &Stats) -> f64 {
-    calculate_standard_points(stats) + (stats.receptions * 0.5)
+    calculate_standard_points(stats) + (stats.base.receptions * 0.5)
 }
 
 fn calculate_ppr_points(stats: &Stats) -> f64 {
-    calculate_standard_points(stats) + stats.receptions
+    calculate_standard_points(stats) + stats.base.receptions
 }
