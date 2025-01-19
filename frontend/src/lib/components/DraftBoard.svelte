@@ -7,11 +7,16 @@
     export let position: Position = Position.ALL;
     export let team: Team = Team.ALL;
     export let searchTerm = '';
+    export let selectedPlayer: Player | undefined = undefined;
 
     function clearSearch() {
         position = Position.ALL;
         team = Team.ALL;
         searchTerm = '';
+    }
+
+    $: if (players.length > 0 && !selectedPlayer) {
+        selectedPlayer = players[0];
     }
 </script>
 
@@ -76,7 +81,10 @@
                     </thead>
                     <tbody>
                         {#each players as player, i}
-                            <tr>
+                            <tr
+                                on:click={() => selectedPlayer = player}
+                                role="button"
+                            >
                                 <td>{i + 1}</td>
                                 <td>{player.name}</td>
                                 <td>{player.position}</td>

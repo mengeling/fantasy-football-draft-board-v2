@@ -52,8 +52,6 @@ impl PlayerScraper {
             player_bio.college = bio_details.get("College").cloned().unwrap_or_default();
         }
 
-        // NOTE: Don't need to scrape image_url anymore. Can now add player_id to url like this:
-        // https://images.fantasypros.com/images/players/nfl/{PLAYER_ID}/headshot/70x70.png
         Ok(player_bio)
     }
 

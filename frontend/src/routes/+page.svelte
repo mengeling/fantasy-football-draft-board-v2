@@ -14,21 +14,7 @@
     let position: Position = Position.ALL;
     let team: Team = Team.ALL;
     let searchTerm = '';
-    
-    let player = {
-        id: '',
-        name: '',
-        team: '',
-        position: '',
-        height: '',
-        age: '',
-        weight: '',
-        college: '',
-        img_url: '',
-        rankings: '',
-        drafted: '',
-        stats: ''
-    };
+    let selectedPlayer: Player | undefined;
 
     async function fetchPlayers() {
         try {
@@ -81,9 +67,10 @@
     />
 
     <div class="main-content">
-        <PlayerDetails {player} />
+        <PlayerDetails player={selectedPlayer} />
         <DraftBoard 
             {players}
+            bind:selectedPlayer
             bind:showAvailable
             bind:position
             bind:team

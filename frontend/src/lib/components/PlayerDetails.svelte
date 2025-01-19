@@ -29,7 +29,6 @@
 <div class="player-details">
     <PlayerImage 
         id={player.id}
-        imgUrl={player.img_url}
         name={player.name}
     />
     
