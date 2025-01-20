@@ -2,11 +2,13 @@
     import { defaultPlayer, type Player } from '$lib/types';
     import PlayerImage from './PlayerImage.svelte';
     import PlayerBio from './PlayerBio.svelte';
-    import PlayerTable from './PlayerTable.svelte';
+    import PlayerTables from './PlayerTables.svelte';
     import { fetchApi } from '$lib/api';
     
     export let player: Player = defaultPlayer;
     export let onPlayerDraftChange: (player: Player) => void;
+
+    $: showPlayerDetails = player !== defaultPlayer;
 
     async function handleDraftAction() {
         if (!player.id) return;
@@ -61,30 +63,32 @@
         name={player.name}
     />
     
-    <PlayerBio 
-        name={player.name}
-        team={player.team}
-        position={player.position}
-        height={player.height}
-        age={player.age}
-        weight={player.weight}
-        college={player.college}
-    />
-    
-    <div class="draft-undraft-container">
-        <button 
-            type="button" 
-            id="draft-undraft-button" 
-            class={player.drafted ? "drafted" : ""}
-            on:click={handleDraftAction}
-        >
-            {player.drafted ? 'Undraft Selected Player' : 'Draft Selected Player'}
-        </button>
-    </div>
-    
-    <PlayerTable
-        rankings={player.rankings}
-        stats={player.stats}
-        position={player.position}
-    />
+    {#if showPlayerDetails}
+        <PlayerBio 
+            name={player.name}
+            team={player.team}
+            position={player.position}
+            height={player.height}
+            age={player.age}
+            weight={player.weight}
+            college={player.college}
+        />
+        
+        <div class="draft-undraft-container">
+            <button 
+                type="button" 
+                id="draft-undraft-button" 
+                class={player.drafted ? "drafted" : ""}
+                on:click={handleDraftAction}
+            >
+                {player.drafted ? 'Undraft Selected Player' : 'Draft Selected Player'}
+            </button>
+        </div>
+        
+        <PlayerTables
+            rankings={player.rankings}
+            stats={player.stats}
+            position={player.position}
+        />
+    {/if}
 </div> 

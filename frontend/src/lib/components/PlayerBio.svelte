@@ -15,6 +15,10 @@
         height: 100%;
         width: 16.5%;
         float: left;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     .player-name,
@@ -48,7 +52,7 @@
 </style>
 
 <div class="player-bio-container">
-    <h3 class="player-name">{name}</h3>
+    <h4 class="player-name">{name}</h4  >
     <h5 class="player-team-pos">{team} {position}</h5>
     <div class="player-bio-sub">
         <p class="player-detail-desc">Height</p>
