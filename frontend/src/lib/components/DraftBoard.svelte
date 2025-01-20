@@ -3,23 +3,34 @@
     import { defaultPlayer, type Player } from '$lib/types';
 
     export let players: Player[] = [];
-    export let showAvailable = true;
-    export let position: Position = Position.ALL;
-    export let team: Team = Team.ALL;
-    export let searchTerm = '';
     export let selectedPlayer: Player = defaultPlayer;
 
+    let showAvailablePlayers = true;
+    let positionFilter: Position = Position.ALL;
+    let teamFilter: Team = Team.ALL;
+    let playerNameSearch: string | null = null;
+
     function clearSearch() {
-        position = Position.ALL;
-        team = Team.ALL;
-        searchTerm = '';
+        positionFilter = Position.ALL;
+        teamFilter = Team.ALL;
+        playerNameSearch = null;
     }
 
+    $: filteredPlayers = players.filter(player => {
+        const matchesPosition = positionFilter === Position.ALL || player.position === positionFilter;
+        const matchesTeam = teamFilter === Team.ALL || player.team === teamFilter;
+        const matchesSearch = !playerNameSearch || 
+            player.name.toLowerCase().includes(playerNameSearch.toLowerCase());
+        const matchesAvailability = showAvailablePlayers ? !player.drafted : player.drafted;
+        
+        return matchesPosition && matchesTeam && matchesSearch && matchesAvailability;
+    });
+
     $: {
-        if (players.length === 0) {
+        if (filteredPlayers.length === 0) {
             selectedPlayer = defaultPlayer;
-        } else if (selectedPlayer === defaultPlayer) {
-            selectedPlayer = players[0];
+        } else if (!filteredPlayers.includes(selectedPlayer)) {
+            selectedPlayer = filteredPlayers[0];
         }
     }
 </script>
@@ -29,18 +40,18 @@
         <button 
             type="button"
             class="available-button" 
-            class:active={showAvailable}
-            on:click={() => showAvailable = true}
-            on:keydown={(e) => e.key === 'Enter' && (showAvailable = true)}
+            class:active={showAvailablePlayers}
+            on:click={() => showAvailablePlayers = true}
+            on:keydown={(e) => e.key === 'Enter' && (showAvailablePlayers = true)}
         >
             Available Players
         </button>
         <button 
             type="button"
             class="drafted-button"
-            class:active={!showAvailable}
-            on:click={() => showAvailable = false}
-            on:keydown={(e) => e.key === 'Enter' && (showAvailable = false)}
+            class:active={!showAvailablePlayers}
+            on:click={() => showAvailablePlayers = false}
+            on:keydown={(e) => e.key === 'Enter' && (showAvailablePlayers = false)}
         >
             Drafted Players
         </button>
@@ -48,14 +59,14 @@
     <div class="search-board-wrapper">
         <div class="position-team-player-search">
             <span class="position-text">Position:</span>
-            <select class="position-dropdown" bind:value={position}>
+            <select class="position-dropdown" bind:value={positionFilter}>
                 {#each Object.values(Position) as positionOption}
                     <option value={positionOption}>{positionOption}</option>
                 {/each}
             </select>
 
             <span class="team-text">Team:</span>
-            <select class="team-dropdown" bind:value={team}>
+            <select class="team-dropdown" bind:value={teamFilter}>
                 {#each Object.values(Team) as teamOption}
                     <option value={teamOption}>{teamOption}</option>
                 {/each}
@@ -63,16 +74,16 @@
 
             <input 
                 type="search" 
-                placeholder="Player Search" 
+                placeholder="Player Name Search" 
                 class="player-search"
-                bind:value={searchTerm}
+                bind:value={playerNameSearch}
             >
             <button type="button" class="clear-search-button" on:click={clearSearch}>
                 Clear Search
             </button>
         </div>
         <div class="table-wrapper">
-            {#if players.length > 0}
+            {#if filteredPlayers.length > 0}
                 <table class="draft-board">
                     <thead>
                         <tr>
@@ -98,7 +109,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {#each players as player, i}
+                        {#each filteredPlayers as player, i}
                             <tr
                                 data-player-id={player.id}
                                 on:click={() => selectedPlayer = player}

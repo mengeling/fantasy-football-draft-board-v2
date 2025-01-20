@@ -105,10 +105,3 @@ pub struct PlayerResponse {
     pub stats: StatsResponse,
     pub drafted: bool,
 }
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct PlayerQueryParameters {
-    pub position: Option<Position>,
-    pub team: Option<Team>,
-    pub name: Option<String>,
-}

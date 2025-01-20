@@ -3,33 +3,17 @@
     import Header from '$lib/components/Header.svelte';
     import PlayerDetails from '$lib/components/PlayerDetails.svelte';
     import DraftBoard from '$lib/components/DraftBoard.svelte';
-    import { Team, Position } from '$lib/enums';
     import { defaultPlayer, type Player } from '$lib/types';
     import { fetchApi, setUserId, clearUserId } from '$lib/api';
     import { onMount } from 'svelte';
 
     let loggedIn = false;
     let players: Player[] = [];
-    let showAvailable = true;
-    let position: Position = Position.ALL;
-    let team: Team = Team.ALL;
-    let searchTerm = '';
     let selectedPlayer: Player = defaultPlayer;
 
     async function fetchPlayers() {
         try {
-            const queryParams = new URLSearchParams({});
-            if (position !== Position.ALL) {
-                queryParams.append('position', position);
-            }
-            if (team !== Team.ALL) {
-                queryParams.append('team', team);
-            }
-            if (searchTerm) {
-                queryParams.append('name', searchTerm);
-            }
-
-            players = await fetchApi(`/players?${queryParams}`);
+            players = await fetchApi('/players');
         } catch (e) {
             console.error('Error fetching players:', e);
         }
@@ -71,10 +55,6 @@
         <DraftBoard 
             {players}
             bind:selectedPlayer
-            bind:showAvailable
-            bind:position
-            bind:team
-            bind:searchTerm
         />
     </div>
 </main>

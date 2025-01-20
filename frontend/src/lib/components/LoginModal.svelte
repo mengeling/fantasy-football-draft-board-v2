@@ -54,27 +54,28 @@
     <div class="login-background">
         <span class="login-helper"></span>
         <div class="login-content">
-            <p>Enter Your Full Name</p>
-            <div class="username-div">
-                <input 
-                    type="search" 
-                    bind:value={username}
-                    placeholder="First and Last Name" 
-                    class="username-input"
+            <form on:submit|preventDefault={handleLogin}>
+                <p>Enter Your Full Name</p>
+                <div class="username-div">
+                    <input 
+                        type="search" 
+                        bind:value={username}
+                        placeholder="First and Last Name" 
+                        class="username-input"
+                        disabled={loading}
+                    >
+                </div>
+                {#if errorMessage}
+                    <p class="error">{errorMessage}</p>
+                {/if}
+                <button 
+                    type="submit" 
+                    class="login-button" 
                     disabled={loading}
                 >
-            </div>
-            {#if errorMessage}
-                <p class="error">{errorMessage}</p>
-            {/if}
-            <button 
-                type="button" 
-                class="login-button" 
-                on:click={handleLogin}
-                disabled={loading}
-            >
-                {loading ? 'Loading...' : 'View My Draft Board'}
-            </button>
+                    {loading ? 'Loading...' : 'View My Draft Board'}
+                </button>
+            </form>
         </div>
     </div>
 {:else}

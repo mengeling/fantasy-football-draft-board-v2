@@ -233,12 +233,7 @@ pub mod user_operations {
 pub mod player_operations {
     use super::*;
 
-    pub async fn get_players(
-        user_id: i32,
-        position: Option<&Position>,
-        team: Option<&Team>,
-        name: Option<&str>,
-    ) -> Result<Vec<PlayerResponse>, Error> {
+    pub async fn get_players(user_id: i32) -> Result<Vec<PlayerResponse>, Error> {
         let pool = get_pool()?;
         sqlx::query_as!(
             PlayerResponse,
@@ -322,15 +317,9 @@ pub mod player_operations {
             INNER JOIN stats s ON p.id = s.player_id
             LEFT JOIN drafted_players d ON d.user_id = $1
                 AND p.id = d.player_id
-            WHERE ($2::position_type IS NULL OR p.position = $2::position_type)
-            AND ($3::team_type IS NULL OR p.team = $3::team_type)
-            AND ($4::text IS NULL OR p.name ILIKE '%' || $4 || '%')
             ORDER BY r.overall ASC
             "#,
             user_id,
-            position as Option<&Position>,
-            team as Option<&Team>,
-            name,
         )
         .fetch_all(pool)
         .await
