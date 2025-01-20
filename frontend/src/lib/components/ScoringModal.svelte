@@ -13,6 +13,15 @@
     }
 </script>
 
+<style>
+    .login-scoring-button,
+    .login-cancel-button {
+        font-size: 0.85em;
+        margin: 1%;
+        padding: 1%;
+    }
+</style>
+
 <div class="login-background">
     <span class="login-helper"></span>
     <div class="login-content">

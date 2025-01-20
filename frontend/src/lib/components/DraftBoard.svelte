@@ -35,6 +35,118 @@
     }
 </script>
 
+<style>
+    .board-container {
+        width: 98%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .search-board-wrapper {
+        border: 1.5px solid #e6f2ff;
+        background-color: #e6f2ff;
+    }
+
+    .available-drafted-container {
+        width: 95%;
+        margin-top: 0;
+        margin-bottom: 0;
+        text-align: left;
+    }
+
+    .available-button,
+    .drafted-button {
+        padding-top: 0.5%;
+        padding-left: 0.5%;
+        padding-right: 0.5%;
+        margin: 0;
+        margin-right: -0.3%;
+        font-size: 0.7em;
+        border: 1.5px solid #e6f2ff;
+        cursor: pointer;
+    }
+
+    .available-button.active {
+        background-color: #e6f2ff;
+        border-bottom: none;
+    }
+
+    .drafted-button.active {
+        background-color: #e6f2ff;
+        border-bottom: none;
+    }
+
+    .available-button:not(.active),
+    .drafted-button:not(.active) {
+        background-color: #fcfcff;
+    }
+
+    .position-team-player-search {
+        width: 95%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 1%;
+        margin-bottom: 1%;
+        text-align: left;
+    }
+
+    .position-text,
+    .team-text {
+        font-size: 0.7em;
+        margin-left: 0.2%;
+    }
+
+    .position-dropdown,
+    .team-dropdown {
+        margin-right: 1%;
+    }
+
+    .player-search {
+        width: 15%;
+    }
+
+    .clear-search-button {
+        margin-left: 0.75%;
+    }
+
+    .table-wrapper {
+        background-color: #fcfcff;
+        width: 95%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .table-wrapper table {
+        width: 100%;
+    }
+
+    .draft-board {
+        max-height: 550px;
+        overflow-y: auto;
+        font-size: 0.72em;
+        cursor: default;
+    }
+
+    .draft-board tr td {
+        height: 25px;
+        line-height: 25px;
+        padding: 4px 0.7%;
+        white-space: nowrap;
+    }
+
+    .draft-board tr:nth-child(even) td {
+        background-color: #fcfcff;
+    }
+
+    .draft-board tr:nth-child(odd) td {
+        background-color: #e6f2ff;
+    }
+
+    .draft-board tr:hover td {
+        background-color: #cce6ff;
+    }
+</style>
+
 <div class="board-container">
     <div class="available-drafted-container">
         <button 

@@ -6,6 +6,19 @@
     const fallbackImgUrl = 'https://images.fantasypros.com/images/photo_missing_square.jpg';
 </script>
 
+<style>
+    .player-pic-container {
+        height: 160px;
+        width: 170px;
+        margin: 0;
+        float: left;
+    }
+
+    .player-pic {
+        width: 160px;
+    }
+</style>
+
 <div class="player-pic-container">
     <img 
         class="player-pic" 

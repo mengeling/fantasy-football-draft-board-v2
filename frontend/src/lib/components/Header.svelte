@@ -23,7 +23,31 @@
     });
 </script>
 
+<style>
+    .back-update-data {
+        width: 98%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 1.5%;
+        margin-bottom: 1.2%;
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .back-login-button {
+        font-size: 0.8em;
+        padding: 0.5%;
+    }
+
+    .refresh-date {
+        font-size: 0.8em;
+        margin: 0;
+    }
+</style>
+
 <div class="back-update-data">
     <button class="back-login-button" on:click={onLogout}>Back</button>
     <p class="refresh-date">Rankings Date: {refreshDate}</p>
-</div> 
+</div>

@@ -12,6 +12,44 @@
     $: positionStats = position ? POSITION_STATS[position] : [];
 </script>
 
+<style>
+    .player-tables {
+        height: 100%;
+        margin-right: 1%;
+        overflow: hidden;
+    }
+
+    .player-table {
+        font-size: 0.75em;
+        height: 50%;
+        width: 100%;
+    }
+
+    .player-table table {
+        background-color: #fcfcff;
+    }
+
+    .player-table tr td,
+    .player-table tr th {
+        padding-left: 1%;
+    }
+
+    .rank-table table {
+        width: 35%;
+    }
+
+    .stats-table table {
+        width: 100%;
+    }
+
+    .rank-header,
+    .stats-header {
+        margin-top: 0;
+        margin-bottom: 0.2%;
+        padding-top: 1.5%;
+    }
+</style>
+
 <div class="player-tables">
     <div class="player-table">
         <h4 class="rank-header">Rankings</h4>

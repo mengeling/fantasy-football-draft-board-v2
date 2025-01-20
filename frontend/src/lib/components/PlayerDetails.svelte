@@ -24,6 +24,37 @@
     }
 </script>
 
+<style>
+    .player-details {
+        width: 98%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 2.5%;
+        background-color: #e6f2ff;
+        text-align: left;
+        height: 160px;
+    }
+
+    .draft-undraft-container {
+        height: 100%;
+        width: 12%;
+        display: flex;
+        align-items: center;
+        vertical-align: top;
+        float: left;
+    }
+
+    #draft-undraft-button {
+        font-size: 0.8em;
+        padding: 3%;
+        margin-top: 5%;
+        margin-right: 35%;
+        font-weight: 600;
+        display: inline-block;
+        vertical-align: middle;
+    }
+</style>
+
 <div class="player-details">
     <PlayerImage 
         id={player.id}

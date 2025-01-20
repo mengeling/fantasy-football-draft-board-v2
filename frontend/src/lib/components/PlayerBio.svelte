@@ -10,6 +10,43 @@
     export let college: string;
 </script>
 
+<style>
+    .player-bio-container {
+        height: 100%;
+        width: 16.5%;
+        float: left;
+    }
+
+    .player-name,
+    .player-team-pos {
+        margin-top: 0;
+        margin-bottom: 2%;
+    }
+
+    .player-name {
+        margin-top: 2%;
+        margin-right: 2%;
+    }
+
+    .player-bio-sub {
+        float: left;
+        font-size: 0.8em;
+        margin-right: 8%;
+    }
+
+    .player-detail-desc {
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+
+    .player-detail-height,
+    .player-detail-weight,
+    .player-detail-age,
+    .player-detail-college {
+        margin: 0;
+    }
+</style>
+
 <div class="player-bio-container">
     <h3 class="player-name">{name}</h3>
     <h5 class="player-team-pos">{team} {position}</h5>

@@ -50,6 +50,59 @@
     }
 </script>
 
+<style>
+    .username-div {
+        width: 100%;
+        margin-bottom: 3%;
+    }
+
+    .username-input {
+        width: 40%;
+    }
+
+    .login-background {
+        background: rgba(0, 0, 0, 0.4);
+        display: block;
+        height: 100%;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+    }
+
+    .login-helper {
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+    }
+
+    .login-content {
+        background-color: #fff;
+        box-shadow: 10px 10px 60px #555;
+        display: inline-block;
+        height: auto;
+        max-width: 400px;
+        min-height: 100px;
+        vertical-align: middle;
+        width: 60%;
+        position: relative;
+        border-radius: 8px;
+        padding: 15px 5%;
+    }
+
+    .login-button {
+        font-size: 0.85em;
+        margin: 1%;
+        padding: 1%;
+    }
+
+    .error {
+        color: red;
+        font-size: 0.9em;
+        margin-top: 0.5em;
+    }
+</style>
+
 {#if currentView === 'login'}
     <div class="login-background">
         <span class="login-helper"></span>
@@ -84,11 +137,3 @@
         onCancel={() => currentView = 'login'}
     />
 {/if}
-
-<style>
-    .error {
-        color: red;
-        font-size: 0.9em;
-        margin-top: 0.5em;
-    }
-</style>
