@@ -289,13 +289,18 @@ td {
 	cursor: pointer;
 }
 
-.available-button {
-	padding-bottom: 0.1%;
+.available-button.active {
 	background-color: #e6f2ff;
+	border-bottom: none;
 }
 
-.drafted-button {
-	padding-bottom: 0.1%;
+.drafted-button.active {
+	background-color: #e6f2ff;
+	border-bottom: none;
+}
+
+.available-button:not(.active),
+.drafted-button:not(.active) {
 	background-color: #fcfcff;
 }
 
@@ -339,10 +344,17 @@ td {
 }
 
 .draft-board {
-	height: 550px;
-	overflow: scroll;
+	max-height: 550px;
+	overflow-y: auto;
 	font-size: 0.72em;
 	cursor: default;
+}
+
+.draft-board tr td {
+	height: 25px;
+	line-height: 25px;
+	padding: 4px 0.7%;
+	white-space: nowrap;
 }
 
 .draft-board tr:nth-child(even) td {
