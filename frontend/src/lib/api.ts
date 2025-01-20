@@ -24,5 +24,5 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 		throw new Error(`API call failed: ${response.statusText}`);
 	}
 
-	return response.json();
+	return options.method === 'DELETE' ? null : response.json();
 }

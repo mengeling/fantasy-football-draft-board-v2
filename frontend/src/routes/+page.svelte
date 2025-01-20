@@ -34,6 +34,18 @@
         players = [];
     }
 
+    function handlePlayerDraftChange(updatedPlayer: Player) {
+        const playerIndex = players.findIndex(p => p.id === updatedPlayer.id);
+        if (playerIndex === -1) {
+            throw new Error(`Failed to find player with ID ${updatedPlayer.id}`);
+        }
+        players = [
+            ...players.slice(0, playerIndex),
+            updatedPlayer,
+            ...players.slice(playerIndex + 1)
+        ];
+    }
+
     onMount(() => {
         if (loggedIn) {
             fetchPlayers();
@@ -51,7 +63,10 @@
     />
 
     <div class="main-content">
-        <PlayerDetails player={selectedPlayer} />
+        <PlayerDetails
+            player={selectedPlayer}
+            onPlayerDraftChange={handlePlayerDraftChange}
+        />
         <DraftBoard 
             {players}
             bind:selectedPlayer

@@ -3,13 +3,24 @@
     import PlayerImage from './PlayerImage.svelte';
     import PlayerBio from './PlayerBio.svelte';
     import PlayerTable from './PlayerTable.svelte';
+    import { fetchApi } from '$lib/api';
     
     export let player: Player = defaultPlayer;
+    export let onPlayerDraftChange: (player: Player) => void;
 
-    let isDrafted = false;
+    async function handleDraftAction() {
+        if (!player.id) return;
 
-    function toggleDraft() {
-        isDrafted = !isDrafted;
+        const method = player.drafted ? 'DELETE' : 'POST';
+        try {
+            await fetchApi(`/drafted_players/${player.id}`, { method });
+        } catch (error) {
+            console.error('Failed to update draft status:', error);
+            return;
+        }
+
+        const updatedPlayer = { ...player, drafted: !player.drafted };
+        onPlayerDraftChange(updatedPlayer);
     }
 </script>
 
@@ -33,10 +44,10 @@
         <button 
             type="button" 
             id="draft-undraft-button" 
-            class={isDrafted ? "drafted" : ""}
-            on:click={toggleDraft}
+            class={player.drafted ? "drafted" : ""}
+            on:click={handleDraftAction}
         >
-            {isDrafted ? 'Undraft Selected Player' : 'Draft Selected Player'}
+            {player.drafted ? 'Undraft Selected Player' : 'Draft Selected Player'}
         </button>
     </div>
     
