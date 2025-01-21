@@ -72,6 +72,7 @@ pub struct PlayerBio {
     pub weight: String,
     pub age: Option<i32>,
     pub college: String,
+    pub bye_week: Option<i32>,
 }
 
 #[derive(Debug, Clone)]
@@ -84,10 +85,8 @@ pub struct PlayerIdentity {
 
 #[derive(Debug, Clone)]
 pub struct PlayerTask {
-    pub player_id: i32,
     pub identity: PlayerIdentity,
     pub position: Position,
-    pub bye_week: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

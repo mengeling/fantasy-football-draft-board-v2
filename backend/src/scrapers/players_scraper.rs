@@ -32,6 +32,7 @@ impl PlayersScraper {
             weight: String::new(),
             age: None,
             college: String::new(),
+            bye_week: None,
         };
 
         if let Some(bio_div) = html.select(&bio_section_selector).next() {
@@ -52,6 +53,19 @@ impl PlayersScraper {
             player_bio.college = bio_details.get("College").cloned().unwrap_or_default();
         }
 
+        let row_selector = Selector::parse("table.table-bordered:not(.sos) tbody tr").unwrap();
+        let cell_selector = Selector::parse("table.table-bordered:not(.sos) td").unwrap();
+        for (row_index, row) in html.select(&row_selector).enumerate() {
+            let cells: Vec<_> = row.select(&cell_selector).collect();
+            if cells.len() >= 2 {
+                let opponent = cells[1].text().collect::<String>().trim().to_string();
+                if opponent == "BYE" {
+                    player_bio.bye_week = Some((row_index + 1) as i32);
+                    break;
+                }
+            }
+        }
+
         Ok(player_bio)
     }
 
@@ -63,11 +77,11 @@ impl PlayersScraper {
                     let player_bio = player_scraper.scrape().await?;
 
                     Ok::<_, anyhow::Error>(Player {
-                        id: task.player_id,
+                        id: task.identity.id,
                         name: task.identity.name,
                         position: task.position,
                         team: task.identity.team,
-                        bye_week: task.bye_week,
+                        bye_week: player_bio.bye_week,
                         height: player_bio.height,
                         weight: player_bio.weight,
                         age: player_bio.age,

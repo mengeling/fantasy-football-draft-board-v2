@@ -99,8 +99,6 @@ impl<'a> RankingsScraper<'a> {
                 .expect("Overall ranking should always be present");
             let player_identity = get_player_identity(&cells[2]);
             let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
-            // TODO: Click on cell 3 to open player bio modal and get bye week
-            let bye_week = None;
             let best_ranking = cells[4]
                 .text()
                 .collect::<String>()
@@ -138,10 +136,8 @@ impl<'a> RankingsScraper<'a> {
             if !seen_players.contains(&player_identity.id) {
                 seen_players.insert(player_identity.id);
                 player_tasks.push(PlayerTask {
-                    player_id: player_identity.id,
                     identity: player_identity,
                     position: position.clone(),
-                    bye_week,
                 });
             }
         }
@@ -177,6 +173,7 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
         .value()
         .attr("href")
         .unwrap_or("")
+        .replace("/players/", "/schedule/")
         .to_string();
     let name = player_url_element.text().collect::<String>();
 
