@@ -253,7 +253,7 @@ sudo certbot --nginx -d your-domain.com
 
 ### Cron Job Setup
 
-Set up the cron job for data updates:
+Set up the cron job for daily data updates:
 
 ```bash
 crontab -e
@@ -262,5 +262,5 @@ crontab -e
 Add:
 
 ```
-0 0 * * * RUST_LOG=info /home/ubuntu/fantasy-football-draft-board-v2/backend/target/release/ffball-app >> /home/ubuntu/ffball.log 2>&1
+0 0 * * * curl -X POST http://127.0.0.1:8080/fantasy-data/update >> /home/ubuntu/ffball.log 2>&1
 ```
