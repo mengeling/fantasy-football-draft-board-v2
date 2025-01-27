@@ -237,20 +237,6 @@ sudo systemctl start ffball
 sudo systemctl enable ffball
 ```
 
-### Monitoring
-
-- Backend logs: `sudo journalctl -u ffball -f`
-- Nginx logs: `sudo tail -f /var/log/nginx/error.log`
-
-### SSL Setup (Optional)
-
-To enable HTTPS:
-
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
-
 ### Cron Job Setup
 
 Set up the cron job for daily data updates:
@@ -264,3 +250,17 @@ Add:
 ```
 0 0 * * * curl -X POST http://127.0.0.1:8080/fantasy-data/update >> /home/ubuntu/ffball.log 2>&1
 ```
+
+### SSL Setup (Optional)
+
+To enable HTTPS:
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
+
+### Monitoring
+
+- Backend logs: `sudo journalctl -u ffball`
+- Nginx logs: `sudo tail /var/log/nginx/error.log`
