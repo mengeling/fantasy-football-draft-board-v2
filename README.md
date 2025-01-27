@@ -6,11 +6,11 @@ This web application provides the same interactive fantasy football drafting exp
 
 ## App Demo
 
-![Demo](frontend/src/static/img/fantasy_football_recording.gif)
+![Demo](frontend/static/img/fantasy_football_recording.gif)
 
 ## App Screenshot
 
-![App Screenshot](frontend/src/static/img/app_pic.png)
+![App Screenshot](frontend/static/img/app_pic.png)
 
 ## Deployment Guide
 
