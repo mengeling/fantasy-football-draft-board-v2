@@ -4,6 +4,8 @@
     
     let refreshDate = '';
     export let onLogout: () => void;
+    export let onUpdateScoring: () => void;
+    export let loading = false;
 
     async function fetchLastUpdate() {
         try {
@@ -41,6 +43,14 @@
         padding: 0.5%;
     }
 
+    .update-scoring-button {
+        font-size: 0.8em;
+        padding: 0.5%;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
     .refresh-date {
         font-size: 0.8em;
         margin: 0;
@@ -49,5 +59,12 @@
 
 <div class="back-update-data">
     <button class="back-login-button" on:click={onLogout}>Back</button>
+    <button 
+        class="update-scoring-button" 
+        on:click={onUpdateScoring}
+        disabled={loading}
+    >
+        Update Scoring Settings
+    </button>
     <p class="refresh-date">Rankings Date: {refreshDate}</p>
 </div>

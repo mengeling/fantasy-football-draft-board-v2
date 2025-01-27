@@ -7,6 +7,7 @@
     
     export let player: Player = defaultPlayer;
     export let onPlayerDraftChange: (player: Player) => void;
+    export let userId: string | undefined;
 
     $: showPlayerDetails = player !== defaultPlayer;
 
@@ -15,7 +16,7 @@
 
         const method = player.drafted ? 'DELETE' : 'POST';
         try {
-            await fetchApi(`/drafted_players/${player.id}`, { method });
+            await fetchApi(`/drafted_players/${player.id}`, { method, userId });
         } catch (error) {
             console.error('Failed to update draft status:', error);
             return;

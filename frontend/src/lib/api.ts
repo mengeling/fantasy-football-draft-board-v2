@@ -1,23 +1,20 @@
-let userId = '';
-
-export function setUserId(id: string) {
-	userId = id;
+interface ApiOptions {
+	userId?: string;
+	method?: string;
+	headers?: Record<string, string>;
+	body?: string;
 }
 
-export function clearUserId() {
-	userId = '';
-}
-
-export async function fetchApi(endpoint: string, options: RequestInit = {}) {
-	const headers = {
+export async function fetchApi(endpoint: string, { userId, headers, ...options }: ApiOptions = {}) {
+	const requestHeaders = {
 		'Content-Type': 'application/json',
-		...options.headers,
-		...(userId && { 'X-User-ID': userId })
+		...(userId && { 'X-User-ID': userId }),
+		...headers
 	};
 
 	const response = await fetch(`/api${endpoint}`, {
 		...options,
-		headers
+		headers: requestHeaders
 	});
 
 	if (!response.ok) {

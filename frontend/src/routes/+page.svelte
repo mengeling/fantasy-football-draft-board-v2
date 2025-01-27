@@ -3,17 +3,22 @@
     import Header from '$lib/components/Header.svelte';
     import PlayerDetails from '$lib/components/PlayerDetails.svelte';
     import DraftBoard from '$lib/components/DraftBoard.svelte';
-    import { defaultPlayer, type Player } from '$lib/types';
-    import { fetchApi, setUserId, clearUserId } from '$lib/api';
+    import ScoringModal from '$lib/components/ScoringModal.svelte';
+    import { defaultPlayer, type Player, type User } from '$lib/types';
+    import { fetchApi } from '$lib/api';
+    import { ScoringSettings } from '$lib/enums';
     import { onMount } from 'svelte';
 
     let loggedIn = false;
     let players: Player[] = [];
     let selectedPlayer: Player = defaultPlayer;
+    let showScoringModal = false;
+    let currentUser: User | null = null;
+    let loading = false;
 
     async function fetchPlayers() {
         try {
-            players = await fetchApi('/players');
+            players = await fetchApi('/players', { userId: currentUser?.id });
         } catch (e) {
             console.error('Error fetching players:', e);
         }
@@ -23,15 +28,34 @@
         fetchPlayers();
     }
 
-    function handleLogin(username: string, userData: any) {
+    function handleLogin(user: User) {
+        currentUser = user;
         loggedIn = true;
-        setUserId(userData.id);
     }
 
     function handleLogout() {
         loggedIn = false;
-        clearUserId();
         players = [];
+        currentUser = null;
+    }
+
+    async function handleScoringUpdate(scoring: ScoringSettings) {
+        if (!currentUser) return;
+        
+        loading = true;
+        try {
+            currentUser = await fetchApi(`/users/${currentUser.username}`, {
+                method: 'PUT',
+                body: JSON.stringify({ scoring_settings: scoring }),
+                userId: currentUser.id
+            });
+            await fetchPlayers();
+            showScoringModal = false;
+        } catch (error) {
+            console.error('Failed to update user:', error);
+        } finally {
+            loading = false;
+        }
     }
 
     function handlePlayerDraftChange(updatedPlayer: Player) {
@@ -54,18 +78,28 @@
 </script>
 
 <main>
+    <Header
+        onLogout={handleLogout}
+        onUpdateScoring={() => showScoringModal = true}
+        {loading}
+    />
+
     {#if !loggedIn}
         <LoginModal onLogin={handleLogin} />
     {/if}
 
-    <Header
-        onLogout={handleLogout}
-    />
+    {#if showScoringModal}
+        <ScoringModal
+            onSelect={handleScoringUpdate}
+            onCancel={() => showScoringModal = false}
+        />
+    {/if}
 
     <div class="main-content">
         <PlayerDetails
             player={selectedPlayer}
             onPlayerDraftChange={handlePlayerDraftChange}
+            userId={currentUser?.id}
         />
         <DraftBoard 
             {players}

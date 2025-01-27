@@ -1,4 +1,4 @@
-import type { Position, Team } from './enums';
+import type { Position, ScoringSettings, Team } from './enums';
 
 export type Rankings = {
 	overall: number | null;
@@ -140,3 +140,10 @@ export const defaultPlayer: Player = {
 	stats: defaultStats,
 	drafted: false
 };
+
+export interface User {
+	id: string;
+	username: string;
+	scoring_settings: ScoringSettings;
+	created_at: string;
+}
