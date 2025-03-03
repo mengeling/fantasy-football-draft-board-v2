@@ -147,28 +147,26 @@ fn get_player_id(row: &scraper::element_ref::ElementRef) -> Option<i32> {
 }
 
 fn calculate_standard_points(stats: &Stats) -> f64 {
-    let mut points = 0.0;
-    points += stats.base.pass_yds * 0.04;
-    points += stats.base.pass_td * 4.0;
-    points += stats.base.pass_int * -2.0;
-    points += stats.base.rush_yds * 0.1;
-    points += stats.base.rush_td * 6.0;
-    points += stats.base.fumbles * -2.0;
-    points += stats.base.rec_yds * 0.1;
-    points += stats.base.rec_td * 6.0;
-    points += stats.base.fg_1_19 * 3.0;
-    points += stats.base.fg_20_29 * 3.0;
-    points += stats.base.fg_30_39 * 3.0;
-    points += stats.base.fg_40_49 * 4.0;
-    points += stats.base.fg_50 * 5.0;
-    points += stats.base.extra_points * 1.0;
-    points += stats.base.sacks * 1.0;
-    points += stats.base.int * 2.0;
-    points += stats.base.fumbles_recovered * 2.0;
-    points += stats.base.def_td * 6.0;
-    points += stats.base.safeties * 2.0;
-    points += stats.base.special_teams_td * 6.0;
-    points
+    0.0 + stats.base.pass_yds * 0.04
+        + stats.base.pass_td * 4.0
+        + stats.base.pass_int * -2.0
+        + stats.base.rush_yds * 0.1
+        + stats.base.rush_td * 6.0
+        + stats.base.fumbles * -2.0
+        + stats.base.rec_yds * 0.1
+        + stats.base.rec_td * 6.0
+        + stats.base.fg_1_19 * 3.0
+        + stats.base.fg_20_29 * 3.0
+        + stats.base.fg_30_39 * 3.0
+        + stats.base.fg_40_49 * 4.0
+        + stats.base.fg_50 * 5.0
+        + stats.base.extra_points * 1.0
+        + stats.base.sacks * 1.0
+        + stats.base.int * 2.0
+        + stats.base.fumbles_recovered * 2.0
+        + stats.base.def_td * 6.0
+        + stats.base.safeties * 2.0
+        + stats.base.special_teams_td * 6.0
 }
 
 fn calculate_half_ppr_points(stats: &Stats) -> f64 {

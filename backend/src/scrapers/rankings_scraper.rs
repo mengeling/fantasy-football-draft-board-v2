@@ -92,33 +92,14 @@ impl<'a> RankingsScraper<'a> {
         for row in document.select(&row_selector) {
             let cells: Vec<_> = row.select(&cell_selector).collect();
 
-            let overall_ranking = cells[0]
-                .text()
-                .collect::<String>()
-                .parse::<i32>()
-                .expect("Overall ranking should always be present");
+            let overall_ranking = parse_cell_as_number::<i32>(&cells[0], "Overall ranking");
             let player_identity = get_player_identity(&cells[2]);
             let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
-            let best_ranking = cells[4]
-                .text()
-                .collect::<String>()
-                .parse::<i32>()
-                .expect("Best ranking should always be present");
-            let worst_ranking = cells[5]
-                .text()
-                .collect::<String>()
-                .parse::<i32>()
-                .expect("Worst ranking should always be present");
-            let average_ranking = cells[6]
-                .text()
-                .collect::<String>()
-                .parse::<f32>()
-                .expect("Average ranking should always be present");
-            let standard_deviation_ranking = cells[7]
-                .text()
-                .collect::<String>()
-                .parse::<f32>()
-                .expect("Standard deviation ranking should always be present");
+            let best_ranking = parse_cell_as_number::<i32>(&cells[4], "Best ranking");
+            let worst_ranking = parse_cell_as_number::<i32>(&cells[5], "Worst ranking");
+            let average_ranking = parse_cell_as_number::<f32>(&cells[6], "Average ranking");
+            let standard_deviation_ranking =
+                parse_cell_as_number::<f32>(&cells[7], "Standard deviation ranking");
 
             rankings.push(Rankings {
                 player_id: player_identity.id,
@@ -144,6 +125,16 @@ impl<'a> RankingsScraper<'a> {
 
         Ok((rankings, player_tasks))
     }
+}
+
+fn parse_cell_as_number<T: FromStr>(
+    cell: &scraper::element_ref::ElementRef,
+    field_name: &str,
+) -> T {
+    cell.text()
+        .collect::<String>()
+        .parse()
+        .unwrap_or_else(|_| panic!("{} should always be present", field_name))
 }
 
 fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> PlayerIdentity {
