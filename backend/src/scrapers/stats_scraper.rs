@@ -1,6 +1,7 @@
 use anyhow::Result;
 use regex::Regex;
 use reqwest::Client;
+use round::round;
 use scraper::{Html, Selector};
 use url::Url;
 
@@ -104,20 +105,15 @@ impl StatsScraper {
                     if current_stats.base.games > 0.0 {
                         current_stats.standard_pts = calculate_standard_points(&current_stats);
                         current_stats.standard_pts_per_game =
-                            ((current_stats.standard_pts / current_stats.base.games) * 10.0)
-                                .round()
-                                / 10.0;
+                            round(current_stats.standard_pts / current_stats.base.games, 1);
 
                         current_stats.half_ppr_pts = calculate_half_ppr_points(&current_stats);
                         current_stats.half_ppr_pts_per_game =
-                            ((current_stats.half_ppr_pts / current_stats.base.games) * 10.0)
-                                .round()
-                                / 10.0;
+                            round(current_stats.half_ppr_pts / current_stats.base.games, 1);
 
                         current_stats.ppr_pts = calculate_ppr_points(&current_stats);
                         current_stats.ppr_pts_per_game =
-                            ((current_stats.ppr_pts / current_stats.base.games) * 10.0).round()
-                                / 10.0;
+                            round(current_stats.ppr_pts / current_stats.base.games, 1);
                     }
 
                     if let Some(player_id) = player_id {
@@ -170,9 +166,9 @@ fn calculate_standard_points(stats: &Stats) -> f64 {
 }
 
 fn calculate_half_ppr_points(stats: &Stats) -> f64 {
-    calculate_standard_points(stats) + (stats.base.receptions * 0.5)
+    stats.standard_pts + (stats.base.receptions * 0.5)
 }
 
 fn calculate_ppr_points(stats: &Stats) -> f64 {
-    calculate_standard_points(stats) + stats.base.receptions
+    stats.standard_pts + stats.base.receptions
 }

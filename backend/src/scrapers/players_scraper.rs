@@ -20,6 +20,10 @@ impl PlayersScraper {
         }
     }
 
+    fn get_bio_field(bio_details: &HashMap<String, String>, key: &str) -> String {
+        bio_details.get(key).cloned().unwrap_or_default()
+    }
+
     pub async fn scrape(&self) -> Result<PlayerBio> {
         let response = self.client.get(&self.url).send().await?;
         let body = response.text().await?;
@@ -36,7 +40,7 @@ impl PlayersScraper {
         };
 
         if let Some(bio_div) = html.select(&bio_section_selector).next() {
-            let bio_details: HashMap<_, _> = bio_div
+            let bio: HashMap<_, _> = bio_div
                 .select(&bio_field_selector)
                 .filter_map(|detail| {
                     let text = detail.text().collect::<String>();
@@ -45,12 +49,10 @@ impl PlayersScraper {
                 })
                 .collect();
 
-            player_bio.height = bio_details.get("Height").cloned().unwrap_or_default();
-            player_bio.weight = bio_details.get("Weight").cloned().unwrap_or_default();
-            player_bio.age = bio_details
-                .get("Age")
-                .and_then(|age| age.parse::<i32>().ok());
-            player_bio.college = bio_details.get("College").cloned().unwrap_or_default();
+            player_bio.height = Self::get_bio_field(&bio, "Height");
+            player_bio.weight = Self::get_bio_field(&bio, "Weight");
+            player_bio.age = Self::get_bio_field(&bio, "Age").parse().ok();
+            player_bio.college = Self::get_bio_field(&bio, "College");
         }
 
         let row_selector = Selector::parse("table.table-bordered:not(.sos) tbody tr").unwrap();
