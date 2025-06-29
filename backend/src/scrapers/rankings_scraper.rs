@@ -41,22 +41,34 @@ impl<'a> RankingsScraper<'a> {
             self.tab.wait_until_navigated()?;
             self.tab.wait_for_element("table#ranking-table")?;
 
-            self.tab.evaluate(
-                "let rows = document.querySelectorAll('tbody tr.player-row');
-                    let lastRow = rows[rows.length - 1];
-                    lastRow.scrollIntoView();",
-                false,
-            )?;
+            // Click the "View" dropdown button to change it to the "Ranks" view to get detailed rankings
+            let view_dropdown_button = self
+                .tab
+                .wait_for_element(".select-advanced--view .select-advanced__button")?;
+            view_dropdown_button.click()?;
+
+            self.tab
+                .wait_for_element(".select-advanced--view .select-advanced__list")?;
+
+            let option_buttons = self
+                .tab
+                .find_elements(".select-advanced--view .select-advanced-content--button")?;
+            for option_button in option_buttons {
+                if option_button.get_inner_text()?.trim() == "Ranks" {
+                    option_button.click()?;
+                    break;
+                }
+            }
+
+            // Wait for table to render with detailed rankings and then scroll to the bottom of it to load all players
+            self.tab.wait_for_element("table#ranking-table")?;
+            let ranking_table_last_row = self
+                .tab
+                .wait_for_element("tbody tr.player-row:last-child")?;
+            ranking_table_last_row.scroll_into_view()?;
 
             let ranking_table = self.tab.wait_for_element("table#ranking-table")?;
-            let ranking_table_html =
-                ranking_table.call_js_fn("function() { return this.outerHTML; }", vec![], false)?;
-            let ranking_table_html_value = ranking_table_html
-                .value
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap();
-
-            ranking_tables.push((ranking_table_html_value, scoring_settings));
+            ranking_tables.push((ranking_table.get_content()?, scoring_settings));
         }
         self.tab.close(true)?;
 
