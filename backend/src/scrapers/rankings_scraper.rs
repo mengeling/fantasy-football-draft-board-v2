@@ -55,8 +55,9 @@ impl<'a> RankingsScraper<'a> {
             for option_button in &view_option_buttons {
                 if let Ok(text) = option_button.get_inner_text() {
                     if text.trim() == "Ranks" {
-                        option_button.click()?;
                         found_ranks_option = true;
+                        option_button.click()?;
+                        std::thread::sleep(std::time::Duration::from_millis(500));
                         break;
                     }
                 }
