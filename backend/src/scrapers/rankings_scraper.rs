@@ -66,7 +66,6 @@ impl<'a> RankingsScraper<'a> {
                 return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
             }
 
-            std::thread::sleep(std::time::Duration::from_millis(1000));
             self.tab.wait_for_element("table#ranking-table")?;
             let ranking_table_last_row = self
                 .tab
@@ -109,15 +108,6 @@ impl<'a> RankingsScraper<'a> {
 
         for row in document.select(&row_selector) {
             let cells: Vec<_> = row.select(&cell_selector).collect();
-
-            // Debug: Print cell contents
-            println!("=== Row Debug ===");
-            for (i, cell) in cells.iter().enumerate() {
-                let cell_text = cell.text().collect::<String>().trim().to_string();
-                println!("Cell {}: '{}'", i, cell_text);
-            }
-            println!("================");
-
             let overall_ranking = parse_cell_as_number::<i32>(&cells[0], "Overall ranking");
             let player_identity = get_player_identity(&cells[2]);
             let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
