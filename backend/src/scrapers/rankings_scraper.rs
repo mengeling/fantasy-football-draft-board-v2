@@ -66,6 +66,7 @@ impl<'a> RankingsScraper<'a> {
                 return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
             }
 
+            std::thread::sleep(std::time::Duration::from_millis(2000));
             self.tab.wait_for_element("table#ranking-table")?;
             let ranking_table_last_row = self
                 .tab
