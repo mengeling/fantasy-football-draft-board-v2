@@ -46,56 +46,55 @@ impl<'a> RankingsScraper<'a> {
             let view_dropdown_button = self
                 .tab
                 .wait_for_element(".select-advanced--view .select-advanced__button")?;
-            println!("Found dropdown button, clicking...");
-
-            let select_advanced_view = self.tab.wait_for_element(".select-advanced--view")?;
+            // println!("Found dropdown button, clicking...");
 
             // Debug: Check button state before clicking
-            match select_advanced_view.get_content() {
-                Ok(html) => println!("View HTML before click: {}", html),
-                Err(e) => println!("Error getting view HTML: {:?}", e),
-            }
+            // match view_dropdown_button.get_content() {
+            //     Ok(html) => println!("Button HTML before click: {}", html),
+            //     Err(e) => println!("Error getting button HTML: {:?}", e),
+            // }
 
-            view_dropdown_button.click()?;
-            println!("Click completed");
-
-            // Wait a moment for the dropdown to start opening
-            std::thread::sleep(std::time::Duration::from_millis(500));
-
-            // Debug: Check if the button state changed
-            match select_advanced_view.get_content() {
-                Ok(html) => println!("View HTML after click: {}", html),
-                Err(e) => println!("Error getting view HTML: {:?}", e),
-            }
-
-            // Wait for the dropdown list to appear
-            println!("Waiting for dropdown list to appear...");
-            match self
-                .tab
-                .wait_for_element(".select-advanced--view .select-advanced__list--show")
-            {
-                Ok(_) => println!("Dropdown list is visible!"),
+            // Click the dropdown button using JavaScript
+            // println!("Clicking dropdown button with JavaScript...");
+            match view_dropdown_button.call_js_fn("function() { this.click(); }", vec![], false) {
+                Ok(_) => println!("JavaScript click completed"),
                 Err(e) => {
-                    println!("Error waiting for dropdown: {:?}", e);
-                    // Try to find any dropdown list to see what's there
-                    match self
-                        .tab
-                        .find_elements(".select-advanced--view .select-advanced__list")
-                    {
-                        Ok(lists) => {
-                            println!("Found {} dropdown lists", lists.len());
-                            for (i, list) in lists.iter().enumerate() {
-                                match list.get_content() {
-                                    Ok(html) => println!("List {} HTML: {}", i, html),
-                                    Err(e) => println!("Error getting list {} HTML: {:?}", i, e),
-                                }
-                            }
-                        }
-                        Err(e) => println!("Error finding any dropdown lists: {:?}", e),
-                    }
-                    return Err(e.into());
+                    println!("JavaScript click failed: {:?}", e);
+                    return Err(anyhow::anyhow!("Failed to click dropdown button: {:?}", e));
                 }
             }
+
+            // Wait longer for the dropdown to open
+            // println!("Waiting for dropdown to open...");
+            // std::thread::sleep(std::time::Duration::from_millis(500));
+
+            // Debug: Check if the button got the --open class
+            // match view_dropdown_button.get_content() {
+            //     Ok(html) => {
+            //         println!("Button HTML after click: {}", html);
+            //         if html.contains("select-advanced__button--open") {
+            //             println!("Button has --open class (dropdown should be open)");
+            //         } else {
+            //             println!("Button does NOT have --open class (dropdown is closed)");
+            //         }
+            //     }
+            //     Err(e) => println!("Error getting button HTML after click: {:?}", e),
+            // }
+
+            // // Check if dropdown is open by looking for the --open class on the button
+            // match view_dropdown_button.get_content() {
+            //     Ok(html) => {
+            //         if html.contains("select-advanced__button--open") {
+            //             println!("Dropdown is open (button has --open class)");
+            //         } else {
+            //             println!("Dropdown is NOT open (button missing --open class)");
+            //             return Err(anyhow::anyhow!(
+            //                 "Failed to open dropdown - button missing --open class"
+            //             ));
+            //         }
+            //     }
+            //     Err(e) => return Err(anyhow::anyhow!("Error checking button state: {:?}", e)),
+            // }
 
             // Find the dropdown options using the correct selectors
             let option_buttons = self.tab.find_elements(
@@ -104,33 +103,66 @@ impl<'a> RankingsScraper<'a> {
             println!("Found {} dropdown options", option_buttons.len());
 
             // Try to find and click the "Ranks" option
-            let mut found_ranks = false;
+            let mut found_ranks_option = false;
             for (i, option_button) in option_buttons.iter().enumerate() {
+                // Debug: Print the HTML of each option button
+                // match option_button.get_content() {
+                //     Ok(html) => println!("Option {} HTML: {}", i, html),
+                //     Err(e) => println!("Error getting option {} HTML: {:?}", i, e),
+                // }
+
                 // Get the text from the .select-advanced-content__text div
                 match option_button.find_element(".select-advanced-content__text") {
-                    Ok(text_element) => match text_element.get_inner_text() {
-                        Ok(text) => {
-                            let trimmed_text = text.trim();
-                            println!("Option {}: '{}'", i, trimmed_text);
-                            if trimmed_text == "Ranks" {
-                                println!("Found Ranks option, clicking...");
-                                option_button.click()?;
-                                found_ranks = true;
-                                break;
+                    Ok(text_element) => {
+                        // Debug: Print the HTML of the text element
+                        // match text_element.get_content() {
+                        //     Ok(html) => println!("Option {} text element HTML: {}", i, html),
+                        //     Err(e) => println!(
+                        //         "Error getting text element HTML for option {}: {:?}",
+                        //         i, e
+                        //     ),
+                        // }
+
+                        match text_element.get_inner_text() {
+                            Ok(text) => {
+                                // println!(
+                                //     "Option {} raw text: '{}' (length: {})",
+                                //     i,
+                                //     text,
+                                //     text.len()
+                                // );
+                                // let trimmed_text = text.trim();
+                                // println!(
+                                //     "Option {} trimmed text: '{}' (length: {})",
+                                //     i,
+                                //     trimmed_text,
+                                //     trimmed_text.len()
+                                // );
+
+                                // // Also check for any non-printable characters
+                                // let bytes: Vec<u8> = text.bytes().collect();
+                                // println!("Option {} bytes: {:?}", i, bytes);
+
+                                if text.trim() == "Ranks" {
+                                    println!("Found Ranks option, clicking...");
+                                    option_button.click()?;
+                                    found_ranks_option = true;
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                // eprintln!("Error getting text for option {}: {:?}", i, e);
                             }
                         }
-                        Err(e) => {
-                            eprintln!("Error getting text for option {}: {:?}", i, e);
-                        }
-                    },
+                    }
                     Err(e) => {
-                        eprintln!("Error finding text element for option {}: {:?}", i, e);
+                        // eprintln!("Error finding text element for option {}: {:?}", i, e);
                     }
                 }
             }
 
-            if !found_ranks {
-                eprintln!("Warning: Could not find 'Ranks' option in dropdown");
+            if !found_ranks_option {
+                return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
             }
 
             // Wait for table to render with detailed rankings and then scroll to the bottom of it to load all players
