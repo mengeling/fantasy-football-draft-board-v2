@@ -37,135 +37,34 @@ impl<'a> RankingsScraper<'a> {
         let mut ranking_tables = Vec::new();
 
         for (scoring_settings, url) in Self::get_urls() {
-            println!("Scraping {}...", url);
             self.tab.navigate_to(url)?;
             self.tab.wait_until_navigated()?;
-            // self.tab.wait_for_element("table#ranking-table")?;
 
-            // Click the "View" dropdown button to change it to the "Ranks" view to get detailed rankings
             let view_dropdown_button = self
                 .tab
                 .wait_for_element(".select-advanced--view .select-advanced__button")?;
-            // println!("Found dropdown button, clicking...");
+            view_dropdown_button.call_js_fn("function() { this.click(); }", vec![], false)?;
+            self.tab.wait_for_element(
+                ".select-advanced--view .select-advanced__button.select-advanced__button--open",
+            )?;
 
-            // Debug: Check button state before clicking
-            // match view_dropdown_button.get_content() {
-            //     Ok(html) => println!("Button HTML before click: {}", html),
-            //     Err(e) => println!("Error getting button HTML: {:?}", e),
-            // }
-
-            // Click the dropdown button using JavaScript
-            // println!("Clicking dropdown button with JavaScript...");
-            match view_dropdown_button.call_js_fn("function() { this.click(); }", vec![], false) {
-                Ok(_) => println!("JavaScript click completed"),
-                Err(e) => {
-                    println!("JavaScript click failed: {:?}", e);
-                    return Err(anyhow::anyhow!("Failed to click dropdown button: {:?}", e));
-                }
-            }
-
-            // Wait longer for the dropdown to open
-            // println!("Waiting for dropdown to open...");
-            // std::thread::sleep(std::time::Duration::from_millis(500));
-
-            // Debug: Check if the button got the --open class
-            // match view_dropdown_button.get_content() {
-            //     Ok(html) => {
-            //         println!("Button HTML after click: {}", html);
-            //         if html.contains("select-advanced__button--open") {
-            //             println!("Button has --open class (dropdown should be open)");
-            //         } else {
-            //             println!("Button does NOT have --open class (dropdown is closed)");
-            //         }
-            //     }
-            //     Err(e) => println!("Error getting button HTML after click: {:?}", e),
-            // }
-
-            // // Check if dropdown is open by looking for the --open class on the button
-            // match view_dropdown_button.get_content() {
-            //     Ok(html) => {
-            //         if html.contains("select-advanced__button--open") {
-            //             println!("Dropdown is open (button has --open class)");
-            //         } else {
-            //             println!("Dropdown is NOT open (button missing --open class)");
-            //             return Err(anyhow::anyhow!(
-            //                 "Failed to open dropdown - button missing --open class"
-            //             ));
-            //         }
-            //     }
-            //     Err(e) => return Err(anyhow::anyhow!("Error checking button state: {:?}", e)),
-            // }
-
-            // Find the dropdown options using the correct selectors
-            let option_buttons = self.tab.find_elements(
+            let view_option_buttons = self.tab.find_elements(
                 ".select-advanced--view .select-advanced__item .select-advanced-content--button",
             )?;
-            println!("Found {} dropdown options", option_buttons.len());
-
-            // Try to find and click the "Ranks" option
             let mut found_ranks_option = false;
-            for (i, option_button) in option_buttons.iter().enumerate() {
-                // Debug: Print the HTML of each option button
-                // match option_button.get_content() {
-                //     Ok(html) => println!("Option {} HTML: {}", i, html),
-                //     Err(e) => println!("Error getting option {} HTML: {:?}", i, e),
-                // }
-
-                // Get the text from the .select-advanced-content__text div
-                match option_button.find_element(".select-advanced-content__text") {
-                    Ok(text_element) => {
-                        // Debug: Print the HTML of the text element
-                        // match text_element.get_content() {
-                        //     Ok(html) => println!("Option {} text element HTML: {}", i, html),
-                        //     Err(e) => println!(
-                        //         "Error getting text element HTML for option {}: {:?}",
-                        //         i, e
-                        //     ),
-                        // }
-
-                        match text_element.get_inner_text() {
-                            Ok(text) => {
-                                // println!(
-                                //     "Option {} raw text: '{}' (length: {})",
-                                //     i,
-                                //     text,
-                                //     text.len()
-                                // );
-                                // let trimmed_text = text.trim();
-                                // println!(
-                                //     "Option {} trimmed text: '{}' (length: {})",
-                                //     i,
-                                //     trimmed_text,
-                                //     trimmed_text.len()
-                                // );
-
-                                // // Also check for any non-printable characters
-                                // let bytes: Vec<u8> = text.bytes().collect();
-                                // println!("Option {} bytes: {:?}", i, bytes);
-
-                                if text.trim() == "Ranks" {
-                                    println!("Found Ranks option, clicking...");
-                                    option_button.click()?;
-                                    found_ranks_option = true;
-                                    break;
-                                }
-                            }
-                            Err(e) => {
-                                // eprintln!("Error getting text for option {}: {:?}", i, e);
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        // eprintln!("Error finding text element for option {}: {:?}", i, e);
+            for option_button in &view_option_buttons {
+                if let Ok(text) = option_button.get_inner_text() {
+                    if text.trim() == "Ranks" {
+                        option_button.click()?;
+                        found_ranks_option = true;
+                        break;
                     }
                 }
             }
-
             if !found_ranks_option {
                 return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
             }
 
-            // Wait for table to render with detailed rankings and then scroll to the bottom of it to load all players
             self.tab.wait_for_element("table#ranking-table")?;
             let ranking_table_last_row = self
                 .tab
@@ -208,15 +107,6 @@ impl<'a> RankingsScraper<'a> {
 
         for row in document.select(&row_selector) {
             let cells: Vec<_> = row.select(&cell_selector).collect();
-
-            // Debug: Print cell contents
-            println!("=== Row Debug ===");
-            for (i, cell) in cells.iter().enumerate() {
-                let cell_text = cell.text().collect::<String>().trim().to_string();
-                println!("Cell {}: '{}'", i, cell_text);
-            }
-            println!("================");
-
             let overall_ranking = parse_cell_as_number::<i32>(&cells[0], "Overall ranking");
             let player_identity = get_player_identity(&cells[2]);
             let (position, position_ranking) = get_position_ranking(&cells[3], &ranking_regex);
