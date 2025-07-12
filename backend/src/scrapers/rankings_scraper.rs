@@ -37,27 +37,100 @@ impl<'a> RankingsScraper<'a> {
         let mut ranking_tables = Vec::new();
 
         for (scoring_settings, url) in Self::get_urls() {
+            println!("Scraping {}...", url);
             self.tab.navigate_to(url)?;
             self.tab.wait_until_navigated()?;
-            self.tab.wait_for_element("table#ranking-table")?;
+            // self.tab.wait_for_element("table#ranking-table")?;
 
             // Click the "View" dropdown button to change it to the "Ranks" view to get detailed rankings
             let view_dropdown_button = self
                 .tab
                 .wait_for_element(".select-advanced--view .select-advanced__button")?;
+            println!("Found dropdown button, clicking...");
+
+            let select_advanced_view = self.tab.wait_for_element(".select-advanced--view")?;
+
+            // Debug: Check button state before clicking
+            match select_advanced_view.get_content() {
+                Ok(html) => println!("View HTML before click: {}", html),
+                Err(e) => println!("Error getting view HTML: {:?}", e),
+            }
+
             view_dropdown_button.click()?;
+            println!("Click completed");
 
-            self.tab
-                .wait_for_element(".select-advanced--view .select-advanced__list")?;
+            // Wait a moment for the dropdown to start opening
+            std::thread::sleep(std::time::Duration::from_millis(500));
 
-            let option_buttons = self
+            // Debug: Check if the button state changed
+            match select_advanced_view.get_content() {
+                Ok(html) => println!("View HTML after click: {}", html),
+                Err(e) => println!("Error getting view HTML: {:?}", e),
+            }
+
+            // Wait for the dropdown list to appear
+            println!("Waiting for dropdown list to appear...");
+            match self
                 .tab
-                .find_elements(".select-advanced--view .select-advanced-content--button")?;
-            for option_button in option_buttons {
-                if option_button.get_inner_text()?.trim() == "Ranks" {
-                    option_button.click()?;
-                    break;
+                .wait_for_element(".select-advanced--view .select-advanced__list--show")
+            {
+                Ok(_) => println!("Dropdown list is visible!"),
+                Err(e) => {
+                    println!("Error waiting for dropdown: {:?}", e);
+                    // Try to find any dropdown list to see what's there
+                    match self
+                        .tab
+                        .find_elements(".select-advanced--view .select-advanced__list")
+                    {
+                        Ok(lists) => {
+                            println!("Found {} dropdown lists", lists.len());
+                            for (i, list) in lists.iter().enumerate() {
+                                match list.get_content() {
+                                    Ok(html) => println!("List {} HTML: {}", i, html),
+                                    Err(e) => println!("Error getting list {} HTML: {:?}", i, e),
+                                }
+                            }
+                        }
+                        Err(e) => println!("Error finding any dropdown lists: {:?}", e),
+                    }
+                    return Err(e.into());
                 }
+            }
+
+            // Find the dropdown options using the correct selectors
+            let option_buttons = self.tab.find_elements(
+                ".select-advanced--view .select-advanced__item .select-advanced-content--button",
+            )?;
+            println!("Found {} dropdown options", option_buttons.len());
+
+            // Try to find and click the "Ranks" option
+            let mut found_ranks = false;
+            for (i, option_button) in option_buttons.iter().enumerate() {
+                // Get the text from the .select-advanced-content__text div
+                match option_button.find_element(".select-advanced-content__text") {
+                    Ok(text_element) => match text_element.get_inner_text() {
+                        Ok(text) => {
+                            let trimmed_text = text.trim();
+                            println!("Option {}: '{}'", i, trimmed_text);
+                            if trimmed_text == "Ranks" {
+                                println!("Found Ranks option, clicking...");
+                                option_button.click()?;
+                                found_ranks = true;
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Error getting text for option {}: {:?}", i, e);
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("Error finding text element for option {}: {:?}", i, e);
+                    }
+                }
+            }
+
+            if !found_ranks {
+                eprintln!("Warning: Could not find 'Ranks' option in dropdown");
             }
 
             // Wait for table to render with detailed rankings and then scroll to the bottom of it to load all players
@@ -103,6 +176,14 @@ impl<'a> RankingsScraper<'a> {
 
         for row in document.select(&row_selector) {
             let cells: Vec<_> = row.select(&cell_selector).collect();
+
+            // Debug: Print cell contents
+            println!("=== Row Debug ===");
+            for (i, cell) in cells.iter().enumerate() {
+                let cell_text = cell.text().collect::<String>().trim().to_string();
+                println!("Cell {}: '{}'", i, cell_text);
+            }
+            println!("================");
 
             let overall_ranking = parse_cell_as_number::<i32>(&cells[0], "Overall ranking");
             let player_identity = get_player_identity(&cells[2]);
