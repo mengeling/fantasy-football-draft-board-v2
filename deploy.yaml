@@ -1,0 +1,158 @@
+# Fantasy Football Draft Board - Deployment Configuration
+# This file defines all deployment options and can be used by a single deployment tool
+
+deployment:
+  # Default deployment mode
+  mode: docker # docker | manual
+
+  # Environments to deploy
+  environments:
+    - production
+    - development
+
+  # Domain configuration
+  domain:
+    enabled: false
+    name: "" # e.g., "fantasyfootball.com"
+    ssl:
+      enabled: true
+      provider: letsencrypt
+      email: "admin@yourdomain.com"
+      auto_renew: true
+
+  # Docker configuration
+  docker:
+    compose_file: "docker-compose.yml"
+    build_args: {}
+    environment:
+      - RUST_LOG=info
+      - NODE_ENV=production
+
+    # Resource limits
+    resources:
+      backend:
+        memory: "512M"
+        cpus: "0.5"
+      frontend:
+        memory: "256M"
+        cpus: "0.25"
+      postgres:
+        memory: "1G"
+        cpus: "0.5"
+
+  # Manual deployment configuration
+  manual:
+    services:
+      - name: ffball
+        type: systemd
+        user: ubuntu
+        working_directory: /home/ubuntu/fantasy-football-draft-board-v2/backend
+        environment:
+          - DATABASE_URL=postgresql://ffball:ffball@localhost/ffball_prod
+          - PORT=8080
+
+      - name: ffball-dev
+        type: systemd
+        user: ubuntu
+        working_directory: /home/ubuntu/fantasy-football-draft-board-v2/backend
+        environment:
+          - DATABASE_URL=postgresql://ffball:ffball@localhost/ffball_dev
+          - PORT=8081
+
+    nginx:
+      config_file: "/etc/nginx/sites-available/ffball-multi-env"
+      ssl_config_file: "/etc/nginx/sites-available/ffball-ssl"
+
+    database:
+      name: postgresql
+      user: ffball
+      password: ffball
+      databases:
+        - ffball_prod
+        - ffball_dev
+
+# CI/CD configuration
+ci_cd:
+  github_actions:
+    enabled: true
+    secrets:
+      - EC2_HOST
+      - EC2_USERNAME
+      - EC2_SSH_KEY
+
+    environments:
+      development:
+        branch: develop
+        auto_deploy: true
+      production:
+        branch: main
+        auto_deploy: true
+        requires_approval: true
+
+# Monitoring configuration
+monitoring:
+  health_checks:
+    - name: backend
+      url: "/api/players"
+      expected_status: [200, 404]
+      interval: 30s
+
+    - name: frontend
+      url: "/"
+      expected_status: [200]
+      interval: 30s
+
+    - name: database
+      type: postgres
+      connection_string: "postgresql://ffball:ffball@localhost/ffball_prod"
+      interval: 60s
+
+  logging:
+    level: info
+    retention: 30d
+    aggregation: false
+
+# Security configuration
+security:
+  ssl:
+    protocols: ["TLSv1.2", "TLSv1.3"]
+    ciphers: "ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512"
+    hsts: true
+    hsts_max_age: 31536000
+
+  headers:
+    - "X-Frame-Options: DENY"
+    - "X-Content-Type-Options: nosniff"
+    - "X-XSS-Protection: 1; mode=block"
+    - "Referrer-Policy: strict-origin-when-cross-origin"
+
+  rate_limiting:
+    api: "10r/s"
+    login: "5r/m"
+
+# Backup configuration
+backup:
+  database:
+    enabled: true
+    schedule: "0 2 * * *" # Daily at 2 AM
+    retention: 7d
+    location: "/backups"
+
+  ssl_certificates:
+    enabled: true
+    schedule: "0 3 * * *" # Daily at 3 AM
+    retention: 30d
+
+# Scaling configuration
+scaling:
+  auto_scaling: false
+  min_instances: 1
+  max_instances: 3
+  cpu_threshold: 70
+  memory_threshold: 80
+
+# Maintenance configuration
+maintenance:
+  auto_updates: false
+  update_schedule: "0 4 * * 0" # Weekly on Sunday at 4 AM
+  maintenance_window: "02:00-04:00"

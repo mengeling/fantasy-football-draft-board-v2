@@ -1,266 +1,309 @@
-# Fantasy Football Draft Board
+# Fantasy Football Draft Board v2
 
-[Click here to use the draft board!](http://100.29.78.245/) Create a username and choose your scoring settings to start using the board.
+A modern fantasy football draft board application with a Rust backend and Svelte frontend, featuring real-time updates, player rankings, and draft management.
 
-This web application provides the same interactive fantasy football drafting experience as the official draft boards on ESPN, Yahoo, NFL.com, etc., but it uses consensus player rankings consolidated from 100+ experts.
-
-## App Demo
-
-![Demo](frontend/static/img/fantasy_football_recording.gif)
-
-## App Screenshot
-
-![App Screenshot](frontend/static/img/app_pic.png)
-
-## Deployment Guide
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- An AWS Ubuntu EC2 instance
-- A domain name (optional)
+- **Nix** (recommended) or manual installation of:
+  - Rust (latest stable)
+  - Node.js 20+
+  - PostgreSQL
+  - Docker & Docker Compose
 
-### Initial Server Setup
+### Development Setup
 
-1. SSH into your EC2 instance:
+1. **Clone the repository**:
 
-```bash
-ssh -i ~/.ssh/id_rsa ubuntu@[YOUR-EC2-PUBLIC-IP]
-```
+   ```bash
+   git clone https://github.com/yourusername/fantasy-football-draft-board-v2.git
+   cd fantasy-football-draft-board-v2
+   ```
 
-2. Install required packages:
+2. **Enter development environment**:
 
-```bash
-sudo apt update && sudo apt upgrade -y
+   ```bash
+   # Using Nix (recommended)
+   nix develop
 
-# Install Node.js and npm
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
+   # Or using traditional Nix
+   nix-shell
 
-# Install Rust (press enter to accept defaults)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
+   # Or manual setup (see manual setup section below)
+   ```
 
-# Install other dependencies
-sudo apt install -y nginx postgresql build-essential pkg-config libssl-dev chromium-browser
-```
+3. **Start development servers**:
 
-3. Create an SSH key:
+   ```bash
+   just dev-backend    # Start backend server
+   just dev-frontend   # Start frontend server
+   ```
 
-```bash
-# Generate SSH key (press enter to accept defaults)
-ssh-keygen
+4. **Access the application**:
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:8000
 
-# Start ssh-agent and add key
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
+## 📦 Package Management with Nix
 
-# Display public key to copy to GitHub
-cat ~/.ssh/id_ed25519.pub
-```
+This project uses **Nix** for reproducible builds and dependency management. See [NIX_GUIDE.md](NIX_GUIDE.md) for detailed information.
 
-4. Add SSH key to GitHub account:
+### Key Benefits
 
-- Go to GitHub → Settings → SSH and GPG keys
-- Click "New SSH key"
-- Paste the contents of your public key and call it "ffball"
-- Test the connection: `ssh -T git@github.com`
+- **Reproducible environments**: Same tools and versions across all machines
+- **Isolated dependencies**: No conflicts with system packages
+- **Easy onboarding**: New developers just run `nix develop`
+- **CI/CD integration**: Same environment locally and in CI
 
-5. Set up PostgreSQL:
-
-```bash
-sudo systemctl start postgresql
-sudo -u postgres psql -c "CREATE USER ffball WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'ffball';"
-sudo -u postgres createdb -O ffball ffball
-
-# Update config file (version number might differ)
-sudo nano /etc/postgresql/16/main/pg_hba.conf
-```
-
-Paste the following config into the file:
-
-```conf
-# Database administrative login by Unix domain socket
-local   all             postgres                                peer
-
-# TYPE  DATABASE        USER            ADDRESS                 METHOD
-
-# "local" is for Unix domain socket connections only
-local   all             all                                     md5
-# IPv4 local connections:
-host    all             all             127.0.0.1/32            md5
-# IPv6 local connections:
-host    all             all             ::1/128                 md5
-# Allow replication connections from localhost, by a user with the
-# replication privilege.
-local   replication     all                                     peer
-host    replication     all             127.0.0.1/32            scram-sha-256
-host    replication     all             ::1/128                 scram-sha-256
-```
-
-Restart postgres and confirm you can connect:
+### Quick Nix Commands
 
 ```bash
-sudo systemctl restart postgresql
-PGPASSWORD=ffball psql -U ffball -d ffball
+nix develop              # Enter development environment
+just nix-build-all       # Build all packages
+just nix-update          # Update dependencies
+just nix-clean           # Clean Nix store
 ```
 
-6. Clone the repository:
+## 🛠️ Manual Setup (Alternative)
+
+If you prefer not to use Nix:
+
+1. **Install Rust**:
+
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   source ~/.cargo/env
+   ```
+
+2. **Install Node.js**:
+
+   ```bash
+   # Using nvm (recommended)
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+   nvm install 20
+   nvm use 20
+   ```
+
+3. **Install PostgreSQL**:
+
+   ```bash
+   # Ubuntu/Debian
+   sudo apt update
+   sudo apt install postgresql postgresql-contrib
+
+   # macOS
+   brew install postgresql
+   ```
+
+4. **Install Docker**:
+   ```bash
+   # Follow instructions at https://docs.docker.com/get-docker/
+   ```
+
+## 🏗️ Project Structure
+
+```
+fantasy-football-draft-board-v2/
+├── backend/                 # Rust backend API
+│   ├── src/
+│   ├── Cargo.toml
+│   └── rust-toolchain.toml  # Rust toolchain specification
+├── frontend/                # Svelte frontend
+│   ├── src/
+│   ├── package.json
+│   └── .nvmrc              # Node.js version specification
+├── scripts/                 # Deployment and utility scripts
+├── docker-compose.yml       # Docker services configuration
+├── justfile                 # Task runner (replaces multiple scripts)
+├── flake.nix               # Nix flake configuration
+├── shell.nix               # Traditional Nix shell configuration
+└── README.md
+```
+
+## 🎯 Available Commands
+
+This project uses **justfile** as a task runner. Run `just --list` to see all available commands.
+
+### Development
 
 ```bash
-git clone git@github.com:mengeling/fantasy-football-draft-board-v2.git
-cd fantasy-football-draft-board-v2
+just dev-backend          # Start backend development server
+just dev-frontend         # Start frontend development server
+just dev                  # Start both servers
+just test                 # Run all tests
+just format               # Format code
+just lint                 # Lint code
 ```
 
-### Backend Setup
-
-1. Set up database and build the backend:
+### Building
 
 ```bash
-cd backend
-./src/scripts/setup_db.sh
-cargo build --release
+just build                # Build both backend and frontend
+just build-backend        # Build backend only
+just build-frontend       # Build frontend only
+just nix-build-all        # Build using Nix
 ```
 
-2. Create a systemd service for the backend:
+### Database
 
 ```bash
-sudo nano /etc/systemd/system/ffball.service
+just db-setup             # Setup development database
+just db-reset             # Reset development database
+just db-migrate-dev       # Run database migrations
 ```
 
-Add the following content:
-
-```ini
-[Unit]
-Description=Fantasy Football Backend
-After=network.target postgresql.service
-
-[Service]
-Type=simple
-User=ubuntu
-Group=ubuntu
-Environment="RUST_LOG=info"
-Environment="RUST_BACKTRACE=1"
-WorkingDirectory=/home/ubuntu/fantasy-football-draft-board-v2/backend
-ExecStart=/home/ubuntu/fantasy-football-draft-board-v2/backend/target/release/backend
-Restart=always
-RestartSec=5
-StandardOutput=append:/home/ubuntu/ffball.log
-StandardError=append:/home/ubuntu/ffball.log
-
-[Install]
-WantedBy=multi-user.target
-```
-
-After updating the service file, run:
+### Docker
 
 ```bash
-# Reload systemd to pick up changes
-sudo systemctl daemon-reload
-
-# Make sure the log file exists and has correct permissions
-sudo touch /home/ubuntu/ffball.log
-sudo chown ubuntu:ubuntu /home/ubuntu/ffball.log
+just docker-build         # Build Docker images
+just docker-up            # Start Docker services
+just docker-down          # Stop Docker services
+just docker-logs          # View Docker logs
 ```
 
-### Frontend Setup
-
-1. Install frontend dependencies and build the frontend:
+### Deployment
 
 ```bash
-cd ../frontend
-npm install
-npm run build
-
-# Set correct permissions for Nginx
-sudo chown -R www-data:www-data /home/ubuntu/fantasy-football-draft-board-v2/frontend/build
-sudo chmod -R 755 /home/ubuntu/fantasy-football-draft-board-v2/frontend/build
-sudo chmod 755 /home/ubuntu
-sudo chmod 755 /home/ubuntu/fantasy-football-draft-board-v2
-sudo chmod 755 /home/ubuntu/fantasy-football-draft-board-v2/frontend
+just deploy               # Deploy to production
+just deploy-nix           # Deploy using Nix builds
+just health-check         # Check system health
 ```
 
-### Nginx Configuration
-
-1. Create Nginx configuration:
+### Nix Commands
 
 ```bash
-sudo nano /etc/nginx/sites-available/ffball-app
+just nix-shell            # Enter Nix development shell
+just nix-flake            # Enter Nix development shell (flakes)
+just nix-prod             # Enter Nix production environment
+just nix-update           # Update Nix dependencies
+just nix-clean            # Clean Nix store
 ```
 
-Add the following configuration:
+## 🐳 Docker Deployment
 
-```nginx
-server {
-    listen 80;
-    server_name [YOUR_EC2_PUBLIC_IP];  # Replace with your EC2 public IP or domain
-
-    # Frontend - serve static files
-    root /home/ubuntu/fantasy-football-draft-board-v2/frontend/build;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Backend API
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-2. Enable the configuration:
+The project includes Docker Compose configuration for easy deployment:
 
 ```bash
-# Create symlink to enable the site
-sudo ln -s /etc/nginx/sites-available/ffball-app /etc/nginx/sites-enabled/
+# Build and start all services
+just docker-build
+just docker-up
 
-# Remove default config if it exists
-sudo rm -f /etc/nginx/sites-enabled/default
+# View logs
+just docker-logs
 
-# Test the configuration
-sudo nginx -t
-
-# Restart Nginx
-sudo systemctl restart nginx
+# Stop services
+just docker-down
 ```
 
-3. Start the backend service:
+### Services
 
-```bash
-sudo systemctl start ffball
-sudo systemctl enable ffball
+- **Backend**: Rust API server
+- **Frontend**: Svelte application served by Nginx
+- **Database**: PostgreSQL with separate prod/dev databases
+- **Nginx**: Reverse proxy with SSL support
+- **Certbot**: SSL certificate management
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create `.env` files in the backend and frontend directories:
+
+**Backend (.env)**:
+
+```env
+DATABASE_URL=postgresql://ffball:ffball@localhost:5432/ffball_dev
+RUST_LOG=debug
+RUST_BACKTRACE=1
 ```
 
-### Cron Job Setup
+**Frontend (.env)**:
 
-Set up the cron job for daily data updates:
-
-```bash
-crontab -e
+```env
+VITE_API_URL=http://localhost:8000
+VITE_APP_TITLE=Fantasy Football Draft Board
 ```
 
-Add:
+### Database Setup
 
-```
-0 0 * * * curl -X POST http://127.0.0.1:8080/fantasy-data/update >> /home/ubuntu/ffball.log 2>&1
-```
+1. **Create databases**:
 
-### SSL Setup (Optional)
+   ```bash
+   createdb -U postgres ffball_prod
+   createdb -U postgres ffball_dev
+   ```
 
-To enable HTTPS:
+2. **Run migrations**:
+   ```bash
+   just db-migrate-dev
+   ```
 
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
+## 🚀 Deployment
 
-### Monitoring
+### Production Deployment
 
-- Backend logs: `sudo journalctl -u ffball`
-- Nginx logs: `sudo tail /var/log/nginx/error.log`
+1. **Build and deploy**:
+
+   ```bash
+   just deploy
+   ```
+
+2. **Or deploy with Nix**:
+
+   ```bash
+   just deploy-nix
+   ```
+
+3. **Check health**:
+   ```bash
+   just health-check
+   ```
+
+### CI/CD
+
+The project includes GitHub Actions workflows for:
+
+- **Testing**: Run tests on pull requests
+- **Building**: Build artifacts for deployment
+- **Deployment**: Deploy to production on main branch
+
+## 📚 Documentation
+
+- [NIX_GUIDE.md](NIX_GUIDE.md) - Comprehensive Nix usage guide
+- [JUSTFILE_GUIDE.md](JUSTFILE_GUIDE.md) - Task runner documentation
+- [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) - Docker deployment guide
+- [DOMAIN_SETUP.md](DOMAIN_SETUP.md) - Domain and SSL setup guide
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Enter development environment: `nix develop`
+4. Make your changes and run tests: `just test`
+5. Commit your changes: `git commit -m 'Add amazing feature'`
+6. Push to the branch: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Issues**: [GitHub Issues](https://github.com/yourusername/fantasy-football-draft-board-v2/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/fantasy-football-draft-board-v2/discussions)
+- **Documentation**: Check the guides in the `docs/` directory
+
+## 🏆 Features
+
+- **Real-time draft board** with live updates
+- **Player rankings** from multiple sources
+- **Draft management** with customizable settings
+- **Responsive design** for mobile and desktop
+- **User authentication** and draft rooms
+- **Statistics and analytics** for draft decisions
+- **Export functionality** for draft results
+- **Multi-environment support** (dev/prod)
+- **Docker containerization** for easy deployment
+- **Nix package management** for reproducible builds
+- **CI/CD pipeline** with automated testing and deployment
