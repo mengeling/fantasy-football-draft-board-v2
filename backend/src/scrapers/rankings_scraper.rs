@@ -56,7 +56,7 @@ impl<'a> RankingsScraper<'a> {
                 if let Ok(text) = option_button.get_inner_text() {
                     if text.trim() == "Ranks" {
                         found_ranks_option = true;
-                        option_button.click()?;
+                        option_button.call_js_fn("function() { this.click(); }", vec![], false)?;
                         std::thread::sleep(std::time::Duration::from_millis(500));
                         break;
                     }
@@ -66,7 +66,7 @@ impl<'a> RankingsScraper<'a> {
                 return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
             }
 
-            std::thread::sleep(std::time::Duration::from_millis(2000));
+            std::thread::sleep(std::time::Duration::from_millis(1000));
             self.tab.wait_for_element("table#ranking-table")?;
             let ranking_table_last_row = self
                 .tab
