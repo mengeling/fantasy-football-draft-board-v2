@@ -13,3 +13,34 @@ Cargo.lock
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
+# Deployment files
+deploy/terraform/terraform.tfvars
+deploy/terraform/terraform.tfstate*
+deploy/terraform/.terraform/
+deploy/terraform/.terraform.lock.hcl
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+ffball_deploy*
+
+# AWS
+.aws/
+
+# Nix
+result
+result-*
+
+# Docker
+.dockerignore
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
