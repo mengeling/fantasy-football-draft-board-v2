@@ -156,6 +156,7 @@ resource "aws_instance" "web" {
     environment  = var.environment
     git_repo     = var.git_repo
     git_branch   = var.git_branch
+    domain_name  = var.domain_name
   })
 
   tags = {
