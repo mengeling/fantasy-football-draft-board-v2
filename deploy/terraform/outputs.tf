@@ -15,22 +15,22 @@ output "instance_id" {
 
 output "security_group_id" {
   description = "ID of the security group"
-  value       = aws_security_group.web.id
+  value       = data.aws_security_group.existing.id
 }
 
 output "vpc_id" {
   description = "ID of the VPC"
-  value       = aws_vpc.main.id
+  value       = data.aws_vpc.default.id
 }
 
 output "subnet_id" {
   description = "ID of the public subnet"
-  value       = aws_subnet.public.id
+  value       = data.aws_subnet.default.id
 }
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
-  value       = "ssh -i ~/.ssh/id_rsa ubuntu@${aws_eip.web.public_ip}"
+  value       = "ssh -i ~/.ssh/id_ed25519 ubuntu@${aws_eip.web.public_ip}"
 }
 
 output "application_url" {
