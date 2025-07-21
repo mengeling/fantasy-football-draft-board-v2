@@ -57,9 +57,47 @@ For automated deployment using Terraform and GitHub Actions:
 
 6. **Deploy Application**:
    - Push to main branch for automatic deployment via GitHub Actions
-   - Or manually: `make deploy`
+   - Or manually: `just deploy`
 
 **Benefits**: Automated, reproducible, version-controlled deployments with proper state management.
+
+## Development Commands
+
+This project uses [Just](https://github.com/casey/just) as the command runner instead of Make. Just provides better syntax, parameter support, and cross-platform compatibility.
+
+### Quick Start
+
+```bash
+# Show all available commands
+just
+
+# Start development environment
+just dev
+
+# Build all components
+just build
+
+# Run tests
+just test
+
+# Deploy to production
+just deploy
+```
+
+### Installing Just
+
+If you don't have Just installed:
+
+```bash
+# On macOS with Homebrew
+brew install just
+
+# On macOS with Nix
+nix-env -iA nixpkgs.just
+
+# On other systems
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash
+```
 
 ### Manual Deployment
 

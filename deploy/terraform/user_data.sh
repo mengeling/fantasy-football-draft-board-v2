@@ -45,6 +45,9 @@ rm -rf aws awscliv2.zip
 # Install Nix
 curl -L https://nixos.org/nix/install | sh -s -- --daemon
 
+# Install Just command runner
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+
 # Create app directory
 mkdir -p /home/ubuntu/app
 chown ubuntu:ubuntu /home/ubuntu/app

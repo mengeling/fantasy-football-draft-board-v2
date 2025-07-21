@@ -134,15 +134,8 @@ jobs:
             git checkout ${{ github.event.inputs.git_branch }}
             git pull origin ${{ github.event.inputs.git_branch }}
             
-            # Stop existing services
-            docker-compose down || true
-            
-            # Clean up unused images and containers
-            docker system prune -f
-            
-            # Build and start services
-            docker-compose build --no-cache
-            docker-compose up -d
+            # Use just commands for deployment
+            just docker-deploy
             
             # Wait for services to be healthy
             echo "Waiting for services to be healthy..."
