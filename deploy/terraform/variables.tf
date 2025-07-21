@@ -40,9 +40,10 @@ variable "root_volume_size" {
   default     = 20
 }
 
-variable "ssh_public_key" {
-  description = "SSH public key for EC2 access"
+variable "ssh_public_key_path" {
+  description = "Path to SSH public key file"
   type        = string
+  default     = "~/.ssh/ffball_deploy.pub"
 }
 
 variable "git_repo" {

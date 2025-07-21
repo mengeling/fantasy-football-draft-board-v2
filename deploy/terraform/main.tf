@@ -64,7 +64,7 @@ data "aws_security_group" "existing" {
 # Create project-specific key pair
 resource "aws_key_pair" "deploy" {
   key_name   = "${var.project_name}-deploy-key"
-  public_key = var.ssh_public_key
+  public_key = file(pathexpand(var.ssh_public_key_path))
 }
 
 # EC2 Instance
