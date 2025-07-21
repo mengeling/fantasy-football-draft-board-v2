@@ -100,27 +100,28 @@ jobs:
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ needs.deploy-infrastructure.outputs.public_ip }} >> ~/.ssh/known_hosts
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Wait for instance to be ready
         run: |
+          # Add the host to known_hosts
+          ssh-keyscan -H ${{ needs.deploy-infrastructure.outputs.public_ip }} >> ~/.ssh/known_hosts
+
           # Wait for SSH to be available
-          for i in {1..30}; do
-            if ssh -o ConnectTimeout=5 -i ~/.ssh/id_rsa ubuntu@${{ needs.deploy-infrastructure.outputs.public_ip }} "echo 'SSH is ready'"; then
+          for i in {1..3}; do
+            if ssh -o ConnectTimeout=3 ubuntu@${{ needs.deploy-infrastructure.outputs.public_ip }} "echo 'SSH is ready'"; then
               echo "SSH connection established"
               break
             fi
-            echo "Waiting for SSH... ($i/30)"
-            sleep 10
+            echo "Waiting for SSH... ($i/3)"
+            sleep 3
           done
 
       - name: Deploy application
         run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@${{ needs.deploy-infrastructure.outputs.public_ip }} << 'EOF'
+          ssh ubuntu@${{ needs.deploy-infrastructure.outputs.public_ip }} << 'EOF'
             set -e
             
             echo "Starting deployment..."
@@ -145,13 +146,13 @@ jobs:
             
             # Wait for services to be healthy
             echo "Waiting for services to be healthy..."
-            for i in {1..30}; do
+            for i in {1..3}; do
               if curl -f http://localhost/health > /dev/null 2>&1; then
                 echo "Application is healthy"
                 break
               fi
-              echo "Waiting for health check... ($i/30)"
-              sleep 10
+              echo "Waiting for health check... ($i/3)"
+              sleep 3
             done
             
             # Verify all services are running
@@ -170,10 +171,7 @@ jobs:
 
           echo "Application is successfully deployed and healthy!"
 
-      - name: Clean up
-        if: always()
-        run: |
-          rm -f ~/.ssh/id_rsa
+      # SSH agent automatically cleans up the private key
 
   notify-deployment:
     runs-on: ubuntu-latest

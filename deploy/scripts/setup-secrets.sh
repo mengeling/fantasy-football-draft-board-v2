@@ -33,27 +33,23 @@ print_header() {
     echo -e "${GREEN}================================${NC}"
 }
 
-# Function to generate SSH key pair
-generate_ssh_key() {
-    print_header "SSH Key Generation"
+# Function to check existing SSH key
+check_ssh_key() {
+    print_header "SSH Key Check"
     
-    local key_path="$HOME/.ssh/ffball_deploy"
+    local key_path="$HOME/.ssh/id_ed25519"
     
-    if [ -f "$key_path" ]; then
-        print_warning "SSH key already exists at $key_path"
-        read -p "Do you want to overwrite it? (y/N): " -r
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_status "Using existing SSH key"
-            return 0
-        fi
+    if [ -f "$key_path" ] && [ -f "${key_path}.pub" ]; then
+        print_success "SSH key pair found at $key_path"
+        print_status "Public key location: ${key_path}.pub"
+        print_status "Private key location: $key_path"
+        return 0
+    else
+        print_error "SSH key pair not found at $key_path"
+        print_status "Please ensure you have an id_ed25519 key pair in ~/.ssh/"
+        print_status "You can generate one with: ssh-keygen -t ed25519 -C 'your-email@example.com'"
+        return 1
     fi
-    
-    print_status "Generating new SSH key pair..."
-    ssh-keygen -t rsa -b 4096 -C "ffball-deploy" -f "$key_path" -N ""
-    
-    print_success "SSH key pair generated successfully"
-    print_status "Public key location: ${key_path}.pub"
-    print_status "Private key location: $key_path"
 }
 
 # Function to display GitHub secrets
@@ -74,25 +70,25 @@ show_github_secrets() {
     echo ""
     
     # SSH keys
-    if [ -f "$HOME/.ssh/ffball_deploy.pub" ]; then
+    if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
         echo "3. SSH_PUBLIC_KEY"
         echo "   Value:"
-        cat "$HOME/.ssh/ffball_deploy.pub"
+        cat "$HOME/.ssh/id_ed25519.pub"
         echo ""
     else
         echo "3. SSH_PUBLIC_KEY"
-        echo "   Value: [Run this script first to generate SSH keys]"
+        echo "   Value: [Ensure you have id_ed25519.pub in ~/.ssh/]"
         echo ""
     fi
     
-    if [ -f "$HOME/.ssh/ffball_deploy" ]; then
+    if [ -f "$HOME/.ssh/id_ed25519" ]; then
         echo "4. SSH_PRIVATE_KEY"
         echo "   Value:"
-        cat "$HOME/.ssh/ffball_deploy"
+        cat "$HOME/.ssh/id_ed25519"
         echo ""
     else
         echo "4. SSH_PRIVATE_KEY"
-        echo "   Value: [Run this script first to generate SSH keys]"
+        echo "   Value: [Ensure you have id_ed25519 in ~/.ssh/]"
         echo ""
     fi
 }
@@ -125,8 +121,8 @@ show_environment_setup() {
     echo "For manual deployments, set the following environment variables:"
     echo ""
     
-    if [ -f "$HOME/.ssh/ffball_deploy.pub" ]; then
-        echo "export SSH_PUBLIC_KEY=\"$(cat $HOME/.ssh/ffball_deploy.pub)\""
+    if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
+        echo "export SSH_PUBLIC_KEY=\"$(cat $HOME/.ssh/id_ed25519.pub)\""
     else
         echo "export SSH_PUBLIC_KEY=\"your-public-key-here\""
     fi
@@ -230,8 +226,8 @@ public_subnet_cidr = "10.0.1.0/24"
 instance_type      = "$instance_type"
 root_volume_size   = 20
 
-# SSH Configuration
-ssh_public_key = "$(cat $HOME/.ssh/ffball_deploy.pub 2>/dev/null || echo "your-public-key-here")"
+# SSH Configuration - Using existing id_ed25519 key
+ssh_public_key = "$(cat $HOME/.ssh/id_ed25519.pub 2>/dev/null || echo "your-public-key-here")"
 
 # Application Configuration
 git_repo   = "https://github.com/mengeling/fantasy-football-draft-board-v2.git"
@@ -281,7 +277,7 @@ show_menu() {
     print_header "Fantasy Football Draft Board - Setup Assistant"
     
     echo "Choose an option:"
-    echo "1. Generate SSH keys"
+    echo "1. Check SSH key"
     echo "2. Show GitHub secrets configuration"
     echo "3. Show GitHub variables configuration"
     echo "4. Show environment setup"
@@ -296,7 +292,7 @@ show_menu() {
     
     case $choice in
         1)
-            generate_ssh_key
+            check_ssh_key
             ;;
         2)
             show_github_secrets
@@ -317,7 +313,7 @@ show_menu() {
             show_deployment_instructions
             ;;
         8)
-            generate_ssh_key
+            check_ssh_key
             validate_aws_credentials
             create_deployment_config
             show_github_secrets
