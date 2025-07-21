@@ -69,3 +69,9 @@ variable "route53_zone_id" {
   type        = string
   default     = ""
 }
+
+variable "backend_bucket" {
+  description = "S3 bucket name for Terraform state backend"
+  type        = string
+  default     = "ffdraftboard-terraform-state"
+}

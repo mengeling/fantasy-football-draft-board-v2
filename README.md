@@ -14,7 +14,58 @@ This web application provides the same interactive fantasy football drafting exp
 
 ## Deployment Guide
 
-### Prerequisites
+### Automated Deployment (Recommended)
+
+For automated deployment using Terraform and GitHub Actions:
+
+1. **Setup Prerequisites**:
+
+   ```bash
+   # Install AWS CLI and Terraform
+   brew install awscli terraform  # macOS
+   # or follow official installation guides for your OS
+   ```
+
+2. **Configure AWS Credentials**:
+
+   ```bash
+   aws configure
+   ```
+
+3. **Setup Terraform Backend**:
+
+   ```bash
+   cd deploy/scripts
+   ./setup-terraform-backend.sh
+   # Run with --help for options and examples
+   ```
+
+4. **Generate SSH Keys**:
+
+   ```bash
+   ./setup-secrets.sh
+   ```
+
+5. **Deploy Infrastructure**:
+
+   ```bash
+   cd deploy/terraform
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+6. **Deploy Application**:
+   - Push to main branch for automatic deployment via GitHub Actions
+   - Or manually: `make deploy`
+
+**Benefits**: Automated, reproducible, version-controlled deployments with proper state management.
+
+### Manual Deployment
+
+For manual deployment on an existing EC2 instance:
+
+#### Prerequisites
 
 - An AWS Ubuntu EC2 instance
 - A domain name (optional)

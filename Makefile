@@ -133,6 +133,13 @@ tf-destroy:
 	@echo "Destroying Terraform resources..."
 	cd deploy/terraform && terraform destroy
 
+tf-backend:
+	@echo "Setting up Terraform S3 backend..."
+	cd deploy/scripts && ./setup-terraform-backend.sh
+
+tf-setup: tf-backend tf-init
+	@echo "Terraform setup complete!"
+
 # Database commands
 db-setup:
 	@echo "Setting up database..."
