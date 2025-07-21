@@ -40,7 +40,10 @@ variable "root_volume_size" {
   default     = 20
 }
 
-# SSH public key variable removed - using existing AWS key pair instead
+variable "ssh_public_key" {
+  description = "SSH public key for EC2 access"
+  type        = string
+}
 
 variable "git_repo" {
   description = "Git repository URL"

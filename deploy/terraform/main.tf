@@ -61,16 +61,17 @@ data "aws_security_group" "existing" {
   id = "sg-f5b4f781"
 }
 
-# Use existing key pair
-data "aws_key_pair" "existing" {
-  key_name = "MacBook Air 2025"
+# Create project-specific key pair
+resource "aws_key_pair" "deploy" {
+  key_name   = "${var.project_name}-deploy-key"
+  public_key = var.ssh_public_key
 }
 
 # EC2 Instance
 resource "aws_instance" "web" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = data.aws_key_pair.existing.key_name
+  key_name               = aws_key_pair.deploy.key_name
   vpc_security_group_ids = [data.aws_security_group.existing.id]
   subnet_id              = data.aws_subnet.default.id
 
