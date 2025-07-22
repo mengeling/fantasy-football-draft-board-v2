@@ -41,6 +41,13 @@ deploy: # Deploy to production
     @echo "Deploying to production..."
     ./deploy/scripts/deploy.sh
 
+deploy-github: # Deploy via GitHub Actions workflow dispatch
+    @echo "To deploy via GitHub Actions:"
+    @echo "1. Go to: https://github.com/$(git remote get-url origin | sed 's/.*github.com[:/]\([^/]*\/[^/]*\).*/\1/')/actions/workflows/deploy.yml"
+    @echo "2. Click 'Run workflow'"
+    @echo "3. Select your branch and environment"
+    @echo "4. Click 'Run workflow'"
+
 setup: # Run setup assistant
     @echo "Running setup assistant..."
     ./deploy/scripts/setup-secrets.sh

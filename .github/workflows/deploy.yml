@@ -10,7 +10,7 @@ on:
       environment:
         description: "Environment to deploy to"
         required: true
-        default: "production"
+        default: "staging"
         type: choice
         options:
           - production
@@ -21,7 +21,12 @@ on:
         default: "main"
         type: string
       force_recreate:
-        description: "Force recreate infrastructure"
+        description: "Force recreate infrastructure (re-runs user_data script)"
+        required: false
+        default: false
+        type: boolean
+      skip_infrastructure:
+        description: "Skip infrastructure deployment (deploy app only)"
         required: false
         default: false
         type: boolean
@@ -33,6 +38,7 @@ env:
 jobs:
   deploy-infrastructure:
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skip_infrastructure != 'true' }}
     environment: ${{ github.event.inputs.environment }}
     outputs:
       public_ip: ${{ steps.terraform.outputs.public_ip }}
@@ -86,7 +92,8 @@ jobs:
 
   deploy-application:
     runs-on: ubuntu-latest
-    needs: deploy-infrastructure
+    needs: [deploy-infrastructure]
+    if: always() && (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
     environment: ${{ github.event.inputs.environment }}
 
     steps:
@@ -99,6 +106,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
+      - name: Get instance details (if infrastructure skipped)
+        if: needs.deploy-infrastructure.result == 'skipped'
+        id: instance-details
+        run: |
+          cd deploy/terraform
+          terraform init
+          echo "public_ip=$(terraform output -raw public_ip)" >> $GITHUB_OUTPUT
+          echo "application_url=$(terraform output -raw application_url)" >> $GITHUB_OUTPUT
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
@@ -106,12 +122,19 @@ jobs:
 
       - name: Wait for instance to be ready
         run: |
+          # Determine the public IP based on whether infrastructure was deployed or skipped
+          if [ "${{ needs.deploy-infrastructure.result }}" == "skipped" ]; then
+            PUBLIC_IP="${{ steps.instance-details.outputs.public_ip }}"
+          else
+            PUBLIC_IP="${{ needs.deploy-infrastructure.outputs.public_ip }}"
+          fi
+
           # Add the host to known_hosts
-          ssh-keyscan -H ${{ needs.deploy-infrastructure.outputs.public_ip }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H $PUBLIC_IP >> ~/.ssh/known_hosts
 
           # Wait for SSH to be available
           for i in {1..3}; do
-            if ssh -o ConnectTimeout=3 ubuntu@${{ needs.deploy-infrastructure.outputs.public_ip }} "echo 'SSH is ready'"; then
+            if ssh -o ConnectTimeout=3 ubuntu@$PUBLIC_IP "echo 'SSH is ready'"; then
               echo "SSH connection established"
               break
             fi
@@ -121,7 +144,14 @@ jobs:
 
       - name: Deploy application
         run: |
-          ssh ubuntu@${{ needs.deploy-infrastructure.outputs.public_ip }} << 'EOF'
+          # Determine the public IP based on whether infrastructure was deployed or skipped
+          if [ "${{ needs.deploy-infrastructure.result }}" == "skipped" ]; then
+            PUBLIC_IP="${{ steps.instance-details.outputs.public_ip }}"
+          else
+            PUBLIC_IP="${{ needs.deploy-infrastructure.outputs.public_ip }}"
+          fi
+
+          ssh ubuntu@$PUBLIC_IP << 'EOF'
             set -e
             
             echo "Starting deployment..."
@@ -159,8 +189,15 @@ jobs:
           # Wait a bit more for the application to fully start
           sleep 30
 
+          # Determine the application URL based on whether infrastructure was deployed or skipped
+          if [ "${{ needs.deploy-infrastructure.result }}" == "skipped" ]; then
+            APP_URL="${{ steps.instance-details.outputs.application_url }}"
+          else
+            APP_URL="${{ needs.deploy-infrastructure.outputs.application_url }}"
+          fi
+
           # Check if application is accessible
-          curl -f ${{ needs.deploy-infrastructure.outputs.application_url }}/health
+          curl -f $APP_URL/health
 
           echo "Application is successfully deployed and healthy!"
 

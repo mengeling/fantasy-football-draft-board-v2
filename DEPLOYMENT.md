@@ -1,435 +1,171 @@
-# Fantasy Football Draft Board - Automated Deployment Guide
+# Deployment Guide
 
-This guide provides complete instructions for deploying the Fantasy Football Draft Board application using our automated deployment pipeline with Docker, Nix, GitHub Actions, and Terraform.
+This guide explains how to deploy the Fantasy Football Draft Board application using various methods.
 
-## 🚀 One-Button Deployment
+## Deployment Methods
 
-### Quick Start
+### 1. GitHub Actions Workflow Dispatch (Recommended for Feature Branches)
 
-1. **Run the setup assistant:**
+The easiest way to deploy from any branch is using GitHub Actions workflow dispatch.
+
+#### Quick Start
+
+```bash
+# Get the deployment URL
+just deploy-github
+```
+
+#### Manual Steps
+
+1. **Navigate to GitHub Actions**:
+
+   - Go to your repository on GitHub
+   - Click on the "Actions" tab
+   - Find the "Deploy" workflow
+   - Click "Run workflow"
+
+2. **Configure Deployment**:
+
+   - **Environment**: Choose `staging` for testing or `production` for live deployment
+   - **Git branch**: Enter your feature branch name (e.g., `feature/new-feature`)
+   - **Force recreate**: Check this to re-run the user_data script (useful if setup failed)
+   - **Skip infrastructure**: Check this to deploy only the application (faster for code changes)
+
+3. **Run the Workflow**:
+   - Click "Run workflow"
+   - Monitor the progress in the Actions tab
+
+#### Use Cases
+
+- **New Feature Testing**: Deploy your feature branch to staging
+- **Bug Fixes**: Deploy fixes to production
+- **Infrastructure Issues**: Use "Force recreate" to re-run user_data script
+- **Quick Code Updates**: Use "Skip infrastructure" for faster deployments
+
+### 2. Local Deployment
+
+For local development and testing:
+
+```bash
+# Deploy to production
+just deploy
+
+# Deploy infrastructure only
+just infra
+
+# Deploy application only
+just app
+```
+
+### 3. Automated Deployment
+
+Push to the `main` branch to trigger automatic deployment to production.
+
+## Environment Configuration
+
+### Staging Environment
+
+- **Purpose**: Testing new features and changes
+- **URL**: `staging.yourdomain.com` (if configured)
+- **Branch**: Any feature branch
+- **Auto-deploy**: No (manual via workflow dispatch)
+
+### Production Environment
+
+- **Purpose**: Live application
+- **URL**: `yourdomain.com`
+- **Branch**: `main`
+- **Auto-deploy**: Yes (on push to main)
+
+## Deployment Options
+
+### Force Recreate Infrastructure
+
+Use this option when:
+
+- The user_data script didn't complete properly
+- You need to reinstall software on the server
+- Infrastructure changes require a fresh instance
+
+**Warning**: This will destroy and recreate the EC2 instance, causing downtime.
+
+### Skip Infrastructure
+
+Use this option when:
+
+- You only changed application code
+- You want faster deployments
+- The infrastructure is already set up correctly
+
+**Benefit**: Much faster deployment (2-3 minutes vs 10-15 minutes).
+
+## Troubleshooting
+
+### User Data Script Issues
+
+If the user_data script didn't complete:
+
+1. **Check the logs**:
 
    ```bash
-   ./deploy/scripts/setup-secrets.sh
+   ssh ubuntu@your-instance-ip
+   sudo cat /var/log/cloud-init-output.log
    ```
 
-2. **Configure GitHub secrets and variables** (shown by the setup assistant)
+2. **Re-run the script**:
+   - Use "Force recreate" in GitHub Actions
+   - Or run locally: `terraform apply -replace="aws_instance.web"`
 
-3. **Deploy via GitHub Actions:**
-   - Go to the Actions tab in your GitHub repository
-   - Find the "Deploy" workflow
-   - Click "Run workflow"
-   - Choose environment and branch
-   - Click "Run workflow" button
+### Deployment Failures
 
-That's it! Your application will be automatically deployed to AWS EC2.
+1. **Check GitHub Actions logs** for specific error messages
+2. **Verify AWS credentials** are configured correctly
+3. **Check SSH key** is added to GitHub secrets
+4. **Verify domain configuration** if using custom domains
 
-## 📋 Prerequisites
+### Health Check Failures
 
-### Required Tools
+If the application doesn't respond after deployment:
 
-- AWS CLI v2
-- Terraform >= 1.0
-- Docker & Docker Compose
-- Git
-- SSH client
-- Nix (optional, for reproducible builds)
+1. **SSH into the instance**:
 
-### AWS Requirements
+   ```bash
+   ssh ubuntu@your-instance-ip
+   ```
 
-- AWS account with programmatic access
-- IAM user with the following permissions:
-  - EC2 (full access)
-  - VPC (full access)
-  - IAM (full access)
-  - Route53 (full access, if using custom domain)
+2. **Check Docker services**:
 
-## 🔧 Setup Instructions
+   ```bash
+   cd /home/ubuntu/app
+   docker-compose ps
+   docker-compose logs
+   ```
 
-### 1. Initial Setup
+3. **Check application logs**:
+   ```bash
+   docker-compose logs backend
+   docker-compose logs frontend
+   ```
 
-Run the interactive setup assistant:
+## Security Considerations
 
-```bash
-./deploy/scripts/setup-secrets.sh
-```
+- **Environment Secrets**: Stored in GitHub repository secrets
+- **SSH Keys**: Private key stored in GitHub secrets, public key in AWS
+- **State Encryption**: Terraform state is encrypted in S3
+- **SSL Certificates**: Automatically managed by Let's Encrypt
 
-This will guide you through:
+## Best Practices
 
-- Generating SSH keys
-- Configuring AWS credentials
-- Setting up GitHub secrets
-- Creating deployment configuration
+1. **Always test in staging first**
+2. **Use feature branches** for development
+3. **Review changes** before deploying to production
+4. **Monitor deployments** in GitHub Actions
+5. **Keep infrastructure changes minimal** during active development
+6. **Use "Skip infrastructure"** for code-only changes
 
-### 2. GitHub Configuration
+## Monitoring
 
-#### Repository Secrets
-
-Go to: **Settings → Secrets and variables → Actions → Repository secrets**
-
-Add these secrets:
-
-- `AWS_ACCESS_KEY_ID`: Your AWS access key ID
-- `AWS_SECRET_ACCESS_KEY`: Your AWS secret access key
-- `SSH_PUBLIC_KEY`: Your SSH public key (generated by setup script)
-- `SSH_PRIVATE_KEY`: Your SSH private key (generated by setup script)
-
-#### Repository Variables
-
-Go to: **Settings → Secrets and variables → Actions → Repository variables**
-
-Add these variables:
-
-- `AWS_REGION`: AWS region (e.g., "us-east-1")
-- `DOMAIN_NAME`: Your domain name (optional)
-- `ROUTE53_ZONE_ID`: Route53 hosted zone ID (optional)
-
-### 3. Local Configuration
-
-For manual deployments, set environment variables:
-
-```bash
-export SSH_PUBLIC_KEY="your-public-key-here"
-export AWS_REGION="us-east-1"
-export DOMAIN_NAME="your-domain.com"  # Optional
-export ROUTE53_ZONE_ID="Z1234567890ABC"  # Optional
-```
-
-## 🎯 Deployment Methods
-
-### Method 1: GitHub Actions (Recommended)
-
-1. **Navigate to GitHub Actions:**
-
-   - Go to your repository
-   - Click the "Actions" tab
-   - Find the "Deploy" workflow
-
-2. **Run the workflow:**
-
-   - Click "Run workflow"
-   - Select environment: `production` or `staging`
-   - Choose git branch: `main` or feature branch
-   - Optionally force recreate infrastructure
-   - Click "Run workflow"
-
-3. **Monitor deployment:**
-   - Watch the workflow progress
-   - Check logs for any issues
-   - Get deployment summary when complete
-
-### Method 2: Manual Deployment
-
-```bash
-# Basic deployment
-./deploy/scripts/deploy.sh
-
-# Deploy specific branch to staging
-./deploy/scripts/deploy.sh -e staging -b develop
-
-# Force recreate infrastructure
-./deploy/scripts/deploy.sh -f
-
-# Deploy application only (skip infrastructure)
-./deploy/scripts/deploy.sh -s
-
-# Full options
-./deploy/scripts/deploy.sh -e production -b main -f -r us-west-2
-```
-
-### Method 3: Local Development
-
-```bash
-# Using Nix (recommended for reproducible builds)
-nix develop
-docker-compose up
-
-# Or using Docker directly
-docker-compose up
-```
-
-## 🏗️ Infrastructure Overview
-
-### Architecture
-
-```
-[Users] → [Load Balancer] → [EC2 Instance] → [Docker Containers]
-                                              ├── Frontend (Nginx)
-                                              ├── Backend (Rust/Actix)
-                                              ├── Database (PostgreSQL)
-                                              └── Cron (Data Updates)
-```
-
-### AWS Resources Created
-
-- **VPC**: Custom VPC with public subnet
-- **EC2 Instance**: t3.medium (configurable)
-- **Security Group**: HTTP/HTTPS/SSH access
-- **Elastic IP**: Static IP address
-- **Route53 Record**: DNS (if domain configured)
-- **EBS Volume**: Encrypted root volume
-
-### Container Services
-
-- **Frontend**: SvelteKit app served by Nginx
-- **Backend**: Rust/Actix web server
-- **Database**: PostgreSQL 16
-- **Cron**: Automated data updates
-
-## 🔒 Security Features
-
-### Network Security
-
-- Security groups with minimal required ports
-- Fail2ban for intrusion detection
-- Rate limiting on API endpoints
-- Security headers (HSTS, CSP, etc.)
-
-### SSL/TLS Security
-
-- **Automatic SSL certificates** via Let's Encrypt
-- **HTTPS enforcement** with HTTP to HTTPS redirects
-- **Modern SSL configuration** with TLS 1.2/1.3
-- **Automatic certificate renewal** via cron jobs
-- **Security headers** (HSTS, X-Frame-Options, etc.)
-
-### Application Security
-
-- Container isolation with Docker
-- Non-root user execution
-- Encrypted EBS volumes
-- SSH key-based authentication only
-
-### Monitoring & Logging
-
-- Application health checks
-- Log rotation and retention
-- Prometheus metrics export
-- CloudWatch integration (optional)
-
-## 📊 Monitoring & Maintenance
-
-### Health Checks
-
-- Application health endpoint: `/health`
-- Automated monitoring every 5 minutes
-- Container health checks in Docker Compose
-
-### Logging
-
-- Application logs: `/home/ubuntu/app/logs/`
-- System logs: `journalctl -u ffball`
-- Nginx logs: `/var/log/nginx/`
-
-### Backup & Recovery
-
-- Daily database backups using BorgBackup
-- Application code in Git repository
-- Infrastructure as code with Terraform
-
-### Maintenance Commands
-
-```bash
-# SSH into the server
-ssh ubuntu@<public-ip>
-
-# Check application status
-docker-compose ps
-
-# View logs
-docker-compose logs -f
-
-# Restart services
-docker-compose restart
-
-# Update application
-cd /home/ubuntu/app
-git pull origin main
-docker-compose up -d --build
-
-# Check system health
-sudo systemctl status ffball
-
-# SSL Certificate Management
-# Check SSL certificate status
-sudo /home/ubuntu/app/deploy/scripts/manage-ssl.sh status
-
-# Renew SSL certificates manually
-sudo /home/ubuntu/app/deploy/scripts/manage-ssl.sh renew
-
-# Test SSL configuration
-sudo /home/ubuntu/app/deploy/scripts/manage-ssl.sh test
-
-# Troubleshoot SSL issues
-sudo /home/ubuntu/app/deploy/scripts/manage-ssl.sh troubleshoot
-```
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-1. **Deployment fails at infrastructure stage:**
-
-   - Check AWS credentials and permissions
-   - Verify Terraform configuration
-   - Ensure SSH key is properly configured
-
-2. **Application doesn't start:**
-
-   - Check container logs: `docker-compose logs`
-   - Verify database connection
-   - Check system resources
-
-3. **Database connection issues:**
-
-   - Ensure PostgreSQL is running: `sudo systemctl status postgresql`
-   - Check database credentials
-   - Verify network connectivity
-
-4. **SSL/Domain issues:**
-   - Verify Route53 configuration
-   - Check domain DNS settings
-   - Ensure SSL certificates are valid
-
-### Debug Commands
-
-```bash
-# Check infrastructure status
-cd deploy/terraform
-terraform show
-
-# Verify EC2 instance
-aws ec2 describe-instances
-
-# Check application health
-curl -f http://your-domain.com/health
-
-# Debug containers
-docker-compose ps
-docker-compose logs backend
-docker-compose logs frontend
-
-# System diagnostics
-sudo systemctl status ffball
-sudo journalctl -u ffball -f
-```
-
-## 🔄 CI/CD Pipeline
-
-### Continuous Integration
-
-- **Code Quality**: Rust formatting and linting
-- **Testing**: Unit and integration tests
-- **Security**: Dependency auditing
-- **Build**: Docker image creation
-
-### Continuous Deployment
-
-- **Infrastructure**: Terraform provisioning
-- **Application**: Docker container deployment
-- **Health Checks**: Automated verification
-- **Rollback**: Automatic on failure
-
-### Workflow Triggers
-
-- **Push to main**: Automatic CI build
-- **Manual dispatch**: One-button deployment
-- **Pull requests**: CI validation
-- **Scheduled**: Nightly security scans
-
-## 📈 Performance Optimization
-
-### Application Performance
-
-- **Caching**: Nginx static asset caching
-- **Compression**: Gzip compression enabled
-- **Database**: Optimized PostgreSQL configuration
-- **CDN**: CloudFront integration (optional)
-
-### Infrastructure Performance
-
-- **Instance Type**: Right-sized EC2 instances
-- **Storage**: GP3 EBS volumes
-- **Network**: VPC optimization
-- **Monitoring**: CloudWatch metrics
-
-## 🌍 Multi-Environment Support
-
-### Environment Configuration
-
-- **Production**: `production` environment
-- **Staging**: `staging` environment
-- **Development**: Local Docker Compose
-
-### Environment Variables
-
-Each environment can have different:
-
-- Instance sizes
-- Database configurations
-- Domain names
-- Security settings
-
-### Deployment Strategies
-
-- **Blue-Green**: Zero-downtime deployments
-- **Rolling**: Gradual updates
-- **Canary**: Traffic-split testing
-
-## 📚 Additional Resources
-
-### Documentation
-
-- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-- [Docker Compose Reference](https://docs.docker.com/compose/)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Nix Package Manager](https://nixos.org/manual/nix/stable/)
-
-### Support
-
-- Check GitHub Issues for common problems
-- Review deployment logs for error details
-- Use the setup assistant for configuration help
-
-## 🔧 Customization
-
-### Infrastructure Customization
-
-Edit `deploy/terraform/variables.tf` to modify:
-
-- Instance types and sizes
-- Network configuration
-- Security group rules
-- Backup settings
-
-### Application Customization
-
-Edit `docker-compose.yml` to modify:
-
-- Environment variables
-- Port mappings
-- Volume mounts
-- Service dependencies
-
-### Monitoring Customization
-
-Edit `deploy/nixos/ec2-configuration.nix` to modify:
-
-- System monitoring
-- Log rotation
-- Security settings
-- Performance tuning
-
----
-
-## 🎉 Congratulations!
-
-You now have a fully automated, production-ready deployment pipeline for your Fantasy Football Draft Board application. The system provides:
-
-- **One-button deployments** via GitHub Actions
-- **Infrastructure as Code** with Terraform
-- **Containerized applications** with Docker
-- **Reproducible builds** with Nix
-- **Security hardening** and monitoring
-- **Automated backups** and maintenance
-
-Enjoy your automated deployment pipeline! 🚀
+- **GitHub Actions**: Monitor deployment progress
+- **AWS Console**: Check EC2 instance status
+- **Application Health**: Check `/health` endpoint
+- **Logs**: SSH into instance for detailed logs
