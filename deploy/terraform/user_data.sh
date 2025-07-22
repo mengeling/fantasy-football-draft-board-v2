@@ -20,7 +20,7 @@ apt-get install -y \
     python3-certbot-nginx
 
 # Install Docker
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg --batch --yes
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
@@ -53,8 +53,8 @@ export HOME=/home/ubuntu
 # Install Just command runner
 curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-# Install Nix
-curl -L https://nixos.org/nix/install | sh -s -- --daemon
+# Install Nix (single-user mode for root)
+sh <(curl -L https://nixos.org/nix/install) --no-daemon --yes
 
 # Create app directory
 mkdir -p /home/ubuntu/app
