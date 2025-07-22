@@ -42,6 +42,11 @@ unzip awscliv2.zip
 ./aws/install
 rm -rf aws awscliv2.zip
 
+# Debug environment
+echo "Current HOME: $HOME"
+echo "Current USER: $USER"
+echo "Current PWD: $PWD"
+
 # Set up environment for ubuntu user
 export HOME=/home/ubuntu
 
