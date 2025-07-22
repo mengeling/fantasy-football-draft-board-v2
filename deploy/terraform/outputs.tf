@@ -30,7 +30,7 @@ output "subnet_id" {
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
-  value       = "ssh -i ~/.ssh/id_ed25519 ubuntu@${aws_eip.web.public_ip}"
+  value       = "ssh -i ~/.ssh/ffball_deploy ubuntu@${aws_eip.web.public_ip}"
 }
 
 output "application_url" {
