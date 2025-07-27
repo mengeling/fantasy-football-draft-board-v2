@@ -336,8 +336,8 @@ crontab -e
 
 Add:
 
-```
-0 0 * * * curl -X POST http://127.0.0.1:8080/fantasy-data/update >> /home/ubuntu/ffball.log 2>&1
+```bash
+0 0 * * * echo "$(date): Starting fantasy data update" >> /home/ubuntu/ffball.log && curl -X POST http://127.0.0.1:8080/fantasy-data/update >> /home/ubuntu/ffball.log 2>&1
 ```
 
 ### SSL Setup (Optional)
