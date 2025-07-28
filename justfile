@@ -155,7 +155,7 @@ db-reset: # Reset database
 
 db-backup: # Create database backup
     @echo "Creating database backup..."
-    docker-compose exec postgres pg_dump -U ffball -d ffball > backup_{{timestamp}}.sql
+    docker-compose exec postgres pg_dump -U ffball -d ffball > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # CI/CD commands
 ci-test: lint test build # Run CI tests

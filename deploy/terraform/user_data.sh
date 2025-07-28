@@ -19,6 +19,13 @@ apt-get install -y \
     certbot \
     python3-certbot-nginx
 
+# Install Nix (single-user mode for root)
+export NIX_INSTALLER_NO_MODIFY_PROFILE=1
+export HOME=/root
+groupadd -f nixbld
+curl -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes
+source /etc/profile.d/nix.sh
+
 # Install Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg --batch --yes
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
@@ -40,11 +47,6 @@ rm -rf aws awscliv2.zip
 
 # Install Just command runner
 curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-
-# Install Nix
-export NIX_INSTALLER_NO_MODIFY_PROFILE=1
-curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes
-source /etc/profile.d/nix.sh
 
 # Create app directory and clone repository
 mkdir -p /home/ubuntu/app
