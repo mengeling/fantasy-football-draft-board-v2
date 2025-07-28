@@ -32,35 +32,22 @@ usermod -aG docker ubuntu
 systemctl start docker
 systemctl enable docker
 
-# Docker Compose is included in docker-compose-plugin package
-
 # Install AWS CLI
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 ./aws/install
 rm -rf aws awscliv2.zip
 
-# Debug environment
-echo "Current HOME: $HOME"
-echo "Current USER: $USER"
-echo "Current PWD: $PWD"
-
-# Set up environment for ubuntu user
-export HOME=/home/ubuntu
-
 # Install Just command runner
 curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-# Install Nix (single-user mode for root) - SKIPPING FOR NOW
-# Create nixbld group if it doesn't exist
-# groupadd -f nixbld
-# sh <(curl -L https://nixos.org/nix/install) --no-daemon --yes
-echo "Skipping Nix installation for now"
+# Install Nix
+export NIX_INSTALLER_NO_MODIFY_PROFILE=1
+curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes
+source /etc/profile.d/nix.sh
 
-# Create app directory
+# Create app directory and clone repository
 mkdir -p /home/ubuntu/app
-
-# Clone repository
 cd /home/ubuntu/app
 git config --global --add safe.directory /home/ubuntu/app
 git clone ${git_repo} .
@@ -110,10 +97,8 @@ fi
 # Copy systemd service from repository
 cp /home/ubuntu/app/deploy/systemd/ffball.service /etc/systemd/system/
 
-# Create log directory
+# Create log directory and set up log rotation
 mkdir -p /home/ubuntu/logs
-
-# Set up log rotation
 cat > /etc/logrotate.d/ffball << 'EOF'
 /home/ubuntu/logs/*.log {
     daily
@@ -130,12 +115,5 @@ EOF
 # Enable the service for future deployments (but don't start it yet)
 systemctl daemon-reload
 systemctl enable ffball
-
-
-
-# Set up CloudWatch agent (optional)
-# wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-# dpkg -i amazon-cloudwatch-agent.deb
-# rm amazon-cloudwatch-agent.deb
 
 echo "User data script completed successfully!"

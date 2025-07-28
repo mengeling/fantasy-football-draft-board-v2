@@ -56,6 +56,7 @@ variable "git_branch" {
   description = "Git branch to deploy"
   type        = string
   default     = "main"
+  # TODO: Change back to "main" after config files are merged to main branch
 }
 
 variable "domain_name" {
