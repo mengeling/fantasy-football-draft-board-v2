@@ -22,9 +22,13 @@ apt-get install -y \
 # Install Nix (single-user mode for root)
 export NIX_INSTALLER_NO_MODIFY_PROFILE=1
 export HOME=/root
+
 groupadd -f nixbld
+for i in {1..32}; do
+    useradd -r -g nixbld -G nixbld -d /var/empty -s /sbin/nologin -c "Nix build user $i" nixbld$i 2>/dev/null || true
+done
+
 curl -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes
-source /etc/profile.d/nix.sh
 
 # Install Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg --batch --yes
@@ -76,7 +80,7 @@ if [ -n "${domain_name}" ]; then
     echo "Configuring Nginx with SSL..."
     
     # Copy Nginx config from repository and substitute domain name
-    sed "s/\${domain_name}/${domain_name}/g" /home/ubuntu/app/deploy/nginx/ffball.conf > /etc/nginx/sites-available/ffball
+    sed "s|\\\${domain_name}|${domain_name}|g" /home/ubuntu/app/deploy/nginx/ffball.conf > /etc/nginx/sites-available/ffball
 
     # Enable the site
     ln -sf /etc/nginx/sites-available/ffball /etc/nginx/sites-enabled/
@@ -88,6 +92,7 @@ if [ -n "${domain_name}" ]; then
     # Start Nginx
     systemctl enable nginx
     systemctl start nginx
+    systemctl status nginx --no-pager -l
     
     echo "Nginx with SSL configured successfully!"
     
