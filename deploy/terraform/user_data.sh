@@ -79,8 +79,8 @@ if [ -n "${domain_name}" ]; then
     # Configure Nginx with SSL
     echo "Configuring Nginx with SSL..."
     
-    # Copy Nginx config from repository and substitute domain name
-    sed "s|\\\${domain_name}|${domain_name}|g" /home/ubuntu/app/deploy/nginx/ffball.conf > /etc/nginx/sites-available/ffball
+    # Copy Nginx config from repository
+    cp /home/ubuntu/app/deploy/nginx/ffball.conf /etc/nginx/sites-available/ffball
 
     # Enable the site
     ln -sf /etc/nginx/sites-available/ffball /etc/nginx/sites-enabled/
