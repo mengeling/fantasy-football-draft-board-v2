@@ -147,11 +147,13 @@ PGPASSWORD=ffball psql -U ffball -d ffball -f "src/database/setup_db.sql"
 
 **Note**: This project uses a single SQL file for database setup rather than migrations.
 
-### 4. Scraping Data
+### 4. Scrape Data to Populate DB
+
+Start the backend server and trigger the scraping endpoint:
 
 ```bash
-cd backend
-cargo run --bin scrape
+cargo run
+curl -X POST http://localhost:8080/fantasy-data/update
 ```
 
 ## Useful Commands
