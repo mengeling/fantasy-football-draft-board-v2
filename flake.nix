@@ -26,7 +26,7 @@
         # Database
         postgresql = pkgs.postgresql_16;
         
-        # System dependencies
+        # System dependencies (for deployment and basic operations)
         systemDeps = with pkgs; [
           pkg-config
           openssl
@@ -38,23 +38,19 @@
           docker-compose
           terraform
           awscli2
-          jq
-          yq
+          certbot
+          bash
+          coreutils
+          nginx
+          just
         ];
 
-        # Development tools
+        # Development tools (for development and debugging)
         devTools = with pkgs; [
           rustToolchain
           nodejs
           postgresql
-          nginx
-          sqlx-cli
           cargo-watch
-          cargo-edit
-          cargo-audit
-          bacon
-          dive # Docker image analysis
-          k9s # Kubernetes CLI
         ];
 
         # Build inputs for Rust
@@ -103,31 +99,7 @@
           '';
         };
 
-        # Docker image builds
-        backendImage = pkgs.dockerTools.buildImage {
-          name = "ffball-backend";
-          tag = "latest";
-          contents = [ backend pkgs.bash pkgs.coreutils pkgs.curl ];
-          config = {
-            Cmd = [ "${backend}/bin/backend" ];
-            ExposedPorts = {
-              "8080/tcp" = {};
-            };
-            WorkingDir = "/app";
-          };
-        };
 
-        frontendImage = pkgs.dockerTools.buildImage {
-          name = "ffball-frontend";
-          tag = "latest";
-          contents = [ frontend pkgs.nginx ];
-          config = {
-            Cmd = [ "${pkgs.nginx}/bin/nginx" "-g" "daemon off;" ];
-            ExposedPorts = {
-              "80/tcp" = {};
-            };
-          };
-        };
 
       in
       {
@@ -161,58 +133,20 @@
         # Packages
         packages = {
           inherit frontend backend;
-          frontend-image = frontendImage;
-          backend-image = backendImage;
           default = backend;
-        };
-
-        # Development apps
-        apps = {
-          backend = flake-utils.lib.mkApp {
-            drv = backend;
-            exePath = "/bin/backend";
+          
+        # System tools package (for EC2 installation)
+        system-tools = pkgs.buildEnv {
+          name = "system-tools";
+          paths = systemDeps;
+          meta = {
+            description = "System tools for Fantasy Football Draft Board deployment";
+            platforms = pkgs.lib.platforms.linux;
           };
         };
-
-        # CI/CD formatter
-        formatter = pkgs.nixpkgs-fmt;
-
-        # System configurations for deployment
-        nixosConfigurations = {
-          # AWS EC2 configuration
-          ec2-instance = nixpkgs.lib.nixosSystem {
-            inherit system;
-            modules = [
-              ./deploy/nixos/ec2-configuration.nix
-              {
-                system.stateVersion = "24.05";
-                networking.hostName = "ffball-server";
-                
-                # Enable Docker
-                virtualisation.docker.enable = true;
-                
-                # Install required packages
-                environment.systemPackages = with pkgs; [
-                  docker
-                  docker-compose
-                  git
-                  curl
-                  nginx
-                  postgresql
-                  awscli2
-                ];
-                
-                # Enable services
-                services.nginx.enable = true;
-                services.postgresql.enable = true;
-                services.postgresql.package = pkgs.postgresql_16;
-                
-                # Open firewall ports
-                networking.firewall.allowedTCPPorts = [ 22 80 443 ];
-              }
-            ];
-          };
         };
+
+
       }
     );
 }

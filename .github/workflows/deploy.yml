@@ -161,30 +161,9 @@ jobs:
             
             echo "Starting deployment..."
             
-            # Navigate to app directory
+            # Navigate to app directory and run deploy script
             cd /home/ubuntu/app
-            
-            # Pull latest changes
-            git fetch origin
-            git checkout ${{ github.event.inputs.git_branch }}
-            git pull origin ${{ github.event.inputs.git_branch }}
-            
-            # Use just commands for deployment
-            just docker-deploy
-            
-            # Wait for services to be healthy
-            echo "Waiting for services to be healthy..."
-            for i in {1..3}; do
-              if curl -f http://localhost/health > /dev/null 2>&1; then
-                echo "Application is healthy"
-                break
-              fi
-              echo "Waiting for health check... ($i/3)"
-              sleep 3
-            done
-            
-            # Verify all services are running
-            docker-compose ps
+            ./deploy/scripts/deploy.sh -e ${{ github.event.inputs.environment }} -b ${{ github.event.inputs.git_branch }}
             
             echo "Deployment completed successfully!"
           EOF

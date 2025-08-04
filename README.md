@@ -61,6 +61,10 @@ For automated deployment using Terraform and GitHub Actions:
 
 **Benefits**: Automated, reproducible, version-controlled deployments with proper state management.
 
+## Local Development
+
+For local development setup, see [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) for detailed instructions on setting up Nix and running the application locally.
+
 ## Development Commands
 
 This project uses [Just](https://github.com/casey/just) as the command runner instead of Make. Just provides better syntax, parameter support, and cross-platform compatibility.
