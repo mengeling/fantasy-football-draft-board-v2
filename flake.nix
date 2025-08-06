@@ -43,6 +43,7 @@
           coreutils
           nginx
           just
+          sqlx-cli
         ];
 
         # Development tools (for development and debugging)
