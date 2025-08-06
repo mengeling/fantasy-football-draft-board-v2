@@ -104,6 +104,16 @@ nix-build: # Build with Nix
     @echo "Building with Nix..."
     nix build
 
+nix-deploy: # Deploy with Nix-built Docker images
+    @echo "Deploying with Nix-built Docker images..."
+    nix build .#backendImage .#frontendImage
+    docker load < result-1
+    docker load < result-2
+    docker-compose down || true
+    docker system prune -f
+    docker-compose up -d
+    docker-compose ps
+
 # Infrastructure commands
 tf-init: # Initialize Terraform
     @echo "Initializing Terraform..."

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -19,13 +19,7 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    environment:
-      - DATABASE_URL=postgres://ffball:ffball@postgres:5432/ffball
-      - RUST_LOG=info
-      - RUST_BACKTRACE=1
+    image: ffball-backend:latest
     ports:
       - "8080:8080"
     depends_on:
@@ -40,9 +34,7 @@ services:
       - ./backend/src/scripts:/app/scripts:ro
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: ffball-frontend:latest
     ports:
       - "80:80"
     depends_on:

@@ -100,6 +100,37 @@
           '';
         };
 
+        # Docker image for backend
+        backendImage = pkgs.dockerTools.buildImage {
+          name = "ffball-backend";
+          tag = "latest";
+          contents = [ backend ];
+          config = {
+            Cmd = [ "${backend}/bin/backend" ];
+            ExposedPorts = {
+              "8080/tcp" = {};
+            };
+            Env = [
+              "DATABASE_URL=postgres://ffball:ffball@postgres:5432/ffball"
+              "RUST_LOG=info"
+              "RUST_BACKTRACE=1"
+            ];
+          };
+        };
+
+        # Docker image for frontend
+        frontendImage = pkgs.dockerTools.buildImage {
+          name = "ffball-frontend";
+          tag = "latest";
+          contents = [ frontend ];
+          config = {
+            Cmd = [ "sh" "-c" "cd ${frontend} && nginx -g 'daemon off;'" ];
+            ExposedPorts = {
+              "80/tcp" = {};
+            };
+          };
+        };
+
 
 
       in
@@ -133,7 +164,7 @@
 
         # Packages
         packages = {
-          inherit frontend backend;
+          inherit frontend backend backendImage frontendImage;
           default = backend;
           
         # System tools package (for EC2 installation)

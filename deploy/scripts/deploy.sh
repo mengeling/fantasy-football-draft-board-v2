@@ -68,9 +68,16 @@ deploy_application() {
         sleep 5
     fi
     
+    print_status "Building Docker images with Nix..."
+    nix build .#backendImage .#frontendImage
+    
+    print_status "Loading Docker images..."
+    docker load < result-1
+    docker load < result-2
+    
+    print_status "Starting services..."
     docker-compose down || true 
     docker system prune -f || true
-    docker-compose build --no-cache
     docker-compose up -d
     docker-compose ps    
     print_success "Application deployed successfully!"
