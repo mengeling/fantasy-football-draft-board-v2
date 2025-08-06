@@ -61,10 +61,10 @@ app: # Deploy application only
     ./deploy/scripts/deploy.sh -s
 
 # Docker commands
-docker-build: # Build Docker images
-    @echo "Building Docker images..."
-    docker build -t ffball-backend -f Dockerfile.backend .
-    docker build -t ffball-frontend -f Dockerfile.frontend .
+docker-build: # Build Docker images with Nix
+    @echo "Building Docker images with Nix..."
+    nix build .#backendImage && docker load < result
+    nix build .#frontendImage && docker load < result
 
 docker-push: # Push Docker images
     @echo "Pushing Docker images..."
@@ -73,14 +73,23 @@ docker-push: # Push Docker images
 
 docker-dev: # Start Docker development environment
     @echo "Starting Docker development environment..."
+    just docker-build
     docker-compose up
 
 docker-deploy: # Deploy with Docker Compose
     @echo "Deploying with Docker Compose..."
     docker-compose down || true
     docker system prune -f
-    docker-compose build --no-cache
+    just docker-build
     docker-compose up -d
+
+docker-inspect: # Inspect Docker images
+    @echo "Inspecting Docker images..."
+    docker images | grep ffball
+    @echo "Backend image layers:"
+    docker history ffball-backend:latest
+    @echo "Frontend image layers:"
+    docker history ffball-frontend:latest
 
 # Utility commands
 logs: # View application logs
@@ -103,6 +112,8 @@ nix-shell: # Start Nix development shell
 nix-build: # Build with Nix
     @echo "Building with Nix..."
     nix build
+    nix build .#backendImage
+    nix build .#frontendImage
 
 # Infrastructure commands
 tf-init: # Initialize Terraform

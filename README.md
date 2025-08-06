@@ -4,6 +4,23 @@
 
 This web application provides the same interactive fantasy football drafting experience as the official draft boards on ESPN, Yahoo, NFL.com, etc., but it uses consensus player rankings consolidated from 100+ experts.
 
+## Architecture
+
+- **Backend**: Rust with Actix-web framework
+- **Frontend**: SvelteKit with TypeScript
+- **Database**: PostgreSQL with automated data updates
+- **Infrastructure**: Reproducible builds with Nix, containerized with Docker
+- **Deployment**: Automated CI/CD with Terraform and GitHub Actions
+
+### Nix-Powered Development
+
+This project uses [Nix](https://nixos.org/) for reproducible development environments and Docker image builds:
+
+- **Reproducible environments**: `nix develop` gives you the exact same development setup on any machine
+- **Efficient Docker images**: Built with Nix for minimal size and maximum layer sharing
+- **No package duplication**: All dependencies managed in a single `flake.nix` file
+- **Time travel**: Can rebuild any version exactly as it was built historically
+
 ## App Demo
 
 ![Demo](frontend/static/img/fantasy_football_recording.gif)
