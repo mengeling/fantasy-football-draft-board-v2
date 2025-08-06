@@ -46,7 +46,7 @@ if [ -n "${domain_name}" ]; then
     
     # Obtain SSL certificate using standalone mode (no Nginx needed)
     echo "Obtaining SSL certificate..."
-    certbot certonly --standalone -d ${domain_name} --non-interactive --agree-tos --email admin@${domain_name} --dry-run
+    certbot certonly --standalone -d ${domain_name} --non-interactive --agree-tos --email admin@${domain_name}
     echo "SSL certificates obtained successfully!"
     
     nginx -t
