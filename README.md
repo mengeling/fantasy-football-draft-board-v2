@@ -14,7 +14,100 @@ This web application provides the same interactive fantasy football drafting exp
 
 ## Deployment Guide
 
-### Prerequisites
+### Automated Deployment (Recommended)
+
+For automated deployment using Terraform and GitHub Actions:
+
+1. **Setup Prerequisites**:
+
+   ```bash
+   # Install AWS CLI and Terraform
+   brew install awscli terraform  # macOS
+   # or follow official installation guides for your OS
+   ```
+
+2. **Configure AWS Credentials**:
+
+   ```bash
+   aws configure
+   ```
+
+3. **Setup Terraform Backend**:
+
+   ```bash
+   cd deploy/scripts
+   ./setup-terraform-backend.sh
+   # Run with --help for options and examples
+   ```
+
+4. **Generate SSH Keys**:
+
+   ```bash
+   ./setup-secrets.sh
+   ```
+
+5. **Deploy Infrastructure**:
+
+   ```bash
+   cd deploy/terraform
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+6. **Deploy Application**:
+   - Push to main branch for automatic deployment via GitHub Actions
+   - Or manually: `just deploy`
+
+**Benefits**: Automated, reproducible, version-controlled deployments with proper state management.
+
+## Local Development
+
+For local development setup, see [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) for detailed instructions on setting up Nix and running the application locally.
+
+## Development Commands
+
+This project uses [Just](https://github.com/casey/just) as the command runner instead of Make. Just provides better syntax, parameter support, and cross-platform compatibility.
+
+### Quick Start
+
+```bash
+# Show all available commands
+just
+
+# Start development environment
+just dev
+
+# Build all components
+just build
+
+# Run tests
+just test
+
+# Deploy to production
+just deploy
+```
+
+### Installing Just
+
+If you don't have Just installed:
+
+```bash
+# On macOS with Homebrew
+brew install just
+
+# On macOS with Nix
+nix-env -iA nixpkgs.just
+
+# On other systems
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash
+```
+
+### Manual Deployment
+
+For manual deployment on an existing EC2 instance:
+
+#### Prerequisites
 
 - An AWS Ubuntu EC2 instance
 - A domain name (optional)
@@ -247,8 +340,8 @@ crontab -e
 
 Add:
 
-```
-0 0 * * * curl -X POST http://127.0.0.1:8080/fantasy-data/update >> /home/ubuntu/ffball.log 2>&1
+```bash
+0 0 * * * echo "$(date): Starting fantasy data update" >> /home/ubuntu/ffball.log && curl -X POST http://127.0.0.1:8080/fantasy-data/update >> /home/ubuntu/ffball.log 2>&1
 ```
 
 ### SSL Setup (Optional)
