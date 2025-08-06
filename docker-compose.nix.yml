@@ -1,0 +1,70 @@
+version: '3.8'
+
+# Docker Compose using Nix-built images
+# Usage: docker-compose -f docker-compose.nix.yml up
+# Build images first: 
+#   nix build .#backendImage && docker load < result
+#   nix build .#frontendImage && docker load < result
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ffball
+      POSTGRES_USER: ffball
+      POSTGRES_PASSWORD: ffball
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/scripts:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ffball -d ffball"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ffball-backend:latest
+    environment:
+      - DATABASE_URL=postgres://ffball:ffball@postgres:5432/ffball
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ./backend/src/scripts:/app/scripts:ro
+
+  frontend:
+    image: ffball-frontend:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Cron job for data updates - using Nix-built image with curl
+  cron:
+    image: ffball-backend:latest  # Reuse backend image which has curl
+    command: >
+      sh -c "
+        echo '0 0 * * * curl -X POST http://backend:8080/fantasy-data/update' | crontab - &&
+        crond -f -L /dev/stdout
+      "
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

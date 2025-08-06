@@ -82,6 +82,32 @@ docker-deploy: # Deploy with Docker Compose
     docker-compose build --no-cache
     docker-compose up -d
 
+# Nix Docker commands
+nix-docker-build: # Build Docker images with Nix
+    @echo "Building Docker images with Nix..."
+    nix build .#backendImage && docker load < result
+    nix build .#frontendImage && docker load < result
+
+nix-docker-dev: # Start Nix Docker development environment  
+    @echo "Starting Nix Docker development environment..."
+    just nix-docker-build
+    docker-compose -f docker-compose.nix.yml up
+
+nix-docker-deploy: # Deploy with Nix Docker images
+    @echo "Deploying with Nix Docker images..."
+    docker-compose -f docker-compose.nix.yml down || true
+    docker system prune -f
+    just nix-docker-build
+    docker-compose -f docker-compose.nix.yml up -d
+
+nix-docker-inspect: # Inspect Nix-built Docker images
+    @echo "Inspecting Nix-built Docker images..."
+    docker images | grep ffball
+    @echo "Backend image layers:"
+    docker history ffball-backend:latest
+    @echo "Frontend image layers:"
+    docker history ffball-frontend:latest
+
 # Utility commands
 logs: # View application logs
     @echo "Viewing application logs..."
