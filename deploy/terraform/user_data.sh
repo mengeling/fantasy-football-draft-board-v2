@@ -4,15 +4,9 @@ set -e
 # Install Nix (multi-user mode for better tool access)
 export NIX_INSTALLER_NO_MODIFY_PROFILE=1
 export HOME=/root
-groupadd -f nixbld
-for i in {1..32}; do
-    useradd -r -g nixbld -G nixbld -d /var/empty -s /sbin/nologin -c "Nix build user $i" nixbld$i 2>/dev/null || true
-done
+export NIX_CONFIG="experimental-features = nix-command flakes"
+export NIXPKGS_ALLOW_UNFREE=1
 curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes
-
-# Build and install system tools package from flake.nix
-nix build .#system-tools
-nix-env -i ./result
 
 mkdir -p /home/ubuntu/app
 cd /home/ubuntu/app
@@ -20,6 +14,19 @@ git config --global --add safe.directory /home/ubuntu/app
 git clone ${git_repo} .
 git checkout ${git_branch}
 chown -R ubuntu:ubuntu /home/ubuntu/app
+
+. /etc/profile.d/nix.sh
+nix profile install --impure .#system-tools
+
+NGINX_STORE_PATH=$(readlink -f /nix/var/nix/profiles/default/bin/nginx | sed 's|/bin/nginx||')
+if [ -n "$NGINX_STORE_PATH" ]; then
+    cp /home/ubuntu/app/deploy/nginx/ffball.conf "$NGINX_STORE_PATH/conf/nginx.conf"
+fi
+
+# Create required Nginx directories
+mkdir -p /var/log/nginx
+mkdir -p /var/cache/nginx
+mkdir -p /var/run
 
 # Set up SSL certificates (if domain is provided)
 if [ -n "${domain_name}" ]; then
@@ -31,14 +38,10 @@ if [ -n "${domain_name}" ]; then
     
     # Obtain SSL certificate using standalone mode (no Nginx needed)
     echo "Obtaining SSL certificate..."
-    certbot certonly --standalone -d ${domain_name} --non-interactive --agree-tos --email admin@${domain_name}
+    certbot certonly --standalone -d ${domain_name} --non-interactive --agree-tos --email admin@${domain_name} --dry-run
     echo "SSL certificates obtained successfully!"
-        
-    cp /home/ubuntu/app/deploy/nginx/ffball.conf /etc/nginx/sites-available/ffball
-    ln -sf /etc/nginx/sites-available/ffball /etc/nginx/sites-enabled/
-    rm -f /etc/nginx/sites-enabled/default  
-    nginx -t
     
+    nginx -t
     systemctl enable nginx
     systemctl start nginx
     systemctl status nginx --no-pager -l
