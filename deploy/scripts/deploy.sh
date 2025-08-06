@@ -61,6 +61,13 @@ check_prerequisites() {
 deploy_application() {    
     set -e
     echo "Starting application deployment..."
+    
+    if ! docker info &> /dev/null; then
+        print_status "Docker daemon not running, starting it..."
+        sudo /nix/var/nix/profiles/default/bin/dockerd --host=unix:///var/run/docker.sock &
+        sleep 5
+    fi
+    
     docker-compose down || true 
     docker system prune -f || true
     docker-compose build --no-cache
