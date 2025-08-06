@@ -3,7 +3,15 @@
 
 # Default recipe - show help
 default:
+    @echo "Fantasy Football Draft Board - Nix-based Development & Deployment"
+    @echo "================================================================"
+    @echo ""
     @just --list
+    @echo ""
+    @echo "Quick Start:"
+    @echo "  just nix-deploy    - Deploy with Nix-built images"
+    @echo "  just nix-shell     - Enter Nix development environment"
+    @echo "  just help-deploy   - Show deployment help"
 
 # Development commands
 dev: # Start development environment
@@ -60,27 +68,22 @@ app: # Deploy application only
     @echo "Deploying application only..."
     ./deploy/scripts/deploy.sh -s
 
-# Docker commands
-docker-build: # Build Docker images
-    @echo "Building Docker images..."
-    docker build -t ffball-backend -f Dockerfile.backend .
-    docker build -t ffball-frontend -f Dockerfile.frontend .
+# Nix-based deployment commands
+nix-build-images: # Build Docker images with Nix
+    @echo "Building Docker images with Nix..."
+    nix build .#backendImage .#frontendImage
 
-docker-push: # Push Docker images
-    @echo "Pushing Docker images..."
-    docker push ffball-backend
-    docker push ffball-frontend
+nix-load-images: # Load Nix-built images into Docker
+    @echo "Loading Nix-built images into Docker..."
+    docker load < result-1
+    docker load < result-2
 
-docker-dev: # Start Docker development environment
-    @echo "Starting Docker development environment..."
-    docker-compose up
-
-docker-deploy: # Deploy with Docker Compose
-    @echo "Deploying with Docker Compose..."
+nix-deploy: nix-build-images nix-load-images # Deploy with Nix-built images
+    @echo "Deploying with Nix-built Docker images..."
     docker-compose down || true
     docker system prune -f
-    docker-compose build --no-cache
     docker-compose up -d
+    docker-compose ps
 
 # Utility commands
 logs: # View application logs
@@ -104,15 +107,7 @@ nix-build: # Build with Nix
     @echo "Building with Nix..."
     nix build
 
-nix-deploy: # Deploy with Nix-built Docker images
-    @echo "Deploying with Nix-built Docker images..."
-    nix build .#backendImage .#frontendImage
-    docker load < result-1
-    docker load < result-2
-    docker-compose down || true
-    docker system prune -f
-    docker-compose up -d
-    docker-compose ps
+
 
 # Infrastructure commands
 tf-init: # Initialize Terraform
@@ -171,8 +166,8 @@ db-backup: # Create database backup
 ci-test: lint test build # Run CI tests
     @echo "Running CI tests..."
 
-ci-build: docker-build # Build for CI
-    @echo "Building for CI..."
+ci-build: nix-build-images # Build for CI with Nix
+    @echo "Building for CI with Nix..."
 
 # Security commands
 security-scan: # Run security scan
@@ -191,7 +186,7 @@ monitor: # Start monitoring
     docker-compose exec backend htop
 
 # Quick commands for common tasks
-quick-deploy: build docker-build deploy # Quick deployment
+quick-deploy: build nix-deploy # Quick deployment with Nix
 quick-test: lint test # Quick test
 quick-clean: clean # Quick clean
 
@@ -200,9 +195,15 @@ help-deploy: # Show deployment help
     @echo "Deployment Help:"
     @echo "==============="
     @echo "just deploy      - Full deployment (infrastructure + application)"
+    @echo "just nix-deploy  - Deploy with Nix-built Docker images"
     @echo "just infra       - Deploy infrastructure only"
     @echo "just app         - Deploy application only"
     @echo "just setup       - Run interactive setup"
+    @echo ""
+    @echo "Nix Commands:"
+    @echo "  just nix-build-images  - Build Docker images with Nix"
+    @echo "  just nix-load-images   - Load images into Docker"
+    @echo "  just nix-deploy        - Complete Nix deployment"
     @echo ""
     @echo "Environment variables:"
     @echo "  ENVIRONMENT=production|staging"
