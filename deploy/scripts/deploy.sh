@@ -55,10 +55,6 @@ check_prerequisites() {
         fi
     done
     
-    if ! nix develop --command bash -c "echo 'Nix environment available'" &> /dev/null; then
-        print_error "Nix development environment is not available. Run 'nix develop' first."
-        exit 1
-    fi
     print_success "Prerequisites check passed"
 }
 
