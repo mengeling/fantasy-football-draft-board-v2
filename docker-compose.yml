@@ -1,5 +1,8 @@
 version: '3.8'
 
+# Docker Compose using Nix-built images
+# Build images first with: just docker-build
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,9 +22,7 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: ffball-backend:latest
     environment:
       - DATABASE_URL=postgres://ffball:ffball@postgres:5432/ffball
       - RUST_LOG=info
@@ -40,9 +41,7 @@ services:
       - ./backend/src/scripts:/app/scripts:ro
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: ffball-frontend:latest
     ports:
       - "80:80"
     depends_on:
@@ -53,12 +52,11 @@ services:
       timeout: 10s
       retries: 3
 
-  # Cron job for data updates
+  # Cron job for data updates - using Nix-built image with curl
   cron:
-    image: alpine:latest
+    image: ffball-backend:latest  # Reuse backend image which has curl
     command: >
       sh -c "
-        apk add --no-cache curl &&
         echo '0 0 * * * curl -X POST http://backend:8080/fantasy-data/update' | crontab - &&
         crond -f -L /dev/stdout
       "

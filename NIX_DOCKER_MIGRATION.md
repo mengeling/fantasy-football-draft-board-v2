@@ -1,52 +1,51 @@
-# Migration to Nix-Built Docker Images
+# Nix-Built Docker Images
 
-This document explains the migration from traditional Dockerfiles to Nix-built Docker images and the significant benefits this provides.
+This document explains our approach of using Nix to build Docker images and the significant benefits this provides over traditional Dockerfiles.
 
 ## Overview
 
-We've implemented **Option 2: Full Nix Docker Images** which replaces our Dockerfiles with Nix expressions that build Docker images. This eliminates all package duplication and provides superior reproducibility and efficiency.
+We use **Nix-built Docker images** exclusively, which replaces traditional Dockerfiles with Nix expressions that build Docker images. This eliminates all package duplication and provides superior reproducibility and efficiency.
 
 ## Quick Start
 
-### Build Nix Docker Images
+### Build Docker Images
 ```bash
-just nix-docker-build
+just docker-build
 ```
 
-### Run with Nix Images
+### Run Development Environment
 ```bash
-just nix-docker-dev
+just docker-dev
 ```
 
 ### Compare Image Sizes and Layers
 ```bash
-just nix-docker-inspect
+just docker-inspect
 ```
 
-## What Changed
+## Architecture
 
-### Before (Traditional Docker)
-- `Dockerfile.backend`: Installs packages via `apt-get`
-- `Dockerfile.frontend`: Uses Node.js base image + nginx
-- Separate package management in Docker and Nix
-- Build-time internet access required
-- Layer caching based on Dockerfile instructions
-
-### After (Nix Docker Images)
+### Nix Docker Images
 - `flake.nix`: Contains Docker image definitions
 - All packages come from Nix (no apt/apk)
 - Single source of truth for all dependencies
 - Hermetic builds (no internet needed after evaluation)
 - Content-addressed layer sharing
 
+### Advantages Over Traditional Docker
+- No `apt-get` or `apk` package installations
+- Reproducible builds with cryptographic verification
+- Automatic layer sharing between services
+- Minimal runtime images with only necessary dependencies
+- No package managers in production containers
+
 ## File Structure
 
 ```
-├── docker-compose.yml          # Original Docker Compose (kept for compatibility)
-├── docker-compose.nix.yml      # New Nix-based Docker Compose
-├── Dockerfile.backend          # Original (can be removed)
-├── Dockerfile.frontend         # Original (can be removed)
-└── flake.nix                   # Contains new Docker image definitions
+├── docker-compose.yml          # Uses Nix-built images
+├── flake.nix                   # Contains Docker image definitions
+├── justfile                    # Build commands for Nix images
+└── deploy/scripts/deploy.sh    # Updated for Nix builds
 ```
 
 ## Benefits Achieved
@@ -95,38 +94,27 @@ When you have multiple services:
 - **Traditional**: Each service = separate image with duplicate dependencies
 - **Nix**: Services automatically share layers for glibc, OpenSSL, etc.
 
-## Migration Path
-
-### Phase 1: Parallel Operation ✅ (Current)
-- Keep original Dockerfiles
-- Add Nix Docker images
-- Test with `just nix-docker-dev`
-
-### Phase 2: Switch Default (Recommended Next)
-- Update CI/CD to use Nix images
-- Update documentation
-- Set Nix as default in justfile
-
-### Phase 3: Cleanup (Future)
-- Remove old Dockerfiles
-- Remove traditional docker-compose.yml
-- Full Nix workflow
-
 ## Commands Reference
 
 ### Development
 ```bash
-# Use Nix images for local development
-just nix-docker-dev
+# Build Docker images with Nix
+just docker-build
 
-# Use traditional images (fallback)
+# Start development environment
 just docker-dev
+
+# Start development with hot reload
+just dev
 ```
 
 ### Production
 ```bash
-# Build and deploy with Nix images
-just nix-docker-deploy
+# Build and deploy
+just docker-deploy
+
+# Full deployment (infrastructure + application)
+just deploy
 
 # Build images separately
 nix build .#backendImage
@@ -137,7 +125,7 @@ docker load < result
 ### Inspection
 ```bash
 # Compare image sizes and layers
-just nix-docker-inspect
+just docker-inspect
 
 # Examine a specific image
 docker history ffball-backend:latest
@@ -149,7 +137,7 @@ dive ffball-backend:latest  # if you have dive installed
 ### "No such image" Error
 Make sure to build the images first:
 ```bash
-just nix-docker-build
+just docker-build
 ```
 
 ### Permission Issues
