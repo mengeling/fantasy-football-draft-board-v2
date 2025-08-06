@@ -18,6 +18,14 @@ chown -R ubuntu:ubuntu /home/ubuntu/app
 . /etc/profile.d/nix.sh
 nix profile install --impure .#system-tools
 
+echo "Setting up Docker permissions..."
+sudo groupadd -f docker
+sudo usermod -aG docker ubuntu
+
+echo "Verifying Docker installation..."
+docker --version
+docker-compose --version
+
 NGINX_STORE_PATH=$(readlink -f /nix/var/nix/profiles/default/bin/nginx | sed 's|/bin/nginx||')
 if [ -n "$NGINX_STORE_PATH" ]; then
     cp /home/ubuntu/app/deploy/nginx/ffball.conf "$NGINX_STORE_PATH/conf/nginx.conf"
