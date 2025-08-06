@@ -71,7 +71,7 @@ app: # Deploy application only
 # Nix-based deployment commands
 nix-build-images: # Build Docker images with Nix
     @echo "Building Docker images with Nix..."
-    nix build .#backendImage .#frontendImage
+    nix build --extra-experimental-features 'nix-command flakes' .#backendImage .#frontendImage
 
 nix-load-images: # Load Nix-built images into Docker
     @echo "Loading Nix-built images into Docker..."
@@ -105,7 +105,7 @@ nix-shell: # Start Nix development shell
 
 nix-build: # Build with Nix
     @echo "Building with Nix..."
-    nix build
+    nix build --extra-experimental-features 'nix-command flakes'
 
 
 
