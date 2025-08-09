@@ -57,7 +57,16 @@
     }
 
     .username-input {
-        width: 40%;
+        width: 50%;
+        font-size: 0.8em;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+
+        &:focus {
+            outline: none;
+            border: 1px solid #ccc;
+        }
     }
 
     .login-button {
