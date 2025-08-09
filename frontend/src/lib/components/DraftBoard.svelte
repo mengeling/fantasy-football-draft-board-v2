@@ -10,7 +10,7 @@
     let teamFilter: Team = Team.ALL;
     let playerNameSearch: string | null = null;
 
-    function clearSearch() {
+    export function clearSearch() {
         positionFilter = Position.ALL;
         teamFilter = Team.ALL;
         playerNameSearch = null;
@@ -92,21 +92,42 @@
 
     .position-text,
     .team-text {
-        font-size: 0.7em;
+        font-size: 0.8em;
         margin-left: 0.2%;
+        font-weight: 500;
     }
 
     .position-dropdown,
     .team-dropdown {
         margin-right: 1%;
+        font-size: 0.8em;
+        padding: 4px 8px;
     }
 
     .player-search {
-        width: 15%;
+        width: 20%;
+        font-size: 0.8em;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+
+        &:focus {
+            outline: none;
+        }
     }
 
     .clear-search-button {
         margin-left: 0.75%;
+        font-size: 0.8em;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .clear-search-button:hover {
+        background-color: #e9ecef;
     }
 
     .table-wrapper {
