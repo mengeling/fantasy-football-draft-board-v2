@@ -1,16 +1,35 @@
 <script lang="ts">
     import { Team, Position } from '$lib/enums';
     import { defaultPlayer, type Player } from '$lib/types';
+    import { fetchApi } from '$lib/api';
 
     export let players: Player[] = [];
     export let selectedPlayer: Player = defaultPlayer;
+    export let onPlayerDraftChange: (player: Player) => void;
+    export let userId: string | undefined;
+
 
     let showAvailablePlayers = true;
     let positionFilter: Position = Position.ALL;
     let teamFilter: Team = Team.ALL;
     let playerNameSearch: string | null = null;
 
-    export function clearSearch() {
+
+
+    async function handleDraftAction() {
+        if (!selectedPlayer.id) return;
+
+        const method = selectedPlayer.drafted ? 'DELETE' : 'POST';
+        try {
+            await fetchApi(`/drafted_players/${selectedPlayer.id}`, { method, userId });
+        } catch (error) {
+            console.error('Failed to update draft status:', error);
+            return;
+        }
+
+        const updatedPlayer = { ...selectedPlayer, drafted: !selectedPlayer.drafted };
+        onPlayerDraftChange(updatedPlayer);
+        
         positionFilter = Position.ALL;
         teamFilter = Team.ALL;
         playerNameSearch = null;
@@ -116,18 +135,24 @@
         }
     }
 
-    .clear-search-button {
-        margin-left: 0.75%;
-        font-size: 0.8em;
+    .draft-button {
+        font-size: 0.85em;
         padding: 6px 12px;
         border: 1px solid #ccc;
         border-radius: 4px;
-        background-color: #f8f9fa;
+        background-color: #007bff;
+        color: white;
         cursor: pointer;
-    }
+        margin-left: 8px;
 
-    .clear-search-button:hover {
-        background-color: #e9ecef;
+        &:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;    
+        }
+
+        &:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
     }
 
     .table-wrapper {
@@ -211,8 +236,13 @@
                 class="player-search"
                 bind:value={playerNameSearch}
             >
-            <button type="button" class="clear-search-button" on:click={clearSearch}>
-                Clear Search
+            <button 
+                type="button" 
+                class="draft-button" 
+                on:click={handleDraftAction}
+                disabled={!selectedPlayer.id}
+            >
+                {selectedPlayer.drafted ? 'Undraft Selected Player' : 'Draft Selected Player'}
             </button>
         </div>
         <div class="table-wrapper">

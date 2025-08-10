@@ -15,7 +15,6 @@
     let showScoringModal = false;
     let currentUser: User | null = null;
     let loading = false;
-    let draftBoardComponent: any;
 
     async function fetchPlayers() {
         try {
@@ -69,10 +68,6 @@
             updatedPlayer,
             ...players.slice(playerIndex + 1)
         ];
-
-        if (draftBoardComponent && draftBoardComponent.clearSearch) {
-            draftBoardComponent.clearSearch();
-        }
     }
 
     onMount(() => {
@@ -103,13 +98,12 @@
     <div class="main-content">
         <PlayerDetails
             player={selectedPlayer}
-            onPlayerDraftChange={handlePlayerDraftChange}
-            userId={currentUser?.id}
         />
         <DraftBoard 
-            bind:this={draftBoardComponent}
             {players}
             bind:selectedPlayer
+            onPlayerDraftChange={handlePlayerDraftChange}
+            userId={currentUser?.id}
         />
     </div>
 </main>
