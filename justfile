@@ -44,6 +44,31 @@ clean: # Clean build artifacts
     cd frontend && rm -rf build node_modules
     docker system prune -f
 
+# Nix commands
+nix-shell: # Start Nix development shell
+    @echo "Starting Nix development shell..."
+    nix develop
+
+nix-build: # Build with Nix
+    @echo "Building with Nix..."
+    nix build --extra-experimental-features 'nix-command flakes'
+
+nix-build-images: # Build Docker images with Nix
+    @echo "Building Docker images with Nix..."
+    nix build --extra-experimental-features 'nix-command flakes' .#backendImage .#frontendImage
+
+nix-load-images: # Load Nix-built images into Docker
+    @echo "Loading Nix-built images into Docker..."
+    docker load < result-1
+    docker load < result-2
+
+nix-deploy: nix-build-images nix-load-images # Deploy with Nix-built images
+    @echo "Deploying with Nix-built Docker images..."
+    docker-compose down || true
+    docker system prune -f
+    docker-compose up -d
+    docker-compose ps
+
 # Deployment commands
 deploy: # Deploy to production
     @echo "Deploying to production..."
@@ -67,47 +92,6 @@ infra: # Deploy infrastructure only
 app: # Deploy application only
     @echo "Deploying application only..."
     ./deploy/scripts/deploy.sh -s
-
-# Nix-based deployment commands
-nix-build-images: # Build Docker images with Nix
-    @echo "Building Docker images with Nix..."
-    nix build --extra-experimental-features 'nix-command flakes' .#backendImage .#frontendImage
-
-nix-load-images: # Load Nix-built images into Docker
-    @echo "Loading Nix-built images into Docker..."
-    docker load < result-1
-    docker load < result-2
-
-nix-deploy: nix-build-images nix-load-images # Deploy with Nix-built images
-    @echo "Deploying with Nix-built Docker images..."
-    docker-compose down || true
-    docker system prune -f
-    docker-compose up -d
-    docker-compose ps
-
-# Utility commands
-logs: # View application logs
-    @echo "Viewing application logs..."
-    docker-compose logs -f
-
-health: # Check application health
-    @echo "Checking application health..."
-    curl -f http://localhost/health || echo "Application is not healthy"
-
-backup: # Create backup
-    @echo "Creating backup..."
-    @echo "Backup functionality not implemented yet"
-
-# Nix commands (if Nix is available)
-nix-shell: # Start Nix development shell
-    @echo "Starting Nix development shell..."
-    nix develop
-
-nix-build: # Build with Nix
-    @echo "Building with Nix..."
-    nix build --extra-experimental-features 'nix-command flakes'
-
-
 
 # Infrastructure commands
 tf-init: # Initialize Terraform
@@ -162,6 +146,15 @@ db-backup: # Create database backup
     @echo "Creating database backup..."
     docker-compose exec postgres pg_dump -U ffball -d ffball > backup_$(date +%Y%m%d_%H%M%S).sql
 
+# Utility commands
+logs: # View application logs
+    @echo "Viewing application logs..."
+    docker-compose logs -f
+
+health: # Check application health
+    @echo "Checking application health..."
+    curl -f http://localhost/health || echo "Application is not healthy"
+
 # CI/CD commands
 ci-test: lint test build # Run CI tests
     @echo "Running CI tests..."
@@ -175,18 +168,8 @@ security-scan: # Run security scan
     cd backend && cargo audit
     cd frontend && npm audit
 
-# Performance commands
-perf-test: # Run performance tests
-    @echo "Running performance tests..."
-    @echo "Performance testing not implemented yet"
-
-# Monitoring commands
-monitor: # Start monitoring
-    @echo "Starting monitoring..."
-    docker-compose exec backend htop
-
 # Quick commands for common tasks
-quick-deploy: build nix-deploy # Quick deployment with Nix
+quick-deploy: nix-deploy # Quick deployment with Nix
 quick-test: lint test # Quick test
 quick-clean: clean # Quick clean
 
@@ -245,12 +228,6 @@ test-frontend: # Test only frontend
 db-backup-named name: # Create named database backup
     @echo "Creating database backup: {{name}}..."
     docker-compose exec postgres pg_dump -U ffball -d ffball > backup_{{name}}.sql
-
-# Docker commands with parameters
-docker-build-tag tag: # Build Docker images with specific tag
-    @echo "Building Docker images with tag: {{tag}}..."
-    docker build -t ffball-backend:{{tag}} -f Dockerfile.backend .
-    docker build -t ffball-frontend:{{tag}} -f Dockerfile.frontend .
 
 # Utility functions
 timestamp:
