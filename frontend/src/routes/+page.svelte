@@ -98,12 +98,12 @@
     <div class="main-content">
         <PlayerDetails
             player={selectedPlayer}
-            onPlayerDraftChange={handlePlayerDraftChange}
-            userId={currentUser?.id}
         />
         <DraftBoard 
             {players}
             bind:selectedPlayer
+            onPlayerDraftChange={handlePlayerDraftChange}
+            userId={currentUser?.id}
         />
     </div>
 </main>

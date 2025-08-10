@@ -1,16 +1,35 @@
 <script lang="ts">
     import { Team, Position } from '$lib/enums';
     import { defaultPlayer, type Player } from '$lib/types';
+    import { fetchApi } from '$lib/api';
 
     export let players: Player[] = [];
     export let selectedPlayer: Player = defaultPlayer;
+    export let onPlayerDraftChange: (player: Player) => void;
+    export let userId: string | undefined;
+
 
     let showAvailablePlayers = true;
     let positionFilter: Position = Position.ALL;
     let teamFilter: Team = Team.ALL;
     let playerNameSearch: string | null = null;
 
-    function clearSearch() {
+
+
+    async function handleDraftAction() {
+        if (!selectedPlayer.id) return;
+
+        const method = selectedPlayer.drafted ? 'DELETE' : 'POST';
+        try {
+            await fetchApi(`/drafted_players/${selectedPlayer.id}`, { method, userId });
+        } catch (error) {
+            console.error('Failed to update draft status:', error);
+            return;
+        }
+
+        const updatedPlayer = { ...selectedPlayer, drafted: !selectedPlayer.drafted };
+        onPlayerDraftChange(updatedPlayer);
+        
         positionFilter = Position.ALL;
         teamFilter = Team.ALL;
         playerNameSearch = null;
@@ -92,21 +111,48 @@
 
     .position-text,
     .team-text {
-        font-size: 0.7em;
+        font-size: 0.8em;
         margin-left: 0.2%;
+        font-weight: 500;
     }
 
     .position-dropdown,
     .team-dropdown {
         margin-right: 1%;
+        font-size: 0.8em;
+        padding: 4px 8px;
     }
 
     .player-search {
-        width: 15%;
+        width: 20%;
+        font-size: 0.8em;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+
+        &:focus {
+            outline: none;
+        }
     }
 
-    .clear-search-button {
-        margin-left: 0.75%;
+    .draft-button {
+        font-size: 0.85em;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        margin-left: 8px;
+
+        &:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;    
+        }
+
+        &:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
     }
 
     .table-wrapper {
@@ -190,8 +236,13 @@
                 class="player-search"
                 bind:value={playerNameSearch}
             >
-            <button type="button" class="clear-search-button" on:click={clearSearch}>
-                Clear Search
+            <button 
+                type="button" 
+                class="draft-button" 
+                on:click={handleDraftAction}
+                disabled={!selectedPlayer.id}
+            >
+                {selectedPlayer.drafted ? 'Undraft Selected Player' : 'Draft Selected Player'}
             </button>
         </div>
         <div class="table-wrapper">
