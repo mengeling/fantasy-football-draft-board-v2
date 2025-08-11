@@ -35,12 +35,22 @@ services:
 
   frontend:
     image: ffball-frontend:latest
+    # No healthcheck needed - container just provides static files
+    # No depends_on needed - frontend doesn't depend on backend
+
+  # Nginx to serve frontend and proxy to backend
+  nginx:
+    image: nginx:alpine
     ports:
       - "80:80"
+    volumes:
+      - ./deploy/nginx/ffball.conf:/etc/nginx/nginx.conf:ro
+      - frontend:/var/www/html:ro
     depends_on:
+      - frontend
       - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -59,3 +69,4 @@ services:
 
 volumes:
   postgres_data:
+  frontend:

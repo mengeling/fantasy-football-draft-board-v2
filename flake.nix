@@ -12,7 +12,8 @@
       let
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs {
-          inherit system overlays;
+          system = "x86_64-linux";
+          overlays = [ (import rust-overlay) ];
         };
         
         # Rust toolchain
@@ -26,12 +27,27 @@
         # Database
         postgresql = pkgs.postgresql_16;
         
+        # Development shell with Linux-compatible tools
+        devShell = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            rustToolchain
+            nodejs_20
+            postgresql
+            cargo-watch
+            chromium
+          ];
+          
+          shellHook = ''
+            echo "Fantasy Football Draft Board development shell"
+            echo "All tools are Linux-compatible for Docker deployment"
+          '';
+        };
+
         # System dependencies (for deployment and basic operations)
         systemDeps = with pkgs; [
           pkg-config
           openssl
           libpq
-          chromium
           curl
           git
           docker
@@ -44,14 +60,7 @@
           nginx
           just
           sqlx-cli
-        ];
-
-        # Development tools (for development and debugging)
-        devTools = with pkgs; [
-          rustToolchain
-          nodejs
-          postgresql
-          cargo-watch
+          chromium
         ];
 
         # Build inputs for Rust
@@ -62,22 +71,6 @@
           chromium
         ];
 
-        # Frontend build
-        frontend = pkgs.stdenv.mkDerivation {
-          name = "ffball-frontend";
-          src = ./frontend;
-          nativeBuildInputs = [ nodejs ];
-          buildPhase = ''
-            export HOME=$(mktemp -d)
-            npm ci
-            npm run build
-          '';
-          installPhase = ''
-            mkdir -p $out
-            cp -r build/* $out/
-          '';
-        };
-
         # Backend build
         backend = pkgs.rustPlatform.buildRustPackage {
           name = "ffball-backend";
@@ -85,8 +78,18 @@
           cargoLock = {
             lockFile = ./backend/Cargo.lock;
           };
-          nativeBuildInputs = rustInputs;
-          buildInputs = rustInputs;
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            openssl
+            libpq
+            chromium
+          ];
+          buildInputs = with pkgs; [
+            pkg-config
+            openssl
+            libpq
+            chromium
+          ];
           
           # Set environment variables for compilation
           LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
@@ -100,11 +103,27 @@
           '';
         };
 
+        # Frontend build
+        frontend = pkgs.stdenv.mkDerivation {
+          name = "ffball-frontend";
+          src = ./frontend;
+          nativeBuildInputs = [ pkgs.nodejs_20 ];
+          buildPhase = ''
+            export HOME=$(mktemp -d)
+            npm ci
+            npm run build
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp -r build/* $out/
+          '';
+        };
+
         # Docker image for backend
         backendImage = pkgs.dockerTools.buildImage {
           name = "ffball-backend";
           tag = "latest";
-          contents = [ backend ];
+          copyToRoot = [ backend ];
           config = {
             Cmd = [ "${backend}/bin/backend" ];
             ExposedPorts = {
@@ -118,49 +137,20 @@
           };
         };
 
-        # Docker image for frontend
+        # Docker image for frontend (static files only)
         frontendImage = pkgs.dockerTools.buildImage {
           name = "ffball-frontend";
           tag = "latest";
-          contents = [ frontend ];
+          copyToRoot = [ frontend ];
           config = {
-            Cmd = [ "sh" "-c" "cd ${frontend} && nginx -g 'daemon off;'" ];
-            ExposedPorts = {
-              "80/tcp" = {};
-            };
+            Cmd = [ "sh" "-c" "echo 'Static files ready to be served by nginx'" ];
           };
         };
-
-
 
       in
       {
         # Development shell
-        devShells.default = pkgs.mkShell {
-          buildInputs = systemDeps ++ devTools;
-          
-          shellHook = ''
-            echo "Fantasy Football Draft Board Development Environment"
-            echo "====================================================="
-            echo "Available commands:"
-            echo "  cargo watch -x run          # Run backend with auto-reload"
-            echo "  npm run dev                  # Run frontend dev server"
-            echo "  docker-compose up            # Start all services"
-            echo "  terraform plan               # Plan infrastructure changes"
-            echo "  ./scripts/deploy.sh          # Deploy to production"
-            echo ""
-            echo "Database URL: postgres://ffball:ffball@localhost:5432/ffball"
-            echo ""
-            
-            # Set up environment variables
-            export DATABASE_URL="postgres://ffball:ffball@localhost:5432/ffball"
-            export RUST_LOG="info"
-            export RUST_BACKTRACE="1"
-            
-            # Add local node_modules to PATH
-            export PATH="$PWD/frontend/node_modules/.bin:$PATH"
-          '';
-        };
+        devShells.default = devShell;
 
         # Packages
         packages = {
@@ -177,7 +167,6 @@
           };
         };
         };
-
 
       }
     );
