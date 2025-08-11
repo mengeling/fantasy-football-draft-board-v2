@@ -17,6 +17,7 @@ chown -R ubuntu:ubuntu /home/ubuntu/app
 
 . /etc/profile.d/nix.sh
 nix profile install --impure .#system-tools
+echo 'export PATH="/nix/var/nix/profiles/default/bin:$PATH"' >> /home/ubuntu/.bashrc
 
 echo "Setting up Docker permissions..."
 sudo groupadd -f docker
