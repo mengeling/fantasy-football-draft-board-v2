@@ -104,31 +104,39 @@
           '';
         };
 
-        # Frontend build using Nix's npm package handling
-        frontend = pkgs.buildNpmPackage {
+        # Frontend build with improved npm handling
+        frontend = pkgs.stdenv.mkDerivation {
           name = "ffball-frontend";
           src = ./frontend;
-          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Will be updated by Nix
-          
-          # Build inputs
           nativeBuildInputs = [ pkgs.nodejs_20 ];
           
-          # Build phase
+          # Set up environment
+          configurePhase = ''
+            export HOME=$(mktemp -d)
+            export NODE_ENV=production
+          '';
+          
+          # Build phase with better npm handling
           buildPhase = ''
+            echo "Installing npm dependencies..."
+            
+            # Use npm ci with better error handling and timeout
+            timeout 300 npm ci --no-audit --no-fund --prefer-offline --include=dev || {
+              echo "npm ci failed, trying npm install..."
+              timeout 300 npm install --no-audit --no-fund --prefer-offline --include=dev
+            }
+            
+            echo "Verifying installation..."
+            ls -la node_modules/.bin/ || echo "No binaries found"
+            
+            echo "Building frontend..."
             npm run build
           '';
           
-          # Install phase
           installPhase = ''
             mkdir -p $out
             cp -r build/* $out/
           '';
-          
-          # Package configuration
-          npmFlags = [ "--no-audit" "--no-fund" "--prefer-offline" ];
-          
-          # Ensure all dependencies are available
-          makeCacheWritable = true;
         };
 
         # Docker image for backend
