@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO drafted_players (user_id, player_id)\n            VALUES ($1, $2)\n            RETURNING id, user_id, player_id, drafted_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "player_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "drafted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a4901ccb8c51846778dcf68acfa82f7c0bc0ccb18608dff425e08875bbe4595f"
+}

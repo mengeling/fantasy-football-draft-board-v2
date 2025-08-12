@@ -1,0 +1,143 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                p.id,\n                p.name,\n                p.position as \"position!: Position\",\n                p.team as \"team!: Team\",\n                p.bye_week,\n                p.height,\n                p.weight,\n                p.age,\n                p.college,\n                jsonb_build_object(\n                    'overall', r.overall,\n                    'position', r.position,\n                    'best', r.best,\n                    'worst', r.worst,\n                    'average', r.average,\n                    'standard_deviation', r.standard_deviation\n                ) as \"rankings!: serde_json::Value\",\n                jsonb_build_object(\n                    'pass_cmp', s.pass_cmp,\n                    'pass_att', s.pass_att,\n                    'pass_cmp_pct', s.pass_cmp_pct,\n                    'pass_yds', s.pass_yds,\n                    'pass_yds_per_att', s.pass_yds_per_att,\n                    'pass_td', s.pass_td,\n                    'pass_int', s.pass_int,\n                    'pass_sacks', s.pass_sacks,\n                    'rush_att', s.rush_att,\n                    'rush_yds', s.rush_yds,\n                    'rush_yds_per_att', s.rush_yds_per_att,\n                    'rush_long', s.rush_long,\n                    'rush_20', s.rush_20,\n                    'rush_td', s.rush_td,\n                    'fumbles', s.fumbles,\n                    'receptions', s.receptions,\n                    'rec_tgt', s.rec_tgt,\n                    'rec_yds', s.rec_yds,\n                    'rec_yds_per_rec', s.rec_yds_per_rec,\n                    'rec_long', s.rec_long,\n                    'rec_20', s.rec_20,\n                    'rec_td', s.rec_td,\n                    'field_goals', s.field_goals,\n                    'fg_att', s.fg_att,\n                    'fg_pct', s.fg_pct,\n                    'fg_long', s.fg_long,\n                    'fg_1_19', s.fg_1_19,\n                    'fg_20_29', s.fg_20_29,\n                    'fg_30_39', s.fg_30_39,\n                    'fg_40_49', s.fg_40_49,\n                    'fg_50', s.fg_50,\n                    'extra_points', s.extra_points,\n                    'xp_att', s.xp_att,\n                    'sacks', s.sacks,\n                    'int', s.int,\n                    'fumbles_recovered', s.fumbles_recovered,\n                    'fumbles_forced', s.fumbles_forced,\n                    'def_td', s.def_td,\n                    'safeties', s.safeties,\n                    'special_teams_td', s.special_teams_td,\n                    'games', s.games,\n                    'points', CASE u.scoring_settings\n                        WHEN 'Standard' THEN s.standard_pts\n                        WHEN 'Half' THEN s.half_ppr_pts\n                        WHEN 'PPR' THEN s.ppr_pts\n                    END,\n                    'points_per_game', CASE u.scoring_settings\n                        WHEN 'Standard' THEN s.standard_pts_per_game\n                        WHEN 'Half' THEN s.half_ppr_pts_per_game\n                        WHEN 'PPR' THEN s.ppr_pts_per_game\n                    END\n                ) as \"stats!: serde_json::Value\",\n                d.player_id IS NOT NULL as \"drafted!: bool\"\n            FROM players p\n            INNER JOIN users u ON u.id = $1\n            INNER JOIN rankings r ON p.id = r.player_id \n                AND r.scoring_settings = u.scoring_settings\n            INNER JOIN stats s ON p.id = s.player_id\n            LEFT JOIN drafted_players d ON d.user_id = $1\n                AND p.id = d.player_id\n            ORDER BY r.overall ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "position!: Position",
+        "type_info": {
+          "Custom": {
+            "name": "position_type",
+            "kind": {
+              "Enum": [
+                "QB",
+                "RB",
+                "WR",
+                "TE",
+                "K",
+                "DST"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "team!: Team",
+        "type_info": {
+          "Custom": {
+            "name": "team_type",
+            "kind": {
+              "Enum": [
+                "ARI",
+                "ATL",
+                "BAL",
+                "BUF",
+                "CAR",
+                "CHI",
+                "CIN",
+                "CLE",
+                "DAL",
+                "DEN",
+                "DET",
+                "GB",
+                "HOU",
+                "IND",
+                "JAC",
+                "KC",
+                "LV",
+                "LAC",
+                "LAR",
+                "MIA",
+                "MIN",
+                "NE",
+                "NO",
+                "NYG",
+                "NYJ",
+                "PHI",
+                "PIT",
+                "SF",
+                "SEA",
+                "TB",
+                "TEN",
+                "WAS",
+                "FA"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "bye_week",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "height",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "weight",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "age",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "college",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "rankings!: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 10,
+        "name": "stats!: serde_json::Value",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "drafted!: bool",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "aa4c00274a977c57f95599d9d8615ca5c395d612b4a08f53689cb0e983b5c5b1"
+}

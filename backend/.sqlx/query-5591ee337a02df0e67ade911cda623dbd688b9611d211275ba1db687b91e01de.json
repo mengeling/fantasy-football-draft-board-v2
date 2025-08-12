@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO users (username, scoring_settings)\n            VALUES ($1, $2)\n            RETURNING id, username, scoring_settings as \"scoring_settings!: ScoringSettings\", created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "scoring_settings!: ScoringSettings",
+        "type_info": {
+          "Custom": {
+            "name": "scoring_settings_type",
+            "kind": {
+              "Enum": [
+                "Standard",
+                "Half",
+                "PPR"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        {
+          "Custom": {
+            "name": "scoring_settings_type",
+            "kind": {
+              "Enum": [
+                "Standard",
+                "Half",
+                "PPR"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "5591ee337a02df0e67ade911cda623dbd688b9611d211275ba1db687b91e01de"
+}

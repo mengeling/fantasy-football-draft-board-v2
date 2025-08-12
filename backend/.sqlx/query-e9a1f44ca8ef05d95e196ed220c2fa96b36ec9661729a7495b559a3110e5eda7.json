@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM stats",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "e9a1f44ca8ef05d95e196ed220c2fa96b36ec9661729a7495b559a3110e5eda7"
+}
