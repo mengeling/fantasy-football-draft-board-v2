@@ -104,33 +104,18 @@
           '';
         };
 
-        # Frontend build with improved npm handling
+        # Frontend - just copy pre-built files (build locally)
         frontend = pkgs.stdenv.mkDerivation {
           name = "ffball-frontend";
           src = ./frontend;
-          nativeBuildInputs = [ pkgs.nodejs_20 ];
           
-          # Set up environment
-          configurePhase = ''
-            export HOME=$(mktemp -d)
-            export NODE_ENV=production
-          '';
-          
-          # Build phase with better npm handling
+          # No build phase needed - just copy the build directory
           buildPhase = ''
-            echo "Installing npm dependencies..."
-            
-            # Use npm ci with better error handling and timeout
-            timeout 300 npm ci --no-audit --no-fund --prefer-offline --include=dev || {
-              echo "npm ci failed, trying npm install..."
-              timeout 300 npm install --no-audit --no-fund --prefer-offline --include=dev
-            }
-            
-            echo "Verifying installation..."
-            ls -la node_modules/.bin/ || echo "No binaries found"
-            
-            echo "Building frontend..."
-            npm run build
+            echo "Using pre-built frontend files..."
+            if [ ! -d "build" ]; then
+              echo "Error: build directory not found. Please run 'npm run build' locally first."
+              exit 1
+            fi
           '';
           
           installPhase = ''
