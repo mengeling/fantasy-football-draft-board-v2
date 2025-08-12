@@ -104,18 +104,29 @@
           '';
         };
 
-        # Frontend - just copy pre-built files (build locally)
+        # Frontend - build on EC2
         frontend = pkgs.stdenv.mkDerivation {
           name = "ffball-frontend";
           src = ./frontend;
           
-          # No build phase needed - just copy the build directory
+          nativeBuildInputs = with pkgs; [
+            nodejs_22
+            nodePackages.npm
+          ];
+          
+          configurePhase = ''
+            echo "Configuring frontend build environment..."
+            export HOME=$TMPDIR
+            npm config set cache $TMPDIR/.npm
+          '';
+          
           buildPhase = ''
-            echo "Using pre-built frontend files..."
-            if [ ! -d "build" ]; then
-              echo "Error: build directory not found. Please run 'npm run build' locally first."
-              exit 1
-            fi
+            echo "Installing frontend dependencies..."
+            npm ci --cache $TMPDIR/.npm
+            
+            echo "Building frontend..."
+            export PATH="$PWD/node_modules/.bin:$PATH"
+            npm run build
           '';
           
           installPhase = ''
