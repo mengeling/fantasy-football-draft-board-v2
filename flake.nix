@@ -104,41 +104,31 @@
           '';
         };
 
-        # Frontend build
-        frontend = pkgs.stdenv.mkDerivation {
+        # Frontend build using Nix's npm package handling
+        frontend = pkgs.buildNpmPackage {
           name = "ffball-frontend";
           src = ./frontend;
+          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Will be updated by Nix
+          
+          # Build inputs
           nativeBuildInputs = [ pkgs.nodejs_20 ];
+          
+          # Build phase
           buildPhase = ''
-            export HOME=$(mktemp -d)
-            export NODE_ENV=production
-            export PATH="$PWD/node_modules/.bin:$PATH"
-            
-            echo "Installing npm dependencies..."
-            # Install all dependencies including devDependencies (needed for vite)
-            npm ci --no-audit --no-fund --prefer-offline --include=dev || npm install --no-audit --no-fund --prefer-offline --include=dev
-            
-            echo "Verifying node_modules installation..."
-            ls -la node_modules/ || echo "node_modules directory not found"
-            ls -la node_modules/.bin/ || echo "node_modules/.bin directory not found"
-            
-            # Ensure vite is available in PATH
-            if [ ! -f "node_modules/.bin/vite" ]; then
-              echo "Error: vite not found in node_modules/.bin"
-              echo "Available binaries:"
-              ls -la node_modules/.bin/ || echo "No binaries found"
-              echo "npm list vite:"
-              npm list vite || echo "vite not listed"
-              exit 1
-            fi
-            
-            echo "Building frontend..."
             npm run build
           '';
+          
+          # Install phase
           installPhase = ''
             mkdir -p $out
             cp -r build/* $out/
           '';
+          
+          # Package configuration
+          npmFlags = [ "--no-audit" "--no-fund" "--prefer-offline" ];
+          
+          # Ensure all dependencies are available
+          makeCacheWritable = true;
         };
 
         # Docker image for backend
