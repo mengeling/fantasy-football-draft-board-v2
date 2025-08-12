@@ -111,7 +111,9 @@
           nativeBuildInputs = [ pkgs.nodejs_20 ];
           buildPhase = ''
             export HOME=$(mktemp -d)
-            npm ci
+            export NODE_ENV=production
+            # Try npm ci first, fallback to npm install with better error handling
+            npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund --prefer-offline
             npm run build
           '';
           installPhase = ''
