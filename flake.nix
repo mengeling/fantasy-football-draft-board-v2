@@ -113,14 +113,26 @@
             export HOME=$(mktemp -d)
             export NODE_ENV=production
             export PATH="$PWD/node_modules/.bin:$PATH"
-            # Try npm ci first, fallback to npm install with better error handling
-            npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund --prefer-offline
+            
+            echo "Installing npm dependencies..."
+            # Install all dependencies including devDependencies (needed for vite)
+            npm ci --no-audit --no-fund --prefer-offline --include=dev || npm install --no-audit --no-fund --prefer-offline --include=dev
+            
+            echo "Verifying node_modules installation..."
+            ls -la node_modules/ || echo "node_modules directory not found"
+            ls -la node_modules/.bin/ || echo "node_modules/.bin directory not found"
+            
             # Ensure vite is available in PATH
             if [ ! -f "node_modules/.bin/vite" ]; then
               echo "Error: vite not found in node_modules/.bin"
-              ls -la node_modules/.bin/
+              echo "Available binaries:"
+              ls -la node_modules/.bin/ || echo "No binaries found"
+              echo "npm list vite:"
+              npm list vite || echo "vite not listed"
               exit 1
             fi
+            
+            echo "Building frontend..."
             npm run build
           '';
           installPhase = ''
