@@ -65,6 +65,73 @@ For automated deployment using Terraform and GitHub Actions:
 
 For local development setup, see [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) for detailed instructions on setting up Nix and running the application locally.
 
+## Database Management
+
+This project uses SQLx for database operations, which requires special handling for builds and deployments.
+
+### SQLx Query Metadata
+
+SQLx uses pre-compiled query metadata (`.sqlx` files) to enable offline compilation. This is essential for:
+
+- **Nix builds**: Allows building without a live database connection
+- **CI/CD**: Enables reproducible builds in isolated environments
+- **Deployment**: Faster EC2 deployment without compilation
+
+### When to Update SQLx Metadata
+
+You need to run `cargo sqlx prepare` whenever you:
+
+1. **Add new SQL queries** using SQLx macros (`sqlx::query!`, `sqlx::query_as!`, etc.)
+2. **Modify existing queries** (change SQL syntax, add/remove columns)
+3. **Change database schema** (add/remove tables, modify columns)
+
+### Updating SQLx Metadata
+
+```bash
+# 1. Ensure you have a local database running
+docker-compose up -d postgres
+
+# 2. Set the database URL
+export DATABASE_URL="postgres://ffball:ffball@localhost:5432/ffball"
+
+# 3. Generate new metadata
+cd backend
+cargo sqlx prepare
+
+# 4. Commit the updated .sqlx directory
+git add .sqlx
+git commit -m "Update SQLx metadata for new queries"
+git push
+```
+
+### Future State: Database Migrations
+
+When you're ready to implement database migrations in this app:
+
+1. **Use `sqlx-cli`** for migration management
+2. **Run migrations** before `cargo sqlx prepare`
+3. **Update metadata** after schema changes
+4. **Test locally** before deploying
+
+Example workflow:
+
+```bash
+# Create a new migration
+cargo sqlx migrate add add_new_table
+
+# Apply migrations
+cargo sqlx migrate run
+
+# Update query metadata
+cargo sqlx prepare
+
+# Commit changes
+git add migrations/ .sqlx
+git commit -m "Add new table with migration"
+```
+
+**Note**: Always run `cargo sqlx prepare` after any database schema changes to keep the metadata in sync.
+
 ## Development Commands
 
 This project uses [Just](https://github.com/casey/just) as the command runner instead of Make. Just provides better syntax, parameter support, and cross-platform compatibility.

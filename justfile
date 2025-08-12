@@ -44,6 +44,18 @@ clean: # Clean build artifacts
     cd frontend && rm -rf build node_modules
     docker system prune -f
 
+# SQLx metadata management
+sqlx-prepare: # Generate SQLx query metadata for offline compilation
+    @echo "Generating SQLx query metadata..."
+    @echo "Ensure database is running: docker-compose up -d postgres"
+    @echo "Setting DATABASE_URL..."
+    cd backend && DATABASE_URL="postgres://ffball:ffball@localhost:5432/ffball" cargo sqlx prepare
+    @echo "✅ SQLx metadata generated. Don't forget to commit .sqlx directory!"
+
+sqlx-check: # Check if SQLx metadata is up-to-date
+    @echo "Checking SQLx metadata..."
+    cd backend && cargo sqlx prepare --check
+
 # Nix commands
 nix-shell: # Start Nix development shell
     @echo "Starting Nix development shell..."

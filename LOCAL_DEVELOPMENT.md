@@ -67,7 +67,44 @@ cd backend
 PGPASSWORD=ffball psql -U ffball -d ffball -f "src/database/setup_db.sql"
 ```
 
-### 4. Start the Application
+### 4. SQLx Query Metadata Management
+
+**Important**: This project uses SQLx with offline compilation. You must generate query metadata before building or deploying.
+
+#### Generate SQLx Metadata
+
+```bash
+# Ensure database is running and accessible
+docker-compose up -d postgres
+
+# Set database URL
+export DATABASE_URL="postgres://ffball:ffball@localhost:5432/ffball"
+
+# Generate metadata (run this after any SQL query changes)
+cd backend
+cargo sqlx prepare
+
+# Commit the updated .sqlx directory
+git add .sqlx
+git commit -m "Update SQLx metadata"
+git push
+```
+
+**When to run `cargo sqlx prepare`:**
+
+- After adding new SQL queries
+- After modifying existing queries
+- After changing database schema
+- Before pushing changes that will be built by Nix
+
+#### Verify Metadata is Up-to-Date
+
+```bash
+# Check if metadata matches current code
+cargo sqlx prepare --check
+```
+
+### 5. Start the Application
 
 #### Option A: Using Docker Compose (Recommended)
 
