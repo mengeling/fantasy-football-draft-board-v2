@@ -112,8 +112,15 @@
           buildPhase = ''
             export HOME=$(mktemp -d)
             export NODE_ENV=production
+            export PATH="$PWD/node_modules/.bin:$PATH"
             # Try npm ci first, fallback to npm install with better error handling
             npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund --prefer-offline
+            # Ensure vite is available in PATH
+            if [ ! -f "node_modules/.bin/vite" ]; then
+              echo "Error: vite not found in node_modules/.bin"
+              ls -la node_modules/.bin/
+              exit 1
+            fi
             npm run build
           '';
           installPhase = ''
