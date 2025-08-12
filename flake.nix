@@ -83,6 +83,7 @@
             openssl
             libpq
             chromium
+            rustfmt
           ];
           buildInputs = with pkgs; [
             pkg-config
