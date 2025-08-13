@@ -78,8 +78,8 @@ deploy_application() {
     print_status "Starting services..."
     docker-compose down || true 
     docker system prune -f || true
-    docker-compose up -d
-    docker-compose ps    
+    docker-compose -f docker-compose.yml up -d
+    docker-compose -f docker-compose.yml ps
     print_success "Application deployed successfully!"
 }
 
@@ -123,7 +123,7 @@ main() {
     print_status "Environment: $ENVIRONMENT"
     print_status "Git Branch: $GIT_BRANCH"
     check_prerequisites
-        deploy_application
+    deploy_application
     show_deployment_summary
 }
 

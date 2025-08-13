@@ -8,9 +8,11 @@ services:
     environment:
       - RUST_LOG=debug
       - RUST_BACKTRACE=1
+      - PATH=/nix/var/nix/profiles/default/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     ports:
       - "8080:8080"
-    command: ["sh", "-c", "cd /app && cargo run"]
+    command:
+      ["sh", "-c", "cd /app && /nix/var/nix/profiles/default/bin/cargo run"]
 
   frontend:
     image: ffball-frontend:latest
@@ -21,4 +23,6 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-    command: ["sh", "-c", "cd /app && npm run dev"]
+      - PATH=/nix/var/nix/profiles/default/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    command:
+      ["sh", "-c", "cd /app && /nix/var/nix/profiles/default/bin/npm run dev"]
