@@ -22,7 +22,7 @@
         };
 
         # Node.js environment
-        nodejs = pkgs.nodejs_20;
+        nodejs = pkgs.nodejs_22;
         
         # Database
         postgresql = pkgs.postgresql_16;
@@ -31,7 +31,8 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             rustToolchain
-            nodejs_20
+            nodejs_22
+            nodePackages.npm
             postgresql
             cargo-watch
             chromium
@@ -60,14 +61,6 @@
           nginx
           just
           sqlx-cli
-          chromium
-        ];
-
-        # Build inputs for Rust
-        rustInputs = with pkgs; [
-          pkg-config
-          openssl
-          libpq
           chromium
         ];
 
@@ -104,36 +97,8 @@
           '';
         };
 
-        # Frontend - build on EC2
-        frontend = pkgs.stdenv.mkDerivation {
-          name = "ffball-frontend";
-          src = ./frontend;
-          
-          nativeBuildInputs = with pkgs; [
-            nodejs_22
-            nodePackages.npm
-          ];
-          
-          configurePhase = ''
-            echo "Configuring frontend build environment..."
-            export HOME=$TMPDIR
-            npm config set cache $TMPDIR/.npm
-          '';
-          
-          buildPhase = ''
-            echo "Installing frontend dependencies..."
-            npm ci --cache $TMPDIR/.npm
-            
-            echo "Building frontend..."
-            export PATH="$PWD/node_modules/.bin:$PATH"
-            npm run build
-          '';
-          
-          installPhase = ''
-            mkdir -p $out
-            cp -r build/* $out/
-          '';
-        };
+        # Frontend - built with Docker (not Nix)
+        # Use 'just build-frontend' to build the frontend image
 
         # Docker image for backend
         backendImage = pkgs.dockerTools.buildImage {
@@ -153,16 +118,6 @@
           };
         };
 
-        # Docker image for frontend (static files only)
-        frontendImage = pkgs.dockerTools.buildImage {
-          name = "ffball-frontend";
-          tag = "latest";
-          copyToRoot = [ frontend ];
-          config = {
-            Cmd = [ "sh" "-c" "echo 'Static files ready to be served by nginx'" ];
-          };
-        };
-
       in
       {
         # Development shell
@@ -170,7 +125,7 @@
 
         # Packages
         packages = {
-          inherit frontend backend backendImage frontendImage;
+          inherit backend backendImage;
           default = backend;
           
         # System tools package (for EC2 installation)

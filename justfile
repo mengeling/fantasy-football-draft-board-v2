@@ -23,6 +23,31 @@ build: # Build all components
     cd backend && cargo build --release
     cd frontend && npm run build
 
+# Development builds (fast, local)
+build-frontend-dev: # Build frontend locally (fast, no hanging)
+    @echo "Building frontend locally using nix development shell..."
+    nix develop --extra-experimental-features 'nix-command flakes' --command bash -c "cd frontend && npm ci --no-audit --no-fund && npm run build"
+    @echo "Frontend built successfully in frontend/build/"
+
+build-backend-dev: # Build backend locally (fast)
+    @echo "Building backend locally..."
+    cd backend && cargo build --release
+    @echo "Backend built successfully!"
+
+# Production builds (reliable, reproducible)
+build-frontend: # Build frontend Docker image (production)
+    @echo "Building frontend Docker image..."
+    cd frontend && docker build -t ffball-frontend:latest .
+    @echo "Frontend Docker image built successfully!"
+
+build-backend: # Build backend Docker image (production)
+    @echo "Building backend Docker image..."
+    nix build --verbose --extra-experimental-features 'nix-command flakes' .#backendImage
+    @echo "Backend Docker image built successfully!"
+
+build-images: build-frontend build-backend # Build both production images
+    @echo "All Docker images built successfully!"
+
 test: # Run all tests
     @echo "Running tests..."
     cd backend && cargo test
@@ -63,16 +88,12 @@ nix-shell: # Start Nix development shell
 
 nix-build: # Build with Nix
     @echo "Building with Nix..."
-    nix build --extra-experimental-features 'nix-command flakes'
-
-nix-build-images: # Build Docker images with Nix
-    @echo "Building Docker images with Nix..."
-    nix build --extra-experimental-features 'nix-command flakes' .#backendImage .#frontendImage
+    nix build --verbose --extra-experimental-features 'nix-command flakes'
 
 nix-load-images: # Load Nix-built images into Docker
     @echo "Loading Nix-built images into Docker..."
-    docker load < result-1
-    docker load < result-2
+    docker load < result
+    @echo "Images loaded successfully!"
 
 nix-deploy: nix-build-images nix-load-images # Deploy with Nix-built images
     @echo "Deploying with Nix-built Docker images..."
@@ -219,14 +240,6 @@ help-dev: # Show development help
 deploy-env env: # Deploy to specific environment
     @echo "Deploying to {{env}}..."
     ENVIRONMENT={{env}} ./deploy/scripts/deploy.sh
-
-build-backend: # Build only backend
-    @echo "Building backend..."
-    cd backend && cargo build --release
-
-build-frontend: # Build only frontend
-    @echo "Building frontend..."
-    cd frontend && npm run build
 
 test-backend: # Test only backend
     @echo "Testing backend..."
