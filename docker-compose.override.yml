@@ -1,6 +1,4 @@
 # Local development override - mounts source code for fast iteration
-version: "3.8"
-
 services:
   backend:
     image: ffball-backend:latest

@@ -104,7 +104,7 @@
         backendImage = pkgs.dockerTools.buildImage {
           name = "ffball-backend";
           tag = "latest";
-          copyToRoot = [ backend ];
+          copyToRoot = [ backend pkgs.bash pkgs.coreutils ];
           config = {
             Cmd = [ "${backend}/bin/backend" ];
             ExposedPorts = {
@@ -114,6 +114,7 @@
               "DATABASE_URL=postgres://ffball:ffball@postgres:5432/ffball"
               "RUST_LOG=info"
               "RUST_BACKTRACE=1"
+              "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin"
             ];
           };
         };

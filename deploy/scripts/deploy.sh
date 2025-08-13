@@ -123,7 +123,7 @@ main() {
     print_status "Environment: $ENVIRONMENT"
     print_status "Git Branch: $GIT_BRANCH"
     check_prerequisites
-    deploy_application
+        deploy_application
     show_deployment_summary
 }
 
