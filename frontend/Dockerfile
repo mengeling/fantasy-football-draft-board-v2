@@ -16,11 +16,8 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage - simple static file server
-FROM node:22-alpine
-
-# Install a simple HTTP server
-RUN npm install -g serve
+# Production stage - use nginx for static file serving (no npm install needed)
+FROM nginx:alpine
 
 # Copy built files
 COPY --from=builder /app/build /usr/share/nginx/html
@@ -28,5 +25,5 @@ COPY --from=builder /app/build /usr/share/nginx/html
 # Expose port 80
 EXPOSE 80
 
-# Start the static file server
-CMD ["serve", "-s", "/usr/share/nginx/html", "-l", "80"] 
+# Start nginx with default configuration
+CMD ["nginx", "-g", "daemon off;"]
