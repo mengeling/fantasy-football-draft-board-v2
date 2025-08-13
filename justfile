@@ -95,7 +95,7 @@ nix-load-images: # Load Nix-built images into Docker
     docker load < result
     @echo "Images loaded successfully!"
 
-nix-deploy: nix-build nix-load-images # Deploy with Nix-built images
+nix-deploy: build-images nix-load-images # Deploy with Nix-built images
     @echo "Deploying with Nix-built Docker images..."
     docker-compose down || true
     docker system prune -f
@@ -192,7 +192,7 @@ health: # Check application health
 ci-test: lint test build # Run CI tests
     @echo "Running CI tests..."
 
-ci-build: nix-build # Build for CI with Nix
+ci-build: build-images # Build for CI with Nix
     @echo "Building for CI with Nix..."
 
 # Security commands
@@ -217,7 +217,7 @@ help-deploy: # Show deployment help
     @echo "just setup       - Run interactive setup"
     @echo ""
     @echo "Nix Commands:"
-    @echo "  just nix-build         - Build Docker images with Nix"
+    @echo "  just build-images      - Build Docker images with Nix"
     @echo "  just nix-load-images   - Load images into Docker"
     @echo "  just nix-deploy        - Complete Nix deployment"
     @echo ""
