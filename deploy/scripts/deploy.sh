@@ -70,7 +70,7 @@ deploy_application() {
     
     print_status "Building Docker images..."
     # Build backend with Nix
-    nix build .#backendImage
+    nix build --extra-experimental-features nix-command --extra-experimental-features flakes .#backendImage
     docker load < result
     
     # Build frontend with Docker
