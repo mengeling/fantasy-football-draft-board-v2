@@ -17,6 +17,7 @@ pub async fn update() -> Result<()> {
     caps.add_arg("--no-sandbox")?;
     caps.add_arg("--disable-dev-shm-usage")?;
     caps.add_arg("--disable-gpu")?;
+    caps.add_arg("--user-data-dir=/tmp/chrome-user-data")?;
 
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
     driver
