@@ -1,19 +1,19 @@
 use anyhow::Result;
-use headless_chrome::Tab;
 use regex::Regex;
 use scraper::{Html, Selector};
 use std::str::FromStr;
+use thirtyfour::prelude::*;
 
 use crate::models::players::{PlayerIdentity, PlayerTask, Position, Team};
 use crate::models::rankings::{Rankings, RankingsBase, ScoringSettings};
 
 pub struct RankingsScraper<'a> {
-    tab: &'a Tab,
+    driver: &'a WebDriver,
 }
 
 impl<'a> RankingsScraper<'a> {
-    pub fn new(tab: &'a Tab) -> Self {
-        Self { tab }
+    pub fn new(driver: &'a WebDriver) -> Self {
+        Self { driver }
     }
 
     fn get_urls() -> std::collections::HashMap<ScoringSettings, &'static str> {
@@ -34,48 +34,76 @@ impl<'a> RankingsScraper<'a> {
     }
 
     pub async fn scrape(&self) -> Result<(Vec<Rankings>, Vec<PlayerTask>)> {
-        let mut ranking_tables = Vec::new();
+        let mut ranking_tables: Vec<(String, ScoringSettings)> = Vec::new();
 
         for (scoring_settings, url) in Self::get_urls() {
-            self.tab.navigate_to(url)?;
-            self.tab.wait_until_navigated()?;
+            self.driver.goto(url).await?;
+
+            if let Ok(cookie_button) = self
+                .driver
+                .query(By::Css("#onetrust-accept-btn-handler"))
+                .first()
+                .await
+            {
+                let _ = cookie_button.click().await;
+                tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+            }
 
             let view_dropdown_button = self
-                .tab
-                .wait_for_element(".select-advanced--view .select-advanced__button")?;
-            view_dropdown_button.call_js_fn("function() { this.click(); }", vec![], false)?;
-            self.tab.wait_for_element(
-                ".select-advanced--view .select-advanced__button.select-advanced__button--open",
-            )?;
+                .driver
+                .query(By::Css(".select-advanced--view .select-advanced__button"))
+                .first()
+                .await?;
+            view_dropdown_button.scroll_into_view().await?;
+            view_dropdown_button.click().await?;
 
-            let view_option_buttons = self.tab.find_elements(
-                ".select-advanced--view .select-advanced__item .select-advanced-content--button",
-            )?;
+            self.driver
+                .query(By::Css(
+                    ".select-advanced--view .select-advanced__button.select-advanced__button--open",
+                ))
+                .first()
+                .await?;
+
+            let view_option_buttons = self
+                .driver
+                .find_all(By::Css(
+                    ".select-advanced--view .select-advanced__item .select-advanced-content--button",
+                ))
+                .await?;
             let mut found_ranks_option = false;
             for option_button in &view_option_buttons {
-                if let Ok(text) = option_button.get_inner_text() {
-                    if text.trim() == "Ranks" {
-                        found_ranks_option = true;
-                        option_button.call_js_fn("function() { this.click(); }", vec![], false)?;
-                        std::thread::sleep(std::time::Duration::from_millis(500));
-                        break;
-                    }
+                if option_button.text().await?.trim() == "Ranks" {
+                    found_ranks_option = true;
+                    option_button.click().await?;
+                    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+                    break;
                 }
             }
             if !found_ranks_option {
                 return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
             }
 
-            self.tab.wait_for_element("table#ranking-table")?;
+            self.driver
+                .query(By::Css("table#ranking-table"))
+                .first()
+                .await?;
             let ranking_table_last_row = self
-                .tab
-                .wait_for_element("tbody tr.player-row:last-child")?;
-            ranking_table_last_row.scroll_into_view()?;
+                .driver
+                .query(By::Css("tbody tr.player-row:last-child"))
+                .first()
+                .await?;
+            ranking_table_last_row.scroll_into_view().await?;
 
-            let ranking_table = self.tab.wait_for_element("table#ranking-table")?;
-            ranking_tables.push((ranking_table.get_content()?, scoring_settings));
+            let ranking_table = self
+                .driver
+                .query(By::Css("table#ranking-table"))
+                .first()
+                .await?;
+            ranking_tables.push((
+                ranking_table.outer_html().await?.to_string(),
+                scoring_settings,
+            ));
         }
-        self.tab.close(true)?;
 
         let mut seen_players = std::collections::HashSet::new();
         let mut all_rankings = Vec::new();

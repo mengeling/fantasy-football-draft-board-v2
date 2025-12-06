@@ -8,9 +8,24 @@ mod services;
 use actix_web::{App, HttpServer};
 use database::connection::init_pool;
 
+use std::process::Command;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
+
+    // Start chromedriver in the background if not already running
+    let chromedriver_path =
+        std::env::var("CHROMEDRIVER_PATH").unwrap_or_else(|_| "chromedriver".to_string());
+
+    // Check if chromedriver is already running
+    if std::net::TcpStream::connect("127.0.0.1:9515").is_err() {
+        Command::new(&chromedriver_path)
+            .arg("--port=9515")
+            .arg("--log-level=INFO")
+            .spawn()
+            .expect("Failed to start chromedriver");
+    }
 
     init_pool()
         .await

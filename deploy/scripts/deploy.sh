@@ -68,12 +68,16 @@ deploy_application() {
         sleep 5
     fi
     
-    print_status "Building Docker images with Nix..."
-    nix build .#backendImage .#frontendImage
+    print_status "Building Docker images..."
+    # Build backend with Nix
+    nix build .#backendImage
+    docker load < result
     
-    print_status "Loading Docker images..."
-    docker load < result-1
-    docker load < result-2
+    # Build frontend with Docker
+    print_status "Building frontend Docker image..."
+    cd frontend
+    docker build -t ffball-frontend:latest .
+    cd ..
     
     print_status "Starting services..."
     docker-compose down || true 

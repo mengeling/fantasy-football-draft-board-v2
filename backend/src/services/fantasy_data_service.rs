@@ -1,5 +1,6 @@
 use anyhow::Result;
-use headless_chrome::Browser;
+use thirtyfour::ChromiumLikeCapabilities;
+use thirtyfour::{DesiredCapabilities, WebDriver};
 
 use crate::database::connection::get_db_connection;
 use crate::database::operations::fantasy_data_operations::{
@@ -11,11 +12,24 @@ use crate::scrapers::{
 };
 
 pub async fn update() -> Result<()> {
-    let browser = Browser::default()?;
-    let tab = browser.new_tab()?;
+    let mut caps = DesiredCapabilities::chrome();
+    caps.add_arg("--headless")?;
+    caps.add_arg("--no-sandbox")?;
+    caps.add_arg("--disable-dev-shm-usage")?;
+    caps.add_arg("--disable-gpu")?;
 
-    let rankings_scraper = RankingsScraper::new(&tab);
+    let driver = WebDriver::new("http://localhost:9515", caps).await?;
+    driver
+        .set_page_load_timeout(std::time::Duration::from_secs(120))
+        .await?;
+    driver
+        .set_implicit_wait_timeout(std::time::Duration::from_secs(10))
+        .await?;
+
+    let rankings_scraper = RankingsScraper::new(&driver);
     let (rankings, player_tasks) = rankings_scraper.scrape().await?;
+
+    driver.quit().await?;
 
     let players = PlayersScraper::process_tasks(player_tasks).await?;
 

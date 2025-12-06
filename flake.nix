@@ -62,6 +62,7 @@
           just
           sqlx-cli
           chromium
+          chromedriver
         ];
 
         # Backend build
@@ -104,7 +105,7 @@
         backendImage = pkgs.dockerTools.buildImage {
           name = "ffball-backend";
           tag = "latest";
-          copyToRoot = [ backend pkgs.bash pkgs.coreutils ];
+          copyToRoot = [ backend pkgs.bash pkgs.coreutils pkgs.chromium pkgs.chromedriver ];
           config = {
             Cmd = [ "${backend}/bin/backend" ];
             ExposedPorts = {
@@ -114,7 +115,7 @@
               "DATABASE_URL=postgres://ffball:ffball@postgres:5432/ffball"
               "RUST_LOG=info"
               "RUST_BACKTRACE=1"
-              "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin"
+              "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.chromedriver}/bin"
             ];
           };
         };
