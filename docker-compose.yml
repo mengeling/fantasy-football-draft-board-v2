@@ -34,6 +34,12 @@ services:
     volumes:
       - ./backend/src/scripts:/app/scripts:ro
     shm_size: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
 
   frontend:
     image: ffball-frontend:latest
