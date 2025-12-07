@@ -22,10 +22,30 @@ pub async fn update() -> Result<()> {
     std::fs::create_dir_all(&user_data_dir)?;
 
     let mut caps = DesiredCapabilities::chrome();
-    caps.add_arg("--headless")?;
+    caps.add_arg("--headless=new")?;
     caps.add_arg("--no-sandbox")?;
     caps.add_arg("--disable-dev-shm-usage")?;
     caps.add_arg("--disable-gpu")?;
+    caps.add_arg("--disable-software-rasterizer")?;
+    caps.add_arg("--disable-extensions")?;
+    caps.add_arg("--disable-background-networking")?;
+    caps.add_arg("--disable-background-timer-throttling")?;
+    caps.add_arg("--disable-renderer-backgrounding")?;
+    caps.add_arg("--disable-backgrounding-occluded-windows")?;
+    caps.add_arg("--disable-breakpad")?;
+    caps.add_arg("--disable-component-update")?;
+    caps.add_arg("--disable-default-apps")?;
+    caps.add_arg("--disable-domain-reliability")?;
+    caps.add_arg("--disable-features=TranslateUI")?;
+    caps.add_arg("--disable-ipc-flooding-protection")?;
+    caps.add_arg("--disable-sync")?;
+    caps.add_arg("--metrics-recording-only")?;
+    caps.add_arg("--mute-audio")?;
+    caps.add_arg("--no-first-run")?;
+    caps.add_arg("--safebrowsing-disable-auto-update")?;
+    caps.add_arg("--enable-automation")?;
+    caps.add_arg("--password-store=basic")?;
+    caps.add_arg("--use-mock-keychain")?;
     caps.add_arg(&format!("--user-data-dir={}", user_data_dir))?;
 
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
