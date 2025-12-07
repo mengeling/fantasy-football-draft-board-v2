@@ -27,6 +27,10 @@ pub async fn update() -> Result<()> {
     caps.add_arg("--disable-dev-shm-usage")?;
     caps.add_arg("--disable-gpu")?;
     caps.add_arg("--disable-software-rasterizer")?;
+    caps.add_arg("--single-process")?;
+    caps.add_arg("--disable-setuid-sandbox")?;
+    caps.add_arg("--disable-web-security")?;
+    caps.add_arg("--disable-features=VizDisplayCompositor")?;
     caps.add_arg("--disable-extensions")?;
     caps.add_arg("--disable-background-networking")?;
     caps.add_arg("--disable-background-timer-throttling")?;
