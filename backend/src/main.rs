@@ -37,6 +37,8 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>()
         .expect("PORT must be a number");
 
+    log::info!("Starting HTTP server on {}:{}", host, port);
+
     HttpServer::new(move || {
         App::new()
             .service(routes::drafted_players::draft_player)
@@ -48,7 +50,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::users::get_user)
             .service(routes::users::update_user)
     })
-    .bind((host, port))?
+    .bind((host.clone(), port))?
     .run()
     .await
 }
