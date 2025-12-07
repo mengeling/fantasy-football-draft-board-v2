@@ -31,7 +31,6 @@ pub async fn update() -> Result<()> {
     caps.add_arg("--disable-web-security")?;
     caps.add_arg("--disable-features=VizDisplayCompositor")?;
     caps.add_arg("--remote-debugging-port=0")?;
-    caps.add_arg("--disable-backgrounding-occluded-windows")?;
     caps.add_arg("--disable-extensions")?;
     caps.add_arg("--disable-background-networking")?;
     caps.add_arg("--disable-background-timer-throttling")?;

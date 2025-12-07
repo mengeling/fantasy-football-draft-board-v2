@@ -33,6 +33,7 @@ services:
       retries: 3
     volumes:
       - ./backend/src/scripts:/app/scripts:ro
+    shm_size: 2g
 
   frontend:
     image: ffball-frontend:latest
