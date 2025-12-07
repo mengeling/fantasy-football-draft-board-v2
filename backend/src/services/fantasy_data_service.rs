@@ -12,12 +12,21 @@ use crate::scrapers::{
 };
 
 pub async fn update() -> Result<()> {
+    // Create a unique user data directory for this session
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let user_data_dir = format!("/tmp/chrome-user-data-{}", timestamp);
+    std::fs::create_dir_all(&user_data_dir)?;
+
     let mut caps = DesiredCapabilities::chrome();
     caps.add_arg("--headless")?;
     caps.add_arg("--no-sandbox")?;
     caps.add_arg("--disable-dev-shm-usage")?;
     caps.add_arg("--disable-gpu")?;
-    caps.add_arg("--user-data-dir=/tmp/chrome-user-data")?;
+    caps.add_arg(&format!("--user-data-dir={}", user_data_dir))?;
 
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
     driver
