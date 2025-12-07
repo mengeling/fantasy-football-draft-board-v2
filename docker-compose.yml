@@ -16,6 +16,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # Selenium Chrome for headless browser automation
+  chrome:
+    image: selenium/standalone-chrome:latest
+    shm_size: 2g
+    environment:
+      - SE_VNC_NO_PASSWORD=1
+    ports:
+      - "4444:4444"
+      - "7900:7900"  # VNC viewer (optional, for debugging)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     image: ffball-backend:latest
     ports:
@@ -23,8 +38,11 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=8080
+      - CHROMEDRIVER_URL=http://chrome:4444/wd/hub
     depends_on:
       postgres:
+        condition: service_healthy
+      chrome:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

@@ -12,20 +12,25 @@ use std::process::Command;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().ok();
+       dotenv::dotenv().ok();
 
-    // Start chromedriver in the background if not already running
-    let chromedriver_path =
-        std::env::var("CHROMEDRIVER_PATH").unwrap_or_else(|_| "chromedriver".to_string());
+       // Only start local chromedriver if CHROMEDRIVER_URL is not set (local development)
+       let chromedriver_url = std::env::var("CHROMEDRIVER_URL").unwrap_or_else(|_| "http://localhost:9515".to_string());
+       
+       if chromedriver_url == "http://localhost:9515" {
+           // Start chromedriver in the background if not already running
+           let chromedriver_path =
+               std::env::var("CHROMEDRIVER_PATH").unwrap_or_else(|_| "chromedriver".to_string());
 
-    // Check if chromedriver is already running
-    if std::net::TcpStream::connect("127.0.0.1:9515").is_err() {
-        Command::new(&chromedriver_path)
-            .arg("--port=9515")
-            .arg("--log-level=INFO")
-            .spawn()
-            .expect("Failed to start chromedriver");
-    }
+           // Check if chromedriver is already running
+           if std::net::TcpStream::connect("127.0.0.1:9515").is_err() {
+               Command::new(&chromedriver_path)
+                   .arg("--port=9515")
+                   .arg("--log-level=INFO")
+                   .spawn()
+                   .expect("Failed to start chromedriver");
+           }
+       }
 
     init_pool()
         .await

@@ -12,47 +12,17 @@ use crate::scrapers::{
 };
 
 pub async fn update() -> Result<()> {
-    // Create a unique user data directory for this session
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let user_data_dir = format!("/tmp/chrome-user-data-{}", timestamp);
-    std::fs::create_dir_all(&user_data_dir)?;
+    // Use Selenium Chrome service if available, otherwise local chromedriver
+    let chromedriver_url =
+        std::env::var("CHROMEDRIVER_URL").unwrap_or_else(|_| "http://localhost:9515".to_string());
 
     let mut caps = DesiredCapabilities::chrome();
-    caps.add_arg("--headless=new")?;
+    // Selenium images are pre-configured, but add essential flags for stability
     caps.add_arg("--no-sandbox")?;
     caps.add_arg("--disable-dev-shm-usage")?;
     caps.add_arg("--disable-gpu")?;
-    caps.add_arg("--disable-software-rasterizer")?;
-    caps.add_arg("--disable-setuid-sandbox")?;
-    caps.add_arg("--disable-web-security")?;
-    caps.add_arg("--disable-features=VizDisplayCompositor")?;
-    caps.add_arg("--remote-debugging-port=0")?;
-    caps.add_arg("--disable-extensions")?;
-    caps.add_arg("--disable-background-networking")?;
-    caps.add_arg("--disable-background-timer-throttling")?;
-    caps.add_arg("--disable-renderer-backgrounding")?;
-    caps.add_arg("--disable-backgrounding-occluded-windows")?;
-    caps.add_arg("--disable-breakpad")?;
-    caps.add_arg("--disable-component-update")?;
-    caps.add_arg("--disable-default-apps")?;
-    caps.add_arg("--disable-domain-reliability")?;
-    caps.add_arg("--disable-features=TranslateUI")?;
-    caps.add_arg("--disable-ipc-flooding-protection")?;
-    caps.add_arg("--disable-sync")?;
-    caps.add_arg("--metrics-recording-only")?;
-    caps.add_arg("--mute-audio")?;
-    caps.add_arg("--no-first-run")?;
-    caps.add_arg("--safebrowsing-disable-auto-update")?;
-    caps.add_arg("--enable-automation")?;
-    caps.add_arg("--password-store=basic")?;
-    caps.add_arg("--use-mock-keychain")?;
-    caps.add_arg(&format!("--user-data-dir={}", user_data_dir))?;
 
-    let driver = WebDriver::new("http://localhost:9515", caps).await?;
+    let driver = WebDriver::new(&chromedriver_url, caps).await?;
     driver
         .set_page_load_timeout(std::time::Duration::from_secs(120))
         .await?;
