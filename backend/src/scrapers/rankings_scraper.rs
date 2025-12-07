@@ -38,6 +38,8 @@ impl<'a> RankingsScraper<'a> {
 
         for (scoring_settings, url) in Self::get_urls() {
             self.driver.goto(url).await?;
+            // Wait a bit for page to stabilize after navigation
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
 
             if let Ok(cookie_button) = self
                 .driver
