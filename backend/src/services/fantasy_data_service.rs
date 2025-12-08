@@ -15,6 +15,8 @@ pub async fn update() -> Result<()> {
     // Use Selenium Chrome service if available, otherwise local chromedriver
     let chromedriver_url =
         std::env::var("CHROMEDRIVER_URL").unwrap_or_else(|_| "http://localhost:9515".to_string());
+    
+    log::info!("Connecting to WebDriver at: {}", chromedriver_url);
 
     let mut caps = DesiredCapabilities::chrome();
     // Selenium images are pre-configured, but add essential flags for stability
