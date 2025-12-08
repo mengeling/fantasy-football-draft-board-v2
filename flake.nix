@@ -115,7 +115,7 @@
               "DATABASE_URL=postgres://ffball:ffball@postgres:5432/ffball"
               "HOST=0.0.0.0"
               "PORT=8080"
-              "RUST_LOG=info"
+              "RUST_LOG=debug"
               "RUST_BACKTRACE=1"
               "PATH=${pkgs.bash}/bin:${pkgs.coreutils}/bin:${pkgs.chromedriver}/bin"
             ];
