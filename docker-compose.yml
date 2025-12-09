@@ -24,7 +24,7 @@ services:
       - SE_VNC_NO_PASSWORD=1
     ports:
       - "4444:4444"
-      - "7900:7900"  # VNC viewer (optional, for debugging)
+      - "7900:7900" # VNC viewer (optional, for debugging)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
       interval: 10s
@@ -38,7 +38,7 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=8080
-      - CHROMEDRIVER_URL=http://chrome:4444/wd/hub
+      - CHROMEDRIVER_URL=http://chrome:4444
     depends_on:
       postgres:
         condition: service_healthy

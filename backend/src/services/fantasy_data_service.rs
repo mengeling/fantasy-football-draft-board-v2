@@ -15,8 +15,11 @@ pub async fn update() -> Result<()> {
     // Use Selenium Chrome service if available, otherwise local chromedriver
     let chromedriver_url =
         std::env::var("CHROMEDRIVER_URL").unwrap_or_else(|_| "http://localhost:9515".to_string());
-    
-    eprintln!("[FANTASY_DATA_SERVICE] Connecting to WebDriver at: {}", chromedriver_url);
+
+    eprintln!(
+        "[FANTASY_DATA_SERVICE] Connecting to WebDriver at: {}",
+        chromedriver_url
+    );
     log::info!("Connecting to WebDriver at: {}", chromedriver_url);
 
     let mut caps = DesiredCapabilities::chrome();
@@ -26,11 +29,13 @@ pub async fn update() -> Result<()> {
     caps.add_arg("--disable-gpu")?;
 
     eprintln!("[FANTASY_DATA_SERVICE] Creating WebDriver connection...");
-    let driver = WebDriver::new(&chromedriver_url, caps).await
-        .map_err(|e| {
-            eprintln!("[FANTASY_DATA_SERVICE] Failed to connect to WebDriver at {}: {}", chromedriver_url, e);
-            e
-        })?;
+    let driver = WebDriver::new(&chromedriver_url, caps).await.map_err(|e| {
+        eprintln!(
+            "[FANTASY_DATA_SERVICE] Failed to connect to WebDriver at {}: {}",
+            chromedriver_url, e
+        );
+        e
+    })?;
     eprintln!("[FANTASY_DATA_SERVICE] WebDriver connected successfully!");
     driver
         .set_page_load_timeout(std::time::Duration::from_secs(120))

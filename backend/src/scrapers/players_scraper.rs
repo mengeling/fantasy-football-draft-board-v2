@@ -14,8 +14,13 @@ pub struct PlayersScraper {
 
 impl PlayersScraper {
     pub fn new(url: &str) -> Self {
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .expect("Failed to create HTTP client");
         PlayersScraper {
-            client: Client::new(),
+            client,
             url: url.to_string(),
         }
     }
@@ -99,8 +104,14 @@ impl PlayersScraper {
         for result in results {
             match result {
                 Ok(Ok(player)) => players.push(player),
-                Ok(Err(e)) => println!("Error fetching player bio: {}", e),
-                Err(e) => println!("Task join error: {}", e),
+                Ok(Err(e)) => {
+                    log::warn!("Error fetching player bio: {}", e);
+                    eprintln!("Error fetching player bio: {}", e);
+                }
+                Err(e) => {
+                    log::warn!("Task join error: {}", e);
+                    eprintln!("Task join error: {}", e);
+                }
             }
         }
 

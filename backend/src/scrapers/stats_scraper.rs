@@ -14,8 +14,13 @@ pub struct StatsScraper {
 
 impl StatsScraper {
     pub fn new() -> Self {
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .expect("Failed to create HTTP client");
         StatsScraper {
-            client: Client::new(),
+            client,
         }
     }
 

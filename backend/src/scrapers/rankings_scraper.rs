@@ -206,12 +206,16 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
         .select(&Selector::parse("a").unwrap())
         .next()
         .unwrap();
-    let bio_url = player_url_element
+    let href = player_url_element
         .value()
         .attr("href")
-        .unwrap_or("")
-        .replace("/players/", "/schedule/")
-        .to_string();
+        .unwrap_or("");
+    // Convert relative URL to absolute and replace /players/ with /schedule/
+    let bio_url = if href.starts_with("http") {
+        href.replace("/players/", "/schedule/")
+    } else {
+        format!("https://www.fantasypros.com{}", href.replace("/players/", "/schedule/"))
+    };
     let name = player_url_element.text().collect::<String>();
 
     PlayerIdentity {
