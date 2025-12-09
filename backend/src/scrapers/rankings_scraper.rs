@@ -58,13 +58,20 @@ impl<'a> RankingsScraper<'a> {
                 .await?;
             view_dropdown_button.scroll_into_view().await?;
             view_dropdown_button.click().await?;
+            // Wait for dropdown to open
+            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
+            // Wait for dropdown to be fully open
             self.driver
                 .query(By::Css(
                     ".select-advanced--view .select-advanced__button.select-advanced__button--open",
                 ))
-                .first()
+                .wait_for_present()
+                .timeout(std::time::Duration::from_secs(5))
                 .await?;
+
+            // Wait a bit more for options to render
+            tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
 
             let view_option_buttons = self
                 .driver
@@ -72,9 +79,13 @@ impl<'a> RankingsScraper<'a> {
                     ".select-advanced--view .select-advanced__item .select-advanced-content--button",
                 ))
                 .await?;
+            
+            log::debug!("Found {} dropdown options", view_option_buttons.len());
             let mut found_ranks_option = false;
             for option_button in &view_option_buttons {
-                if option_button.text().await?.trim() == "Ranks" {
+                let option_text = option_button.text().await?;
+                log::debug!("Dropdown option: '{}'", option_text.trim());
+                if option_text.trim() == "Ranks" {
                     found_ranks_option = true;
                     option_button.click().await?;
                     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
@@ -82,7 +93,17 @@ impl<'a> RankingsScraper<'a> {
                 }
             }
             if !found_ranks_option {
-                return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
+                let mut option_texts = Vec::new();
+                for btn in &view_option_buttons {
+                    if let Ok(text) = btn.text().await {
+                        option_texts.push(text.trim().to_string());
+                    }
+                }
+                return Err(anyhow::anyhow!(
+                    "Could not find 'Ranks' option in dropdown. Found {} options: {:?}",
+                    option_texts.len(),
+                    option_texts
+                ));
             }
 
             self.driver
@@ -206,15 +227,15 @@ fn get_player_identity(player_cell: &scraper::element_ref::ElementRef) -> Player
         .select(&Selector::parse("a").unwrap())
         .next()
         .unwrap();
-    let href = player_url_element
-        .value()
-        .attr("href")
-        .unwrap_or("");
+    let href = player_url_element.value().attr("href").unwrap_or("");
     // Convert relative URL to absolute and replace /players/ with /schedule/
     let bio_url = if href.starts_with("http") {
         href.replace("/players/", "/schedule/")
     } else {
-        format!("https://www.fantasypros.com{}", href.replace("/players/", "/schedule/"))
+        format!(
+            "https://www.fantasypros.com{}",
+            href.replace("/players/", "/schedule/")
+        )
     };
     let name = player_url_element.text().collect::<String>();
 
