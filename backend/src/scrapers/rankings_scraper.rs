@@ -62,12 +62,12 @@ impl<'a> RankingsScraper<'a> {
             tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
             // Wait for dropdown to be fully open
-            self.driver
+            let _ = self
+                .driver
                 .query(By::Css(
                     ".select-advanced--view .select-advanced__button.select-advanced__button--open",
                 ))
-                .wait_for_present()
-                .timeout(std::time::Duration::from_secs(5))
+                .first()
                 .await?;
 
             // Wait a bit more for options to render
@@ -79,7 +79,7 @@ impl<'a> RankingsScraper<'a> {
                     ".select-advanced--view .select-advanced__item .select-advanced-content--button",
                 ))
                 .await?;
-            
+
             log::debug!("Found {} dropdown options", view_option_buttons.len());
             let mut found_ranks_option = false;
             for option_button in &view_option_buttons {
