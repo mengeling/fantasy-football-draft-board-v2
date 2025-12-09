@@ -30,7 +30,11 @@ impl PlayersScraper {
     }
 
     pub async fn scrape(&self) -> Result<PlayerBio> {
-        let response = self.client.get(&self.url).send().await?;
+        log::debug!("Fetching player bio from: {}", self.url);
+        let response = self.client.get(&self.url).send().await.map_err(|e| {
+            log::error!("Failed to fetch {}: {}", self.url, e);
+            e
+        })?;
         let body = response.text().await?;
         let html = Html::parse_document(&body);
         let bio_section_selector = Selector::parse("div.clearfix").unwrap();
