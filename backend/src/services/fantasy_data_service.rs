@@ -37,11 +37,15 @@ pub async fn update() -> Result<()> {
         e
     })?;
     eprintln!("[FANTASY_DATA_SERVICE] WebDriver connected successfully!");
+    // Set longer timeouts for scraping operations
     driver
-        .set_page_load_timeout(std::time::Duration::from_secs(120))
+        .set_page_load_timeout(std::time::Duration::from_secs(180))
         .await?;
     driver
-        .set_implicit_wait_timeout(std::time::Duration::from_secs(10))
+        .set_implicit_wait_timeout(std::time::Duration::from_secs(15))
+        .await?;
+    driver
+        .set_script_timeout(std::time::Duration::from_secs(60))
         .await?;
 
     let rankings_scraper = RankingsScraper::new(&driver);
