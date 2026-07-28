@@ -269,23 +269,24 @@ To ship changes to an already-deployed server, SSH in and run:
 cd ~/fantasy-football-draft-board-v2
 git pull
 
-# Backend: apply any schema changes, rebuild, restart
 cd backend
-./src/scripts/setup_db.sh          # idempotent — safe to run on every deploy
+./src/scripts/setup_db.sh
 cargo build --release
 sudo systemctl restart ffball
 
-# Frontend: only when the UI changed
 cd ../frontend
-npm install                        # only if dependencies changed
+npm install
+sudo rm -rf build
 npm run build
 sudo chown -R www-data:www-data ~/fantasy-football-draft-board-v2/frontend/build
 ```
 
 Run `setup_db.sh` **before** `cargo build --release`. The backend uses `sqlx`, which
 validates every query against the live database at compile time, so a newly added
-column has to exist before the build or it will fail. Nginx serves the static
-`build/` directory directly, so it does not need to be restarted for frontend changes.
+column has to exist before the build or it will fail. The previous deploy left
+`build/` owned by `www-data`, so it is removed with `sudo` before rebuilding —
+otherwise `npm run build` fails trying to clear it. Nginx serves the static `build/`
+directory directly, so it does not need to be restarted for frontend changes.
 
 ## Database Schema
 
