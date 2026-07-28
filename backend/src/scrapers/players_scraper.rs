@@ -3,7 +3,6 @@ use futures::stream;
 use futures::stream::StreamExt;
 use reqwest::Client;
 use scraper::{Html, Selector};
-use std::collections::HashMap;
 
 use crate::models::players::{Player, PlayerBio, PlayerTask};
 
@@ -20,16 +19,10 @@ impl PlayersScraper {
         }
     }
 
-    fn get_bio_field(bio_details: &HashMap<String, String>, key: &str) -> String {
-        bio_details.get(key).cloned().unwrap_or_default()
-    }
-
     pub async fn scrape(&self) -> Result<PlayerBio> {
         let response = self.client.get(&self.url).send().await?;
         let body = response.text().await?;
         let html = Html::parse_document(&body);
-        let bio_section_selector = Selector::parse("div.clearfix").unwrap();
-        let bio_field_selector = Selector::parse("span.bio-detail").unwrap();
 
         let mut player_bio = PlayerBio {
             height: String::new(),
@@ -39,20 +32,24 @@ impl PlayersScraper {
             bye_week: None,
         };
 
-        if let Some(bio_div) = html.select(&bio_section_selector).next() {
-            let bio: HashMap<_, _> = bio_div
-                .select(&bio_field_selector)
-                .filter_map(|detail| {
-                    let text = detail.text().collect::<String>();
-                    let mut parts = text.split(": ");
-                    Some((parts.next()?.to_string(), parts.next()?.to_string()))
-                })
-                .collect();
+        // Vitals are a list of unlabeled items (e.g. "6'", "205 lbs", "Age 26",
+        // "LSU"), so classify each by its content rather than by order.
+        let vitals_selector = Selector::parse("li.player-bio-header_vitals-list-item").unwrap();
+        for item in html.select(&vitals_selector) {
+            let text = item.text().collect::<String>().trim().to_string();
+            if text.is_empty() {
+                continue;
+            }
 
-            player_bio.height = Self::get_bio_field(&bio, "Height");
-            player_bio.weight = Self::get_bio_field(&bio, "Weight");
-            player_bio.age = Self::get_bio_field(&bio, "Age").parse().ok();
-            player_bio.college = Self::get_bio_field(&bio, "College");
+            if text.to_lowercase().contains("lbs") {
+                player_bio.weight = text;
+            } else if let Some(age) = text.strip_prefix("Age") {
+                player_bio.age = age.trim().parse().ok();
+            } else if text.contains('\'') {
+                player_bio.height = text;
+            } else {
+                player_bio.college = text;
+            }
         }
 
         let row_selector = Selector::parse("table.table-bordered:not(.sos) tbody tr").unwrap();

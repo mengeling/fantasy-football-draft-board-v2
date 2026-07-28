@@ -7,24 +7,21 @@
 </script>
 
 <style>
-    .player-pic-container {
-        height: 160px;
-        width: 170px;
-        margin: 0;
-        float: left;
-    }
-
     .player-pic {
-        width: 160px;
+        width: 118px;
+        height: 118px;
+        object-fit: cover;
+        border-radius: 14px;
+        background: var(--panel);
+        flex-shrink: 0;
+        display: block;
     }
 </style>
 
-<div class="player-pic-container">
-    <img 
-        class="player-pic" 
-        id={id.toString()}
-        src={imgUrl} 
-        on:error={(e) => (e.target as HTMLImageElement).src = fallbackImgUrl}
-        alt={name}
-    >
-</div>
+<img
+    class="player-pic"
+    id={id.toString()}
+    src={imgUrl}
+    on:error={(e) => ((e.target as HTMLImageElement).src = fallbackImgUrl)}
+    alt={name}
+/>

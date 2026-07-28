@@ -17,7 +17,7 @@
         
         try {
             try {
-                const user = await fetchApi(`/users/${username}`);
+                const user = await fetchApi(`/users/${encodeURIComponent(username.trim())}`);
                 onLogin(user);
             } catch (e) {
                 currentView = 'scoring';

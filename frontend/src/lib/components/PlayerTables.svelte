@@ -3,104 +3,120 @@
     import { Position } from '$lib/enums';
     import { POSITION_STATS } from '$lib/constants';
     import { defaultRankings, defaultStats } from '$lib/types';
+    import { fmtNum, fmtPts } from '$lib/format';
 
-    type PositionType = typeof Position[keyof typeof Position];
-    
+    type PositionType = (typeof Position)[keyof typeof Position];
+
     export let rankings: Rankings;
     export let stats: Stats;
     export let position: PositionType | null;
 
     $: positionStats = position ? POSITION_STATS[position] : [];
     $: showTables = rankings !== defaultRankings && stats !== defaultStats;
+
+    const rankFields: { key: keyof Rankings; label: string }[] = [
+        { key: 'overall', label: 'Overall' },
+        { key: 'position', label: 'Pos' },
+        { key: 'best', label: 'Best' },
+        { key: 'worst', label: 'Worst' },
+        { key: 'average', label: 'Avg' },
+        { key: 'standard_deviation', label: 'Std' }
+    ];
 </script>
 
 <style>
-    .player-tables {
-        height: 100%;
-        margin-right: 1%;
-        overflow: hidden;
+    .stat-groups {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: flex-start;
     }
 
-    .player-table {
-        font-size: 0.75em;
-        height: 50%;
-        width: 100%;
+    .stat-group {
+        background: var(--panel);
+        border-radius: 12px;
+        padding: 9px 16px;
     }
 
-    .player-table table {
-        background-color: #fcfcff;
+    .group-label {
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        margin: 0 0 7px;
+        font-weight: 600;
     }
 
-    .player-table tr td,
-    .player-table tr th {
-        padding-left: 1%;
+    .stat-row {
+        display: grid;
+        gap: 10px 8px;
     }
 
-    .rank-table table {
-        width: 65%;
+    .stat {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        line-height: 1.15;
+        min-width: 0;
     }
 
-    .stats-table table {
-        width: 100%;
+    .stat .v {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
     }
 
-    .rank-header,
-    .stats-header {
-        margin-top: 0;
-        margin-bottom: 0.2%;
-        padding-top: 1.5%;
+    .stat .k {
+        font-size: 0.56rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-top: 2px;
     }
 </style>
 
 {#if showTables}
-    <div class="player-tables">
-        <div class="player-table">
-            <h4 class="rank-header">Rankings</h4>
-            <div class="rank-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Overall</th>
-                            <th>Position</th>
-                            <th>Best</th>
-                            <th>Worst</th>
-                            <th>Average</th>
-                            <th>Std Dev</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{rankings.overall}</td>
-                            <td>{rankings.position}</td>
-                            <td>{rankings.best}</td>
-                            <td>{rankings.worst}</td>
-                            <td>{rankings.average}</td>
-                            <td>{rankings.standard_deviation}</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <div class="stat-groups">
+        <div class="stat-group">
+            <p class="group-label">Rankings</p>
+            <div
+                class="stat-row"
+                style="grid-template-columns: repeat({Math.max(
+                    rankFields.length,
+                    positionStats.length
+                )}, minmax(0, 1fr))"
+            >
+                {#each rankFields as field}
+                    <div class="stat">
+                        <span class="v">{fmtNum(rankings[field.key])}</span>
+                        <span class="k">{field.label}</span>
+                    </div>
+                {/each}
             </div>
         </div>
-        <div class="player-table">
-            <h4 class="stats-header">Previous Stats</h4>
-        <div class="stats-table">
-                <table>
-                    <thead>
-                        <tr>
-                            {#each positionStats as stat}
-                                <th>{stat.label}</th>
-                            {/each}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            {#each positionStats as stat}
-                                <td>{stats[stat.key]}</td>
-                            {/each}
-                        </tr>
-                    </tbody>
-                </table>
+
+        {#if positionStats.length}
+            <div class="stat-group">
+                <p class="group-label">Previous stats</p>
+                <div
+                    class="stat-row"
+                    style="grid-template-columns: repeat({positionStats.length}, minmax(0, 1fr))"
+                >
+                    {#each positionStats as stat}
+                        <div class="stat">
+                            <span class="v"
+                                >{stat.key === 'points'
+                                    ? fmtPts(stats[stat.key])
+                                    : fmtNum(stats[stat.key])}</span
+                            >
+                            <span class="k">{stat.label}</span>
+                        </div>
+                    {/each}
+                </div>
             </div>
-        </div>
+        {/if}
     </div>
 {/if}

@@ -33,8 +33,8 @@ pub static STATS_BY_POSITION: LazyLock<HashMap<&'static str, Vec<&'static str>>>
                     "rush_long",
                     "rush_20",
                     "rush_td",
-                    "receptions",
                     "rec_tgt",
+                    "receptions",
                     "rec_yds",
                     "rec_yds_per_rec",
                     "rec_td",
@@ -45,11 +45,11 @@ pub static STATS_BY_POSITION: LazyLock<HashMap<&'static str, Vec<&'static str>>>
             (
                 "wr",
                 vec![
-                    "receptions",
                     "rec_tgt",
+                    "unused", // TGT %
+                    "receptions",
                     "rec_yds",
                     "rec_yds_per_rec",
-                    "rec_long",
                     "rec_20",
                     "rec_td",
                     "rush_att",
@@ -62,11 +62,11 @@ pub static STATS_BY_POSITION: LazyLock<HashMap<&'static str, Vec<&'static str>>>
             (
                 "te",
                 vec![
-                    "receptions",
                     "rec_tgt",
+                    "unused", // TGT %
+                    "receptions",
                     "rec_yds",
                     "rec_yds_per_rec",
-                    "rec_long",
                     "rec_20",
                     "rec_td",
                     "rush_att",

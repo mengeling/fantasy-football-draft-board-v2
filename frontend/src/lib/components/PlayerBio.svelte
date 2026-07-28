@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Position, Team } from "$lib/enums";
+    import type { Position, Team } from '$lib/enums';
 
     export let name: string;
     export let position: Position | null;
@@ -8,62 +8,59 @@
     export let weight: string;
     export let age: number | null;
     export let college: string;
+
+    $: posClass = position ? `pos-${position.toString().toLowerCase()}` : '';
+    $: bioLine = [
+        height,
+        weight,
+        age ? `Age ${age}` : '',
+        college
+    ]
+        .filter(Boolean)
+        .join('  ·  ');
 </script>
 
 <style>
-    .player-bio-container {
-        height: 100%;
-        width: 16.5%;
-        float: left;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        box-sizing: border-box;
-        overflow: hidden;
-    }
-
-    .player-name,
-    .player-team-pos {
-        margin-top: 0;
-        margin-bottom: 2%;
+    .player-bio {
+        width: 172px;
+        flex-shrink: 0;
     }
 
     .player-name {
-        margin-top: 2%;
-        margin-right: 2%;
-    }
-
-    .player-bio-sub {
-        float: left;
-        font-size: 0.8em;
-        margin-right: 8%;
-    }
-
-    .player-detail-desc {
+        font-size: 1.1rem;
         font-weight: 600;
-        margin-bottom: 0;
+        margin: 0 0 6px;
+        line-height: 1.2;
     }
 
-    .player-detail-height,
-    .player-detail-weight,
-    .player-detail-age,
-    .player-detail-college {
+    .team-pos {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 10px;
+    }
+
+    .team {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .bio-line {
+        font-size: 0.76rem;
+        color: var(--text-muted);
+        line-height: 1.5;
         margin: 0;
     }
 </style>
 
-<div class="player-bio-container">
-    <h4 class="player-name">{name}</h4  >
-    <h5 class="player-team-pos">{team} {position}</h5>
-    <div class="player-bio-sub">
-        <p class="player-detail-desc">Height</p>
-        <p class="player-detail-height">{height}</p>
-        <p class="player-detail-desc">Age</p>
-        <p class="player-detail-age">{age}</p>
+<div class="player-bio">
+    <p class="player-name">{name}</p>
+    <div class="team-pos">
+        {#if position}
+            <span class="pos-badge {posClass}">{position}</span>
+        {/if}
+        <span class="team">{team}</span>
     </div>
-    <div class="player-bio-sub">
-        <p class="player-detail-desc">Weight</p>
-        <p class="player-detail-weight">{weight}</p>
-        <p class="player-detail-desc">College</p>
-        <p class="player-detail-college">{college}</p>
-    </div>
+    <p class="bio-line">{bioLine || 'Bio unavailable'}</p>
 </div>

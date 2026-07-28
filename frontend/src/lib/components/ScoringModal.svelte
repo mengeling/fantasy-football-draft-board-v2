@@ -3,6 +3,8 @@
     
     export let onSelect: (scoring: ScoringSettings) => void;
     export let onCancel: () => void;
+    export let prompt =
+        'No draft boards exist under that name. Choose a scoring option to create a board.';
 
     function handleSelect(scoring: ScoringSettings) {
         onSelect(scoring);
@@ -25,10 +27,7 @@
 <div class="login-background">
     <span class="login-helper"></span>
     <div class="login-content">
-        <p>
-            No draft boards exist under that name.<br/>
-            Choose a scoring option to create a board.
-        </p>
+        <p>{prompt}</p>
         <button class="login-scoring-button" on:click={() => handleSelect(ScoringSettings.Standard)}>
             Standard
         </button>

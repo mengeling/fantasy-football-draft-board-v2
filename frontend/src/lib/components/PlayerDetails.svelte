@@ -12,12 +12,17 @@
 <style>
     .player-details {
         width: 98%;
-        margin-left: auto;
-        margin-right: auto;
-        margin-bottom: 2.5%;
-        background-color: #e6f2ff;
+        margin: 0 auto 1.1rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
         text-align: left;
-        height: 160px;
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        padding: 16px 18px;
+        min-height: 148px;
+        box-sizing: border-box;
     }
 </style>
 

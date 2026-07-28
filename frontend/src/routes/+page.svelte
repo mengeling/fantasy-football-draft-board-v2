@@ -48,7 +48,7 @@
         
         loading = true;
         try {
-            currentUser = await fetchApi(`/users/${currentUser.username}`, {
+            currentUser = await fetchApi(`/users/${encodeURIComponent(currentUser.username)}`, {
                 method: 'PUT',
                 body: JSON.stringify({ scoring_settings: scoring }),
                 userId: currentUser.id
@@ -99,6 +99,7 @@
 
 <main>
     <Header
+        username={currentUser?.username ?? ''}
         onLogout={handleLogout}
         onUpdateScoring={() => showScoringModal = true}
         onResetBoard={() => showResetModal = true}
@@ -112,6 +113,7 @@
 
     {#if showScoringModal}
         <ScoringModal
+            prompt="Choose a scoring format for your board."
             onSelect={handleScoringUpdate}
             onCancel={() => showScoringModal = false}
         />
