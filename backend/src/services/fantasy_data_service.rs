@@ -16,11 +16,28 @@ pub async fn update() -> Result<()> {
 
     let rankings_scraper = RankingsScraper::new(&tab);
     let (rankings, player_tasks) = rankings_scraper.scrape().await?;
+    eprintln!(
+        "Scraped {} rankings across {} unique players",
+        rankings.len(),
+        player_tasks.len()
+    );
 
     let players = PlayersScraper::process_tasks(player_tasks).await?;
+    eprintln!("Scraped {} player profiles", players.len());
 
     let stats_scraper = StatsScraper::new();
     let stats = stats_scraper.scrape().await?;
+    eprintln!("Scraped {} player stat lines", stats.len());
+
+    if players.is_empty() || rankings.is_empty() || stats.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Scrape produced incomplete data (players: {}, rankings: {}, stats: {}); \
+             aborting refresh to preserve existing data",
+            players.len(),
+            rankings.len(),
+            stats.len()
+        ));
+    }
 
     let conn = get_db_connection().await?;
     let mut tx = conn.begin().await?;

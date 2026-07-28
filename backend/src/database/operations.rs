@@ -48,6 +48,10 @@ pub mod fantasy_data_operations {
         players: &[Player],
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<()> {
+        if players.is_empty() {
+            return Ok(());
+        }
+
         let mut query_builder = QueryBuilder::new(
             "INSERT INTO players (id, name, position, team, bye_week, height, weight, age, college)",
         );
@@ -72,6 +76,10 @@ pub mod fantasy_data_operations {
         rankings: &[Rankings],
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<()> {
+        if rankings.is_empty() {
+            return Ok(());
+        }
+
         let mut query_builder = QueryBuilder::new(
             "INSERT INTO rankings (
                 player_id, scoring_settings, overall, position, 
@@ -98,6 +106,10 @@ pub mod fantasy_data_operations {
         stats: &[Stats],
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<()> {
+        if stats.is_empty() {
+            return Ok(());
+        }
+
         let mut query_builder = QueryBuilder::new(
             "INSERT INTO stats (
                 player_id, pass_cmp, pass_att, pass_cmp_pct, pass_yds, pass_yds_per_att,

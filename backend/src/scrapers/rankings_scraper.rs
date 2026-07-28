@@ -3,6 +3,7 @@ use headless_chrome::Tab;
 use regex::Regex;
 use scraper::{Html, Selector};
 use std::str::FromStr;
+use std::time::{Duration, Instant};
 
 use crate::models::players::{PlayerIdentity, PlayerTask, Position, Team};
 use crate::models::rankings::{Rankings, RankingsBase, ScoringSettings};
@@ -37,45 +38,10 @@ impl<'a> RankingsScraper<'a> {
         let mut ranking_tables = Vec::new();
 
         for (scoring_settings, url) in Self::get_urls() {
-            self.tab.navigate_to(url)?;
-            self.tab.wait_until_navigated()?;
-
-            let view_dropdown_button = self
-                .tab
-                .wait_for_element(".select-advanced--view .select-advanced__button")?;
-            view_dropdown_button.call_js_fn("function() { this.click(); }", vec![], false)?;
-            self.tab.wait_for_element(
-                ".select-advanced--view .select-advanced__button.select-advanced__button--open",
-            )?;
-
-            let view_option_buttons = self.tab.find_elements(
-                ".select-advanced--view .select-advanced__item .select-advanced-content--button",
-            )?;
-            let mut found_ranks_option = false;
-            for option_button in &view_option_buttons {
-                if let Ok(text) = option_button.get_inner_text() {
-                    if text.trim() == "Ranks" {
-                        found_ranks_option = true;
-                        option_button.call_js_fn("function() { this.click(); }", vec![], false)?;
-                        std::thread::sleep(std::time::Duration::from_millis(500));
-                        break;
-                    }
-                }
-            }
-            if !found_ranks_option {
-                return Err(anyhow::anyhow!("Could not find 'Ranks' option in dropdown"));
-            }
-
-            self.tab.wait_for_element("table#ranking-table")?;
-            let ranking_table_last_row = self
-                .tab
-                .wait_for_element("tbody tr.player-row:last-child")?;
-            ranking_table_last_row.scroll_into_view()?;
-
-            let ranking_table = self.tab.wait_for_element("table#ranking-table")?;
-            ranking_tables.push((ranking_table.get_content()?, scoring_settings));
+            let table_html = self.scrape_ranking_table(url)?;
+            ranking_tables.push((table_html, scoring_settings));
         }
-        self.tab.close(true)?;
+        let _ = self.tab.close(true);
 
         let mut seen_players = std::collections::HashSet::new();
         let mut all_rankings = Vec::new();
@@ -90,6 +56,156 @@ impl<'a> RankingsScraper<'a> {
         }
 
         Ok((all_rankings, all_player_tasks))
+    }
+
+    fn scrape_ranking_table(&self, url: &str) -> Result<String> {
+        const MAX_ATTEMPTS: u32 = 3;
+        let mut last_err: Option<anyhow::Error> = None;
+
+        for attempt in 1..=MAX_ATTEMPTS {
+            match self.try_scrape_ranking_table(url) {
+                Ok(html) => return Ok(html),
+                Err(e) => {
+                    eprintln!(
+                        "Rankings scrape attempt {}/{} for {} failed: {}",
+                        attempt, MAX_ATTEMPTS, url, e
+                    );
+                    last_err = Some(e);
+                    std::thread::sleep(Duration::from_secs(2));
+                }
+            }
+        }
+
+        Err(last_err.unwrap_or_else(|| anyhow::anyhow!("Failed to scrape {}", url)))
+    }
+
+    fn try_scrape_ranking_table(&self, url: &str) -> Result<String> {
+        self.tab.navigate_to(url)?;
+        self.tab.wait_until_navigated()?;
+        self.dismiss_consent_banner();
+        self.select_ranks_view()?;
+        self.wait_for_full_ranks_table(Duration::from_secs(30))?;
+
+        let ranking_table = self.tab.wait_for_element("table#ranking-table")?;
+        let html = ranking_table.get_content()?;
+
+        let row_count = Html::parse_document(&html)
+            .select(&Selector::parse("tbody tr.player-row").unwrap())
+            .count();
+        if row_count == 0 {
+            return Err(anyhow::anyhow!("Ranking table captured with 0 player rows"));
+        }
+
+        Ok(html)
+    }
+
+    fn dismiss_consent_banner(&self) {
+        // Best-effort: FantasyPros shows a OneTrust cookie banner on fresh
+        // (cookie-less) sessions that can interfere with the view dropdown.
+        // Prefer rejecting non-essential cookies; fall back to accept/close.
+        let _ = self.tab.evaluate(
+            r#"(function () {
+                var b = document.querySelector(
+                    '#onetrust-reject-all-handler, #onetrust-accept-btn-handler, .onetrust-close-btn-handler'
+                );
+                if (b) { b.click(); return true; }
+                return false;
+            })()"#,
+            false,
+        );
+    }
+
+    fn select_ranks_view(&self) -> Result<()> {
+        // Open the "view" dropdown and pick "Ranks" in a single evaluated step.
+        // Matching on textContent (not innerText) avoids a headless race where
+        // freshly-opened options have no laid-out text yet.
+        let result = self.tab.evaluate(
+            r#"(function () {
+                var btn = document.querySelector('.select-advanced--view .select-advanced__button');
+                if (!btn) return 'no-button';
+                btn.click();
+                var opts = [].slice.call(document.querySelectorAll(
+                    '.select-advanced--view .select-advanced__item .select-advanced-content--button'
+                ));
+                var ranks = opts.filter(function (o) { return o.textContent.trim() === 'Ranks'; })[0];
+                if (!ranks) return 'no-ranks';
+                ranks.click();
+                return 'ok';
+            })()"#,
+            false,
+        )?;
+
+        match result.value.as_ref().and_then(|v| v.as_str()) {
+            Some("ok") => Ok(()),
+            other => Err(anyhow::anyhow!(
+                "Could not select 'Ranks' view (dropdown state: {:?})",
+                other
+            )),
+        }
+    }
+
+    fn wait_for_full_ranks_table(&self, timeout: Duration) -> Result<()> {
+        // The table is only safe to capture once (a) the "Ranks" view is active
+        // and its Best/Worst/Avg/StdDev columns have rendered as numbers (the
+        // default "Overview" view puts non-numeric analytics ratings there), and
+        // (b) every row has rendered. The rows populate progressively, so we
+        // scroll to the bottom to nudge lazy loading and wait until the row
+        // count stops changing before capturing.
+        let check = r#"(function () {
+            var label = document.querySelector('.select-advanced--view .select-advanced__button-text');
+            var ranksActive = !!label && label.innerText.trim() === 'Ranks';
+            window.scrollTo(0, document.body.scrollHeight);
+            var last = document.querySelector('#ranking-table tbody tr.player-row:last-child');
+            if (last) last.scrollIntoView();
+            var rows = document.querySelectorAll('#ranking-table tbody tr.player-row');
+            var worstNumeric = false;
+            if (rows.length) {
+                var cells = rows[0].querySelectorAll('td');
+                worstNumeric = cells.length >= 8 && /^\d+$/.test((cells[5].innerText || '').trim());
+            }
+            return JSON.stringify({ ranksActive: ranksActive, worstNumeric: worstNumeric, count: rows.length });
+        })()"#;
+
+        let start = Instant::now();
+        let mut last_count = 0usize;
+        let mut stable_ticks = 0u32;
+
+        loop {
+            let parsed = self
+                .tab
+                .evaluate(check, false)?
+                .value
+                .and_then(|v| v.as_str().map(str::to_owned))
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
+
+            if let Some(v) = parsed {
+                let ranks_active = v["ranksActive"].as_bool().unwrap_or(false);
+                let worst_numeric = v["worstNumeric"].as_bool().unwrap_or(false);
+                let count = v["count"].as_u64().unwrap_or(0) as usize;
+
+                if ranks_active && worst_numeric && count > 0 {
+                    if count == last_count {
+                        stable_ticks += 1;
+                        // ~1.2s with an unchanged row count means rendering settled.
+                        if stable_ticks >= 3 {
+                            return Ok(());
+                        }
+                    } else {
+                        stable_ticks = 0;
+                        last_count = count;
+                    }
+                }
+            }
+
+            if start.elapsed() >= timeout {
+                return Err(anyhow::anyhow!(
+                    "'Ranks' view did not finish rendering within {:?} (last row count: {})",
+                    timeout,
+                    last_count
+                ));
+            }
+            std::thread::sleep(Duration::from_millis(400));
+        }
     }
 
     async fn parse_ranking_table(
