@@ -5,6 +5,8 @@
     let refreshDate = '';
     export let onLogout: () => void;
     export let onUpdateScoring: () => void;
+    export let onResetBoard: () => void;
+    export let draftedCount = 0;
     export let loading = false;
 
     async function fetchLastUpdate() {
@@ -38,9 +40,14 @@
         align-items: center;
     }
 
-    .back-login-button {
+    .back-login-button,
+    .reset-board-button {
         font-size: 0.8em;
         padding: 0.5%;
+    }
+
+    .reset-board-button {
+        margin-left: 0.5%;
     }
 
     .update-scoring-button {
@@ -58,8 +65,17 @@
 </style>
 
 <div class="back-update-data">
-    <button class="back-login-button" on:click={onLogout}>Back</button>
-    <button 
+    <div>
+        <button class="back-login-button" on:click={onLogout}>Back</button>
+        <button
+            class="reset-board-button"
+            on:click={onResetBoard}
+            disabled={loading || draftedCount === 0}
+        >
+            Reset Board
+        </button>
+    </div>
+    <button
         class="update-scoring-button" 
         on:click={onUpdateScoring}
         disabled={loading}

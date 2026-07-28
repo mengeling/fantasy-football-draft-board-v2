@@ -25,6 +25,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .service(routes::drafted_players::draft_player)
+            .service(routes::drafted_players::reset_board)
             .service(routes::drafted_players::undraft_player)
             .service(routes::fantasy_data::get_last_update)
             .service(routes::fantasy_data::update_fantasy_data)

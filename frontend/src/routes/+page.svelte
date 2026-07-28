@@ -4,6 +4,7 @@
     import PlayerDetails from '$lib/components/PlayerDetails.svelte';
     import DraftBoard from '$lib/components/DraftBoard.svelte';
     import ScoringModal from '$lib/components/ScoringModal.svelte';
+    import ResetBoardModal from '$lib/components/ResetBoardModal.svelte';
     import { defaultPlayer, type Player, type User } from '$lib/types';
     import { fetchApi } from '$lib/api';
     import { ScoringSettings } from '$lib/enums';
@@ -13,8 +14,11 @@
     let players: Player[] = [];
     let selectedPlayer: Player = defaultPlayer;
     let showScoringModal = false;
+    let showResetModal = false;
     let currentUser: User | null = null;
     let loading = false;
+
+    $: draftedCount = players.filter(p => p.drafted).length;
 
     async function fetchPlayers() {
         try {
@@ -58,6 +62,22 @@
         }
     }
 
+    async function handleResetBoard() {
+        if (!currentUser) return;
+
+        loading = true;
+        try {
+            await fetchApi('/drafted_players', { method: 'DELETE', userId: currentUser.id });
+            players = players.map(p => (p.drafted ? { ...p, drafted: false } : p));
+            selectedPlayer = defaultPlayer;
+            showResetModal = false;
+        } catch (error) {
+            console.error('Failed to reset board: ', error);
+        } finally {
+            loading = false;
+        }
+    }
+
     function handlePlayerDraftChange(updatedPlayer: Player) {
         const playerIndex = players.findIndex(p => p.id === updatedPlayer.id);
         if (playerIndex === -1) {
@@ -81,6 +101,8 @@
     <Header
         onLogout={handleLogout}
         onUpdateScoring={() => showScoringModal = true}
+        onResetBoard={() => showResetModal = true}
+        {draftedCount}
         {loading}
     />
 
@@ -92,6 +114,14 @@
         <ScoringModal
             onSelect={handleScoringUpdate}
             onCancel={() => showScoringModal = false}
+        />
+    {/if}
+
+    {#if showResetModal}
+        <ResetBoardModal
+            {draftedCount}
+            onConfirm={handleResetBoard}
+            onCancel={() => showResetModal = false}
         />
     {/if}
 

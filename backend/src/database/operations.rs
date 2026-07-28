@@ -360,4 +360,19 @@ pub mod drafted_player_operations {
 
         Ok(result.rows_affected() > 0)
     }
+
+    pub async fn undraft_all(user_id: i32) -> Result<u64, Error> {
+        let pool = get_pool()?;
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM drafted_players
+            WHERE user_id = $1
+            "#,
+            user_id
+        )
+        .execute(pool)
+        .await?;
+
+        Ok(result.rows_affected())
+    }
 }
