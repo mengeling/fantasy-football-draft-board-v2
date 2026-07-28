@@ -1,6 +1,6 @@
-<svelte:head>
-    <link rel="stylesheet" href="/styles/styles.css">
-</svelte:head>
+<script>
+    import '../app.css';
+</script>
 
 <div class="app">
     <slot />

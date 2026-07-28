@@ -100,6 +100,7 @@
 <main>
     <Header
         username={currentUser?.username ?? ''}
+        scoringSettings={currentUser?.scoring_settings}
         onLogout={handleLogout}
         onUpdateScoring={() => showScoringModal = true}
         onResetBoard={() => showResetModal = true}

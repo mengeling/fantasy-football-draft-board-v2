@@ -2,13 +2,22 @@
     import { onMount } from 'svelte';
     import { fetchApi } from '$lib/api';
     import Logo from './Logo.svelte';
+    import type { ScoringSettings } from '$lib/enums';
 
     export let username = '';
+    export let scoringSettings: ScoringSettings | undefined = undefined;
     export let onLogout: () => void;
     export let onUpdateScoring: () => void;
     export let onResetBoard: () => void;
     export let draftedCount = 0;
     export let loading = false;
+
+    const SCORING_LABELS: Record<string, string> = {
+        Standard: 'Standard',
+        Half: 'Half PPR',
+        PPR: 'Full PPR'
+    };
+    $: scoringLabel = scoringSettings ? SCORING_LABELS[scoringSettings] ?? scoringSettings : '';
 
     let refreshDate = '';
     let menuOpen = false;
@@ -164,6 +173,12 @@
         border-color: transparent;
     }
 
+    .menu-value {
+        margin-left: auto;
+        color: var(--text-muted);
+        font-size: 0.78rem;
+    }
+
     .menu-item.danger {
         color: var(--danger);
     }
@@ -208,7 +223,8 @@
                         on:click={() => runAndClose(onUpdateScoring)}
                         disabled={loading}
                     >
-                        Scoring settings
+                        <span>Scoring settings</span>
+                        {#if scoringLabel}<span class="menu-value">{scoringLabel}</span>{/if}
                     </button>
                     <button
                         class="menu-item danger"

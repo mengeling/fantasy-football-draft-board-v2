@@ -52,7 +52,7 @@
 
 <style>
     .username-div {
-        margin-top: 4px;
+        margin-top: 18px;
     }
 
     .username-input {
