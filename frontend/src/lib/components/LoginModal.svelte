@@ -19,7 +19,7 @@
             try {
                 const user = await fetchApi(`/users/${encodeURIComponent(username.trim())}`);
                 onLogin(user);
-            } catch (e) {
+            } catch {
                 currentView = 'scoring';
             }
         } catch (error) {
@@ -52,33 +52,27 @@
 
 <style>
     .username-div {
-        width: 100%;
-        margin-bottom: 3%;
+        margin-top: 4px;
     }
 
     .username-input {
-        width: 50%;
-        font-size: 0.8em;
-        padding: 6px 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 0.9rem;
+        padding: 9px 12px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
 
         &:focus {
             outline: none;
-            border: 1px solid #ccc;
+            border-color: var(--accent);
         }
     }
 
-    .login-button {
-        font-size: 0.85em;
-        margin: 1%;
-        padding: 1%;
-    }
-
     .error {
-        color: red;
-        font-size: 0.9em;
-        margin-top: 0.5em;
+        color: var(--danger);
+        font-size: 0.85rem;
+        margin-top: 8px;
     }
 </style>
 
@@ -87,12 +81,13 @@
         <span class="login-helper"></span>
         <div class="login-content">
             <form on:submit|preventDefault={handleLogin}>
-                <p>Enter Your Full Name</p>
+                <p class="modal-title">Enter your full name</p>
+                <p class="modal-subtitle">This will open your board or create a new one.</p>
                 <div class="username-div">
-                    <input 
-                        type="search" 
+                    <input
+                        type="search"
                         bind:value={username}
-                        placeholder="First and Last Name" 
+                        placeholder="First and last name"
                         class="username-input"
                         disabled={loading}
                     >
@@ -100,13 +95,11 @@
                 {#if errorMessage}
                     <p class="error">{errorMessage}</p>
                 {/if}
-                <button 
-                    type="submit" 
-                    class="login-button" 
-                    disabled={loading}
-                >
-                    {loading ? 'Loading...' : 'View My Draft Board'}
-                </button>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary" disabled={loading}>
+                        {loading ? 'Loading…' : 'View my draft board'}
+                    </button>
+                </div>
             </form>
         </div>
     </div>

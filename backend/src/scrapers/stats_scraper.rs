@@ -18,7 +18,7 @@ impl<'a> StatsScraper<'a> {
     }
 
     fn build_url(&self, position: &str) -> String {
-        format!("https://www.fantasypros.com/nfl/stats/{}.php", position)
+        ["https://www.fantasypros.com/nfl/stats/", position, ".php"].concat()
     }
 
     pub async fn scrape(&self) -> Result<Vec<Stats>> {
@@ -69,6 +69,7 @@ impl<'a> StatsScraper<'a> {
                                 "fumbles" => current_stats.base.fumbles = value,
                                 "receptions" => current_stats.base.receptions = value,
                                 "rec_tgt" => current_stats.base.rec_tgt = value,
+                                "rec_tgt_pct" => current_stats.base.rec_tgt_pct = value,
                                 "rec_yds" => current_stats.base.rec_yds = value,
                                 "rec_yds_per_rec" => current_stats.base.rec_yds_per_rec = value,
                                 "rec_long" => current_stats.base.rec_long = value,

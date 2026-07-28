@@ -1,30 +1,28 @@
--- Drop existing tables and types
-DROP TABLE IF EXISTS rankings;
-DROP TABLE IF EXISTS stats;
-DROP TABLE IF EXISTS drafted_players;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS players;
-DROP TABLE IF EXISTS fantasy_data_updates;
+-- Idempotent schema. Safe to run repeatedly — including automatically on every
+-- application startup — because it only creates missing types, tables, and
+-- columns and never drops existing data. Run it (e.g. via setup_db.sh) before
+-- `cargo build`, since sqlx validates queries against the live schema.
 
-DROP TYPE IF EXISTS position_type;
-DROP TYPE IF EXISTS team_type;
-DROP TYPE IF EXISTS scoring_settings_type;
+-- Enum types. CREATE TYPE has no IF NOT EXISTS, so swallow the duplicate error.
+DO $$ BEGIN
+    CREATE TYPE position_type AS ENUM ('QB', 'RB', 'WR', 'TE', 'K', 'DST');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Create enum types
-CREATE TYPE position_type AS ENUM (
-    'QB', 'RB', 'WR', 'TE', 'K', 'DST'
-);
+DO $$ BEGIN
+    CREATE TYPE team_type AS ENUM (
+        'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE',
+        'DAL', 'DEN', 'DET', 'GB', 'HOU', 'IND', 'JAC', 'KC',
+        'LV', 'LAC', 'LAR', 'MIA', 'MIN', 'NE', 'NO', 'NYG',
+        'NYJ', 'PHI', 'PIT', 'SF', 'SEA', 'TB', 'TEN', 'WAS', 'FA'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE team_type AS ENUM (
-    'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE',
-    'DAL', 'DEN', 'DET', 'GB', 'HOU', 'IND', 'JAC', 'KC',
-    'LV', 'LAC', 'LAR', 'MIA', 'MIN', 'NE', 'NO', 'NYG',
-    'NYJ', 'PHI', 'PIT', 'SF', 'SEA', 'TB', 'TEN', 'WAS', 'FA'
-);
-
-CREATE TYPE scoring_settings_type AS ENUM (
-    'Standard', 'Half', 'PPR'
-);
+DO $$ BEGIN
+    CREATE TYPE scoring_settings_type AS ENUM ('Standard', 'Half', 'PPR');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Create tables
 CREATE TABLE IF NOT EXISTS players (
@@ -70,6 +68,7 @@ CREATE TABLE IF NOT EXISTS stats (
     fumbles DOUBLE PRECISION,
     receptions DOUBLE PRECISION,
     rec_tgt DOUBLE PRECISION,
+    rec_tgt_pct DOUBLE PRECISION,
     rec_yds DOUBLE PRECISION,
     rec_yds_per_rec DOUBLE PRECISION,
     rec_long DOUBLE PRECISION,
@@ -121,3 +120,9 @@ CREATE TABLE IF NOT EXISTS fantasy_data_updates (
     id SERIAL PRIMARY KEY,
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+-- Additive column migrations for databases created before a column existed.
+-- CREATE TABLE IF NOT EXISTS above won't add columns to an existing table, so
+-- every column added after initial release gets an ADD COLUMN IF NOT EXISTS
+-- line here to backfill older databases.
+ALTER TABLE stats ADD COLUMN IF NOT EXISTS rec_tgt_pct DOUBLE PRECISION;

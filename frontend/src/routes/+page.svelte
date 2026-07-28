@@ -113,7 +113,7 @@
 
     {#if showScoringModal}
         <ScoringModal
-            prompt="Choose a scoring format for your board."
+            prompt="This sets how points are scored for your board."
             onSelect={handleScoringUpdate}
             onCancel={() => showScoringModal = false}
         />

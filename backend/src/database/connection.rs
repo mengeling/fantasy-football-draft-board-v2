@@ -7,7 +7,17 @@ static POOL: OnceLock<PgPool> = OnceLock::new();
 pub async fn init_pool() -> Result<(), Error> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = PgPool::connect(&database_url).await?;
+    ensure_schema(&pool).await?;
     POOL.set(pool).expect("Failed to set database pool");
+    Ok(())
+}
+
+// Applies the idempotent schema on startup so a deploy that adds a table or
+// column self-migrates — no manual step to remember per environment.
+async fn ensure_schema(pool: &PgPool) -> Result<(), Error> {
+    sqlx::raw_sql(include_str!("setup_db.sql"))
+        .execute(pool)
+        .await?;
     Ok(())
 }
 

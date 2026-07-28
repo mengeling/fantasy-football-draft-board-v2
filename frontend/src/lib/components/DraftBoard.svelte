@@ -19,10 +19,14 @@
     // Position-specific stat columns are only shown once a single position is
     // selected — then every visible row shares them. PTS is already a universal
     // column, so drop the duplicate.
+    // PTS, PPG and G are always-shown universal columns, so drop them from the
+    // position-specific group to avoid duplicate columns.
     $: statColumns =
         positionFilter === Position.ALL
             ? []
-            : POSITION_STATS[positionFilter].filter((stat) => stat.key !== 'points');
+            : POSITION_STATS[positionFilter].filter(
+                  (stat) => stat.key !== 'points' && stat.key !== 'games'
+              );
 
     async function toggleDraft(player: Player) {
         if (!player.id) return;

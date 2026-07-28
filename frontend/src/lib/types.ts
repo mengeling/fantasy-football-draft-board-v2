@@ -37,6 +37,7 @@ export type Stats = {
 	fumbles: number | null;
 	receptions: number | null;
 	rec_tgt: number | null;
+	rec_tgt_pct: number | null;
 	rec_yds: number | null;
 	rec_yds_per_rec: number | null;
 	rec_long: number | null;
@@ -83,6 +84,7 @@ export const defaultStats: Stats = {
 	fumbles: null,
 	receptions: null,
 	rec_tgt: null,
+	rec_tgt_pct: null,
 	rec_yds: null,
 	rec_yds_per_rec: null,
 	rec_long: null,

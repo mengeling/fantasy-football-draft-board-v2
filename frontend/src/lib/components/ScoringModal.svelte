@@ -1,10 +1,9 @@
 <script lang="ts">
     import { ScoringSettings } from '$lib/enums';
-    
+
     export let onSelect: (scoring: ScoringSettings) => void;
     export let onCancel: () => void;
-    export let prompt =
-        'No draft boards exist under that name. Choose a scoring option to create a board.';
+    export let prompt = 'No board exists under that name yet — pick a format to create one.';
 
     function handleSelect(scoring: ScoringSettings) {
         onSelect(scoring);
@@ -16,29 +15,23 @@
 </script>
 
 <style>
-    .login-scoring-button,
-    .login-cancel-button {
-        font-size: 0.85em;
-        margin: 1%;
-        padding: 1%;
+    .cancel-row {
+        margin-top: 8px;
     }
 </style>
 
 <div class="login-background">
     <span class="login-helper"></span>
     <div class="login-content">
-        <p>{prompt}</p>
-        <button class="login-scoring-button" on:click={() => handleSelect(ScoringSettings.Standard)}>
-            Standard
-        </button>
-        <button class="login-scoring-button" on:click={() => handleSelect(ScoringSettings.Half)}>
-            Half PPR
-        </button>
-        <button class="login-scoring-button" on:click={() => handleSelect(ScoringSettings.PPR)}>
-            Full PPR
-        </button>
-        <button class="login-cancel-button" on:click={handleCancel}>
-            Cancel
-        </button>
+        <p class="modal-title">Choose a scoring format</p>
+        <p class="modal-subtitle">{prompt}</p>
+        <div class="modal-actions">
+            <button on:click={() => handleSelect(ScoringSettings.Standard)}>Standard</button>
+            <button on:click={() => handleSelect(ScoringSettings.Half)}>Half PPR</button>
+            <button on:click={() => handleSelect(ScoringSettings.PPR)}>Full PPR</button>
+        </div>
+        <div class="modal-actions cancel-row">
+            <button class="btn-ghost" on:click={handleCancel}>Cancel</button>
+        </div>
     </div>
-</div> 
+</div>

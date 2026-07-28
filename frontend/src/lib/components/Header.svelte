@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { fetchApi } from '$lib/api';
+    import Logo from './Logo.svelte';
 
     export let username = '';
     export let onLogout: () => void;
@@ -77,11 +78,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-
-    .brand-mark {
-        display: block;
-        flex-shrink: 0;
     }
 
     .brand-word {
@@ -185,16 +181,8 @@
 
 <div class="header-bar">
     <div class="brand">
-        <svg class="brand-mark" viewBox="0 0 32 32" width="30" height="30" role="img" aria-label="Draft Board logo">
-            <rect width="32" height="32" rx="9" fill="var(--accent)" />
-            <rect x="7" y="8" width="5" height="5" rx="1.5" fill="#ffffff" />
-            <rect x="14" y="9.5" width="11" height="2.4" rx="1.2" fill="#ffffff" opacity="0.95" />
-            <rect x="7" y="15" width="5" height="5" rx="1.5" fill="#ffffff" opacity="0.8" />
-            <rect x="14" y="16.5" width="11" height="2.4" rx="1.2" fill="#ffffff" opacity="0.75" />
-            <rect x="7" y="22" width="5" height="5" rx="1.5" fill="#ffffff" opacity="0.55" />
-            <rect x="14" y="23.5" width="11" height="2.4" rx="1.2" fill="#ffffff" opacity="0.5" />
-        </svg>
-        <span class="brand-word">Draft Board</span>
+        <Logo />
+        <span class="brand-word">Fantasy Football Draft Board</span>
     </div>
 
     <div class="header-right">

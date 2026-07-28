@@ -114,7 +114,7 @@ pub mod fantasy_data_operations {
             "INSERT INTO stats (
                 player_id, pass_cmp, pass_att, pass_cmp_pct, pass_yds, pass_yds_per_att,
                 pass_td, pass_int, pass_sacks, rush_att, rush_yds, rush_yds_per_att,
-                rush_long, rush_20, rush_td, fumbles, receptions, rec_tgt, rec_yds,
+                rush_long, rush_20, rush_td, fumbles, receptions, rec_tgt, rec_tgt_pct, rec_yds,
                 rec_yds_per_rec, rec_long, rec_20, rec_td, field_goals, fg_att,
                 fg_pct, fg_long, fg_1_19, fg_20_29, fg_30_39, fg_40_49, fg_50,
                 extra_points, xp_att, sacks, int, fumbles_recovered, fumbles_forced,
@@ -143,6 +143,7 @@ pub mod fantasy_data_operations {
                 .push_bind(stat.base.fumbles)
                 .push_bind(stat.base.receptions)
                 .push_bind(stat.base.rec_tgt)
+                .push_bind(stat.base.rec_tgt_pct)
                 .push_bind(stat.base.rec_yds)
                 .push_bind(stat.base.rec_yds_per_rec)
                 .push_bind(stat.base.rec_long)
@@ -286,6 +287,7 @@ pub mod player_operations {
                     'fumbles', s.fumbles,
                     'receptions', s.receptions,
                     'rec_tgt', s.rec_tgt,
+                    'rec_tgt_pct', s.rec_tgt_pct,
                     'rec_yds', s.rec_yds,
                     'rec_yds_per_rec', s.rec_yds_per_rec,
                     'rec_long', s.rec_long,
