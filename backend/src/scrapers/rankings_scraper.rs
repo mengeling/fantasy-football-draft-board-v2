@@ -41,7 +41,6 @@ impl<'a> RankingsScraper<'a> {
             let table_html = self.scrape_ranking_table(url)?;
             ranking_tables.push((table_html, scoring_settings));
         }
-        let _ = self.tab.close(true);
 
         let mut seen_players = std::collections::HashSet::new();
         let mut all_rankings = Vec::new();
@@ -83,6 +82,8 @@ impl<'a> RankingsScraper<'a> {
         self.tab.navigate_to(url)?;
         self.tab.wait_until_navigated()?;
         self.dismiss_consent_banner();
+        self.tab
+            .wait_for_element(".select-advanced--view .select-advanced__button")?;
         self.select_ranks_view()?;
         self.wait_for_full_ranks_table(Duration::from_secs(30))?;
 

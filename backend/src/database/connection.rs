@@ -1,8 +1,8 @@
-use once_cell::sync::OnceCell;
 use sqlx::{Error, PgPool, Pool, Postgres};
 use std::env;
+use std::sync::OnceLock;
 
-static POOL: OnceCell<PgPool> = OnceCell::new();
+static POOL: OnceLock<PgPool> = OnceLock::new();
 
 pub async fn init_pool() -> Result<(), Error> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

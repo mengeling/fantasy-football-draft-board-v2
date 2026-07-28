@@ -22,12 +22,12 @@ pub async fn update() -> Result<()> {
         player_tasks.len()
     );
 
-    let players = PlayersScraper::process_tasks(player_tasks).await?;
-    eprintln!("Scraped {} player profiles", players.len());
-
-    let stats_scraper = StatsScraper::new();
+    let stats_scraper = StatsScraper::new(&tab);
     let stats = stats_scraper.scrape().await?;
     eprintln!("Scraped {} player stat lines", stats.len());
+
+    let players = PlayersScraper::process_tasks(player_tasks).await?;
+    eprintln!("Scraped {} player profiles", players.len());
 
     if players.is_empty() || rankings.is_empty() || stats.is_empty() {
         return Err(anyhow::anyhow!(

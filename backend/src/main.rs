@@ -10,7 +10,7 @@ use database::connection::init_pool;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     init_pool()
         .await

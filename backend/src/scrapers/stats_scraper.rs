@@ -1,44 +1,20 @@
 use anyhow::Result;
+use headless_chrome::Tab;
 use regex::Regex;
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE};
-use reqwest::Client;
 use round::round;
 use scraper::{Html, Selector};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::constants::STATS_BY_POSITION;
 use crate::models::stats::Stats;
 
-const BROWSER_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
-AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
-
-pub struct StatsScraper {
-    client: Client,
+pub struct StatsScraper<'a> {
+    tab: &'a Tab,
 }
 
-impl StatsScraper {
-    pub fn new() -> Self {
-        // FantasyPros' CloudFront edge returns 403 to requests that don't look
-        // like a browser (notably the default `Accept: */*`), so send a
-        // browser-like Accept + User-Agent. The stats tables are server-rendered,
-        // so a plain HTTP GET returns the full table with no JS required.
-        let mut default_headers = HeaderMap::new();
-        default_headers.insert(
-            ACCEPT,
-            HeaderValue::from_static(
-                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            ),
-        );
-        default_headers.insert(ACCEPT_LANGUAGE, HeaderValue::from_static("en-US,en;q=0.9"));
-
-        let client = Client::builder()
-            .user_agent(BROWSER_USER_AGENT)
-            .default_headers(default_headers)
-            .cookie_store(true)
-            .build()
-            .expect("Failed to build stats scraper HTTP client");
-
-        StatsScraper { client }
+impl<'a> StatsScraper<'a> {
+    pub fn new(tab: &'a Tab) -> Self {
+        StatsScraper { tab }
     }
 
     fn build_url(&self, position: &str) -> String {
@@ -48,15 +24,10 @@ impl StatsScraper {
     pub async fn scrape(&self) -> Result<Vec<Stats>> {
         let mut players: Vec<Stats> = Vec::new();
 
-        for (index, (position, headers)) in STATS_BY_POSITION.iter().enumerate() {
-            // Space requests out slightly so the burst doesn't look like a bot.
-            if index > 0 {
-                tokio::time::sleep(Duration::from_millis(500)).await;
-            }
-
+        for (position, headers) in STATS_BY_POSITION.iter() {
             let url = self.build_url(position);
-            let body = self.fetch_stats_page(&url).await?;
-            let html = Html::parse_document(&body);
+            let table_html = self.load_stats_table(&url)?;
+            let html = Html::parse_document(&table_html);
 
             let stats_table_selector = Selector::parse("table#data tbody").unwrap();
             let stats_row_selector = Selector::parse("tr").unwrap();
@@ -155,41 +126,85 @@ impl StatsScraper {
         Ok(players)
     }
 
-    async fn fetch_stats_page(&self, url: &str) -> Result<String> {
-        const MAX_ATTEMPTS: u32 = 4;
+    fn load_stats_table(&self, url: &str) -> Result<String> {
+        const MAX_ATTEMPTS: u32 = 3;
         let mut last_err: Option<anyhow::Error> = None;
 
         for attempt in 1..=MAX_ATTEMPTS {
-            match self.client.get(url).send().await {
-                Ok(response) => {
-                    let status = response.status();
-                    let body = response.text().await?;
-                    if status.is_success() {
-                        return Ok(body);
-                    }
-                    eprintln!(
-                        "Stats request attempt {}/{} for {} returned HTTP {}",
-                        attempt, MAX_ATTEMPTS, url, status
-                    );
-                    last_err = Some(anyhow::anyhow!(
-                        "Stats request for {} returned HTTP {}",
-                        url,
-                        status
-                    ));
-                }
+            match self.try_load_stats_table(url) {
+                Ok(html) => return Ok(html),
                 Err(e) => {
                     eprintln!(
-                        "Stats request attempt {}/{} for {} failed: {}",
+                        "Stats scrape attempt {}/{} for {} failed: {}",
                         attempt, MAX_ATTEMPTS, url, e
                     );
-                    last_err = Some(e.into());
+                    last_err = Some(e);
+                    std::thread::sleep(Duration::from_secs(2));
                 }
             }
-
-            tokio::time::sleep(Duration::from_millis(1000 * attempt as u64)).await;
         }
 
-        Err(last_err.unwrap_or_else(|| anyhow::anyhow!("Failed to fetch {}", url)))
+        Err(last_err.unwrap_or_else(|| anyhow::anyhow!("Failed to scrape {}", url)))
+    }
+
+    fn try_load_stats_table(&self, url: &str) -> Result<String> {
+        self.tab.navigate_to(url)?;
+        self.tab.wait_until_navigated()?;
+        self.dismiss_consent_banner();
+        self.wait_until_stats_rendered(Duration::from_secs(20))?;
+
+        let table = self.tab.wait_for_element("table#data")?;
+        let html = table.get_content()?;
+
+        let row_count = Html::parse_document(&html)
+            .select(&Selector::parse("table#data tbody tr").unwrap())
+            .count();
+        if row_count == 0 {
+            return Err(anyhow::anyhow!("Stats table captured with 0 rows"));
+        }
+
+        Ok(html)
+    }
+
+    fn dismiss_consent_banner(&self) {
+        // Best-effort: dismiss the OneTrust cookie banner shown on fresh
+        // sessions. Prefer rejecting non-essential cookies.
+        let _ = self.tab.evaluate(
+            r#"(function () {
+                var b = document.querySelector(
+                    '#onetrust-reject-all-handler, #onetrust-accept-btn-handler, .onetrust-close-btn-handler'
+                );
+                if (b) { b.click(); return true; }
+                return false;
+            })()"#,
+            false,
+        );
+    }
+
+    fn wait_until_stats_rendered(&self, timeout: Duration) -> Result<()> {
+        let check = r#"(function () {
+            return document.querySelectorAll('table#data tbody tr').length > 0;
+        })()"#;
+
+        let start = Instant::now();
+        loop {
+            let ready = self
+                .tab
+                .evaluate(check, false)?
+                .value
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            if ready {
+                return Ok(());
+            }
+            if start.elapsed() >= timeout {
+                return Err(anyhow::anyhow!(
+                    "Stats table did not render within {:?}",
+                    timeout
+                ));
+            }
+            std::thread::sleep(Duration::from_millis(400));
+        }
     }
 }
 
