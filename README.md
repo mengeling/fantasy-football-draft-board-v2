@@ -4,10 +4,6 @@
 
 This web application provides the same interactive fantasy football drafting experience as the official draft boards on ESPN, Yahoo, NFL.com, etc., but it uses consensus player rankings consolidated from 100+ experts.
 
-## App Demo
-
-![Demo](frontend/static/img/fantasy_football_recording.gif)
-
 ## App Screenshot
 
 ![App Screenshot](frontend/static/img/app_pic.png)
@@ -264,3 +260,42 @@ sudo certbot --nginx -d your-domain.com
 
 - Backend logs: `sudo journalctl -u ffball`
 - Nginx logs: `sudo tail /var/log/nginx/error.log`
+
+## Updating a Running Deployment
+
+To ship changes to an already-deployed server, SSH in and run:
+
+```bash
+cd ~/fantasy-football-draft-board-v2
+git pull
+
+# Backend: apply any schema changes, rebuild, restart
+cd backend
+./src/scripts/setup_db.sh          # idempotent — safe to run on every deploy
+cargo build --release
+sudo systemctl restart ffball
+
+# Frontend: only when the UI changed
+cd ../frontend
+npm install                        # only if dependencies changed
+npm run build
+sudo chown -R www-data:www-data ~/fantasy-football-draft-board-v2/frontend/build
+```
+
+Run `setup_db.sh` **before** `cargo build --release`. The backend uses `sqlx`, which
+validates every query against the live database at compile time, so a newly added
+column has to exist before the build or it will fail. Nginx serves the static
+`build/` directory directly, so it does not need to be restarted for frontend changes.
+
+## Database Schema
+
+`backend/src/database/setup_db.sql` is idempotent: it only creates missing types,
+tables, and columns and never drops data. It runs automatically on backend startup
+(and can be re-run any time via `setup_db.sh`), so schema changes apply themselves
+across environments — there is no separate migration tool.
+
+To add a column, edit `setup_db.sql` in two places:
+
+1. Add it to the relevant `CREATE TABLE` block (for fresh databases).
+2. Add an `ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...` line to the migrations
+   section at the bottom of the file (to backfill existing databases).
