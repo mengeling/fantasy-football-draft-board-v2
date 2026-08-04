@@ -1,6 +1,6 @@
 # Fantasy Football Draft Board
 
-[Click here to use the draft board!](http://100.29.78.245/) Create a username and choose your scoring settings to start using the board.
+Go to [https://ffdraftboard.com/](https://ffdraftboard.com/) to test the draft board. Create a username and choose your scoring settings to start using the board.
 
 This web application provides the same interactive fantasy football drafting experience as the official draft boards on ESPN, Yahoo, NFL.com, etc., but it uses consensus player rankings consolidated from 100+ experts.
 
