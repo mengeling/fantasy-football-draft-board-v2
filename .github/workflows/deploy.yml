@@ -1,0 +1,212 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - production
+          - staging
+      git_branch:
+        description: "Git branch to deploy"
+        required: true
+        default: "main"
+        type: string
+      force_recreate:
+        description: "Force recreate infrastructure (re-runs user_data script)"
+        required: false
+        default: false
+        type: boolean
+      skip_infrastructure:
+        description: "Skip infrastructure deployment (deploy app only)"
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skip_infrastructure != 'true' }}
+    environment: ${{ github.event.inputs.environment }}
+    outputs:
+      public_ip: ${{ steps.terraform.outputs.public_ip }}
+      ssh_command: ${{ steps.terraform.outputs.ssh_command }}
+      application_url: ${{ steps.terraform.outputs.application_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Terraform Init
+        run: |
+          cd deploy/terraform
+          terraform init
+
+      - name: Setup SSH key file
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/ffball_deploy.pub
+          chmod 600 ~/.ssh/ffball_deploy.pub
+
+      - name: Terraform Plan
+        run: |
+          cd deploy/terraform
+          terraform plan -var="environment=${{ github.event.inputs.environment }}" \
+                        -var="git_branch=${{ github.event.inputs.git_branch }}" \
+                        -var="domain_name=${{ vars.DOMAIN_NAME }}" \
+                        -var="route53_zone_id=${{ vars.ROUTE53_ZONE_ID }}" \
+                        -out=tfplan
+
+      - name: Terraform Apply
+        id: terraform
+        run: |
+          cd deploy/terraform
+          if [ "${{ github.event.inputs.force_recreate }}" == "true" ]; then
+            terraform apply -auto-approve -replace=aws_instance.web tfplan
+          else
+            terraform apply -auto-approve tfplan
+          fi
+
+          # Export outputs
+          echo "public_ip=$(terraform output -raw public_ip)" >> $GITHUB_OUTPUT
+          echo "ssh_command=$(terraform output -raw ssh_command)" >> $GITHUB_OUTPUT
+          echo "application_url=$(terraform output -raw application_url)" >> $GITHUB_OUTPUT
+
+  deploy-application:
+    runs-on: ubuntu-latest
+    needs: [deploy-infrastructure]
+    if: always() && (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Get instance details (if infrastructure skipped)
+        if: needs.deploy-infrastructure.result == 'skipped'
+        id: instance-details
+        run: |
+          cd deploy/terraform
+          terraform init
+          echo "public_ip=$(terraform output -raw public_ip)" >> $GITHUB_OUTPUT
+          echo "application_url=$(terraform output -raw application_url)" >> $GITHUB_OUTPUT
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Wait for instance to be ready
+        run: |
+          # Determine the public IP based on whether infrastructure was deployed or skipped
+          if [ "${{ needs.deploy-infrastructure.result }}" == "skipped" ]; then
+            PUBLIC_IP="${{ steps.instance-details.outputs.public_ip }}"
+          else
+            PUBLIC_IP="${{ needs.deploy-infrastructure.outputs.public_ip }}"
+          fi
+
+          # Add the host to known_hosts
+          ssh-keyscan -H $PUBLIC_IP >> ~/.ssh/known_hosts
+
+          # Wait for SSH to be available
+          for i in {1..3}; do
+            if ssh -o ConnectTimeout=3 ubuntu@$PUBLIC_IP "echo 'SSH is ready'"; then
+              echo "SSH connection established"
+              break
+            fi
+            echo "Waiting for SSH... ($i/3)"
+            sleep 3
+          done
+
+      - name: Deploy application
+        run: |
+          # Determine the public IP based on whether infrastructure was deployed or skipped
+          if [ "${{ needs.deploy-infrastructure.result }}" == "skipped" ]; then
+            PUBLIC_IP="${{ steps.instance-details.outputs.public_ip }}"
+          else
+            PUBLIC_IP="${{ needs.deploy-infrastructure.outputs.public_ip }}"
+          fi
+
+          ssh ubuntu@$PUBLIC_IP << 'EOF'
+            set -e
+            
+            echo "Starting deployment..."
+            
+            # Navigate to app directory and run deploy script
+            cd /home/ubuntu/app
+            ./deploy/scripts/deploy.sh -e ${{ github.event.inputs.environment }} -b ${{ github.event.inputs.git_branch }}
+            
+            echo "Deployment completed successfully!"
+          EOF
+
+      - name: Run health checks
+        run: |
+          # Wait a bit more for the application to fully start
+          sleep 30
+
+          # Determine the application URL based on whether infrastructure was deployed or skipped
+          if [ "${{ needs.deploy-infrastructure.result }}" == "skipped" ]; then
+            APP_URL="${{ steps.instance-details.outputs.application_url }}"
+          else
+            APP_URL="${{ needs.deploy-infrastructure.outputs.application_url }}"
+          fi
+
+          # Check if application is accessible
+          curl -f $APP_URL/health
+
+          echo "Application is successfully deployed and healthy!"
+
+      # SSH agent automatically cleans up the private key
+
+  notify-deployment:
+    runs-on: ubuntu-latest
+    needs: [deploy-infrastructure, deploy-application]
+    if: always()
+
+    steps:
+      - name: Notify success
+        if: needs.deploy-application.result == 'success'
+        run: |
+          echo "🚀 Deployment successful!"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Branch: ${{ github.event.inputs.git_branch }}"
+          echo "Application URL: ${{ needs.deploy-infrastructure.outputs.application_url }}"
+          echo "SSH Command: ${{ needs.deploy-infrastructure.outputs.ssh_command }}"
+
+      - name: Notify failure
+        if: needs.deploy-application.result == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Branch: ${{ github.event.inputs.git_branch }}"
+          echo "Check the logs for more details."
+          exit 1
