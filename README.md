@@ -37,7 +37,12 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
 # Install other dependencies
-sudo apt install -y nginx postgresql build-essential pkg-config libssl-dev chromium-browser
+sudo apt install -y nginx postgresql build-essential pkg-config libssl-dev
+
+# Install Google Chrome for the scraper. Do NOT use apt's `chromium-browser` —
+# on Ubuntu it's a snap the headless scraper can't launch a debug port on.
+wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install -y ./google-chrome-stable_current_amd64.deb
 ```
 
 3. Create an SSH key:
@@ -136,6 +141,7 @@ User=ubuntu
 Group=ubuntu
 Environment="RUST_LOG=info"
 Environment="RUST_BACKTRACE=1"
+Environment="CHROME=/usr/bin/google-chrome-stable"
 WorkingDirectory=/home/ubuntu/fantasy-football-draft-board-v2/backend
 ExecStart=/home/ubuntu/fantasy-football-draft-board-v2/backend/target/release/backend
 Restart=always
