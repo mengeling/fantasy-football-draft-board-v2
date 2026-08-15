@@ -30,6 +30,14 @@ body {
 	background-color: var(--bg);
 	margin-left: 2%;
 	margin-right: 2%;
+	-webkit-text-size-adjust: 100%;
+}
+
+@media (max-width: 700px) {
+	body {
+		margin-left: 3%;
+		margin-right: 3%;
+	}
 }
 
 button {
@@ -145,13 +153,24 @@ td {
 	box-shadow: 0 24px 60px rgba(20, 30, 45, 0.28);
 	display: inline-block;
 	height: auto;
-	max-width: 420px;
 	min-height: 100px;
 	vertical-align: middle;
-	width: 62%;
+	width: min(92%, 420px);
+	box-sizing: border-box;
 	position: relative;
 	border-radius: 14px;
 	padding: 26px 32px;
+}
+
+@media (max-width: 700px) {
+	.login-content {
+		padding: 22px 18px;
+	}
+
+	.modal-actions button {
+		flex: 1 1 auto;
+		min-height: 40px;
+	}
 }
 
 /* Shared modal typography + actions */

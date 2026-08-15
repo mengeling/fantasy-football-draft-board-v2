@@ -74,6 +74,12 @@
         font-size: 0.85rem;
         margin-top: 8px;
     }
+
+    @media (max-width: 700px) {
+        .username-input {
+            font-size: 16px;
+        }
+    }
 </style>
 
 {#if currentView === 'login'}

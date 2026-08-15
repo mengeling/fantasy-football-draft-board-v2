@@ -72,6 +72,15 @@
         }
     }
 
+    $: filtersActive =
+        positionFilter !== Position.ALL || teamFilter !== Team.ALL || Boolean(playerNameSearch);
+
+    function clearFilters() {
+        positionFilter = Position.ALL;
+        teamFilter = Team.ALL;
+        playerNameSearch = null;
+    }
+
     $: filteredPlayers = players.filter((player) => {
         const matchesPosition = positionFilter === Position.ALL || player.position === positionFilter;
         const matchesTeam = teamFilter === Team.ALL || player.team === teamFilter;
@@ -158,6 +167,14 @@
         border-color: var(--accent);
     }
 
+    .clear-filters {
+        font-size: 0.78rem;
+        padding: 6px 10px;
+        color: var(--text-muted);
+        background: transparent;
+        border-color: var(--border-strong);
+    }
+
     .draft-button {
         font-size: 0.82rem;
         padding: 7px 14px;
@@ -193,6 +210,8 @@
         width: 100%;
         table-layout: fixed;
         font-size: 0.74rem;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     /* RANK narrow, PLAYER bounded; remaining width is split evenly across the
@@ -270,6 +289,153 @@
         color: var(--text-muted);
         font-size: 0.85rem;
     }
+
+    .count {
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .hint-touch,
+    .rank-inline {
+        display: none;
+    }
+
+    @media (max-width: 900px) {
+        .draft-board table {
+            table-layout: auto;
+        }
+
+        .draft-board th:nth-child(1),
+        .draft-board td:nth-child(1) {
+            display: none;
+        }
+
+        .rank-inline {
+            display: inline-block;
+            min-width: 1.5rem;
+            margin-right: 4px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .draft-board th:nth-child(2),
+        .draft-board td:nth-child(2) {
+            position: sticky;
+            left: 0;
+            width: auto;
+            max-width: 11rem;
+            box-shadow: 1px 0 0 var(--border-strong);
+        }
+
+        .draft-board tbody td:nth-child(2) {
+            z-index: 1;
+        }
+
+        .draft-board thead th {
+            z-index: 2;
+        }
+
+        .draft-board thead th:nth-child(2) {
+            z-index: 3;
+        }
+
+        .draft-board th:nth-child(n + 5):nth-child(-n + 8),
+        .draft-board td:nth-child(n + 5):nth-child(-n + 8) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .board-container {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .draft-board {
+            max-height: none;
+            height: 100%;
+            min-height: 180px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .board-toolbar {
+            gap: 8px;
+            padding: 8px 10px;
+        }
+
+        .segmented {
+            flex: 1 1 100%;
+        }
+
+        .segmented button {
+            flex: 1;
+            padding: 8px 12px;
+        }
+
+        .filter {
+            flex: 1 1 calc(50% - 4px);
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .filter select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .player-search {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        select,
+        .player-search {
+            font-size: 16px;
+            padding: 7px 8px;
+        }
+
+        .clear-filters {
+            flex: 0 0 auto;
+            font-size: 0.8rem;
+            padding: 8px 10px;
+        }
+
+        .draft-button {
+            flex: 1 1 100%;
+            font-size: 0.9rem;
+            padding: 10px 14px;
+        }
+
+        .draft-board table {
+            font-size: 0.78rem;
+        }
+
+        .draft-board tbody td,
+        .draft-board thead th {
+            padding: 9px 8px;
+        }
+
+        .hint {
+            font-size: 0.7rem;
+            margin: 5px 2px;
+        }
+
+        .hint-pointer {
+            display: none;
+        }
+
+        .hint-touch {
+            display: inline;
+        }
+    }
 </style>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -318,6 +484,12 @@
             bind:value={playerNameSearch}
         />
 
+        {#if filtersActive}
+            <button type="button" class="clear-filters" on:click={clearFilters}>
+                Clear filters
+            </button>
+        {/if}
+
         <button
             type="button"
             class="draft-button"
@@ -364,7 +536,8 @@
                             >
                                 <td>{fmtNum(player.rankings.overall)}</td>
                                 <td class="player-cell">
-                                    <span class="pos-badge {posClass(player.position)}">{player.position}</span
+                                    <span class="rank-inline">{fmtNum(player.rankings.overall)}</span
+                                    ><span class="pos-badge {posClass(player.position)}">{player.position}</span
                                     >{player.name} <span class="team">{player.team}</span>
                                 </td>
                                 <td>{fmtNum(player.bye_week)}</td>
@@ -392,8 +565,14 @@
     </div>
 
     <p class="hint">
-        Click or use ↑ ↓ to preview · double-click or Enter to {showAvailablePlayers
-            ? 'draft'
-            : 'undraft'}
+        <span class="count">{filteredPlayers.length} shown</span> ·
+        <span class="hint-pointer"
+            >Click or use ↑ ↓ to preview · double-click or Enter to {showAvailablePlayers
+                ? 'draft'
+                : 'undraft'}</span
+        >
+        <span class="hint-touch"
+            >Tap a player to preview · {showAvailablePlayers ? 'Draft' : 'Undraft'} to move them</span
+        >
     </p>
 </div>

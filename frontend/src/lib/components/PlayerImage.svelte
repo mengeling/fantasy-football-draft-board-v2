@@ -16,6 +16,14 @@
         flex-shrink: 0;
         display: block;
     }
+
+    @media (max-width: 700px) {
+        .player-pic {
+            width: 74px;
+            height: 74px;
+            border-radius: 10px;
+        }
+    }
 </style>
 
 <img

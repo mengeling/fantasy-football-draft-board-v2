@@ -52,6 +52,22 @@
         line-height: 1.5;
         margin: 0;
     }
+
+    @media (max-width: 700px) {
+        .player-bio {
+            width: auto;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .player-name {
+            font-size: 1rem;
+        }
+
+        .team-pos {
+            margin-bottom: 6px;
+        }
+    }
 </style>
 
 <div class="player-bio">

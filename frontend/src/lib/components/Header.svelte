@@ -192,12 +192,72 @@
         background: var(--border);
         margin: 5px 8px;
     }
+
+    .menu-note {
+        display: none;
+        padding: 6px 10px 4px;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 700px) {
+        .header-bar {
+            width: 100%;
+            gap: 8px;
+            margin: 0.5rem auto 0.8rem;
+        }
+
+        .brand {
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .brand-word {
+            font-size: 1rem;
+        }
+
+        .brand-word-long {
+            display: none;
+        }
+
+        .header-right {
+            gap: 8px;
+        }
+
+        .refresh-date {
+            display: none;
+        }
+
+        .menu-note {
+            display: block;
+        }
+
+        .user-menu-button {
+            padding: 6px 10px;
+            max-width: 42vw;
+        }
+
+        .user-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .menu {
+            min-width: 200px;
+            max-width: calc(100vw - 24px);
+        }
+
+        .menu-item {
+            padding: 10px;
+        }
+    }
 </style>
 
 <div class="header-bar">
     <div class="brand">
         <Logo />
-        <span class="brand-word">Fantasy Football Draft Board</span>
+        <span class="brand-word"><span class="brand-word-long">Fantasy Football&nbsp;</span>Draft Board</span>
     </div>
 
     <div class="header-right">
@@ -211,7 +271,7 @@
                 aria-expanded={menuOpen}
             >
                 <span class="avatar">{initials}</span>
-                <span>{username}</span>
+                <span class="user-name">{username}</span>
                 <span class="caret" aria-hidden="true">▼</span>
             </button>
 
@@ -242,6 +302,7 @@
                     >
                         Log out
                     </button>
+                    <div class="menu-note">Rankings updated {refreshDate}</div>
                 </div>
             {/if}
         </div>

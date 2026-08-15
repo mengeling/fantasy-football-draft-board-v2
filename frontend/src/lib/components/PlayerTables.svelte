@@ -51,6 +51,7 @@
 
     .stat-row {
         display: grid;
+        grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
         gap: 10px 8px;
     }
 
@@ -76,6 +77,26 @@
         color: var(--text-muted);
         margin-top: 2px;
     }
+
+    @media (max-width: 900px) {
+        .stat-groups {
+            flex: 1 1 100%;
+            gap: 8px;
+        }
+
+        .stat-group {
+            padding: 8px 12px;
+        }
+
+        .stat-row {
+            grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+            gap: 8px 6px;
+        }
+
+        .stat .v {
+            font-size: 0.85rem;
+        }
+    }
 </style>
 
 {#if showTables}
@@ -84,10 +105,7 @@
             <p class="group-label">Rankings</p>
             <div
                 class="stat-row"
-                style="grid-template-columns: repeat({Math.max(
-                    rankFields.length,
-                    positionStats.length
-                )}, minmax(0, 1fr))"
+                style="--cols: {Math.max(rankFields.length, positionStats.length)}"
             >
                 {#each rankFields as field}
                     <div class="stat">
@@ -101,10 +119,7 @@
         {#if positionStats.length}
             <div class="stat-group">
                 <p class="group-label">Previous stats</p>
-                <div
-                    class="stat-row"
-                    style="grid-template-columns: repeat({positionStats.length}, minmax(0, 1fr))"
-                >
+                <div class="stat-row" style="--cols: {positionStats.length}">
                     {#each positionStats as stat}
                         <div class="stat">
                             <span class="v"

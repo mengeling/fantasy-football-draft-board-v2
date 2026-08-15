@@ -97,6 +97,23 @@
     });
 </script>
 
+<style>
+    @media (max-width: 700px) {
+        main {
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100dvh - 2.5rem);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+    }
+</style>
+
 <main>
     <Header
         username={currentUser?.username ?? ''}
